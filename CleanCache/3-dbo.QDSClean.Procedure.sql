@@ -100,13 +100,13 @@ GO
 --		*** Basic-logged cleanup: this execution is recommended when a cleanup is required but logging is necessary for further analysis afterwards
 --
 --		EXECUTE [dbo].[QDSCleanup]
---			 @DatabaseName = 'Database01'
---			,@ReportOutputTable = '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCleanupIndex]'
---			,@QueryDetailsOutputTable = '[MaintenanceDB].[dbo].[QDSCleanupDetails]'
+--			 @DatabaseName				= 'Database01'
+--			,@ReportIndexOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCleanupIndex]'
+--			,@ReportDetailsOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCleanupDetails]'
 --
 --		This execution will generate 2 separate reports:
 --			Stored in the table [dbo].[QDSCleanSummary] on the database [CentralMaintenanceDB] on the linked server [LinkedSQL] : Estimated space used by the queries be deleted (including query text, execution plans, and both runtime and wait statistics
---			Stored in the table [dbo].[QDSCleanQueryDetails] on the local database [MaintenanceDB]: Complete list of the queries selected be deleted, along with details on their execution analyze why they have been selected be deleted and the text of the query itself
+--			Stored in the table [dbo].[QDSCleanQueryDetails] on the database [CentralMaintenanceDB] on the linked server [LinkedSQL] : Complete list of the queries selected be deleted, along with details on their execution analyze why they have been selected be deleted and the text of the query itself
 --		using the default parameters
 --		Will also perform the actual cleanup using the default parameters
 --
