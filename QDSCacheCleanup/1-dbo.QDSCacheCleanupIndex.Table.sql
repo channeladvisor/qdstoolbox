@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS [dbo].[QDSCleanupIndex]
-CREATE TABLE [dbo].[QDSCleanupIndex]
+DROP TABLE IF EXISTS [dbo].[QDSCacheCleanupIndex]
+CREATE TABLE [dbo].[QDSCacheCleanupIndex]
 (
 	[ReportID]				BIGINT			NOT NULL,
 	[ReportDate]			DATETIME2		NOT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE [dbo].[QDSCleanupIndex]
 	[CleanupParameters]		XML					NULL,
 	[TestMode]				BIT				NOT NULL
 )
-ALTER TABLE [dbo].[QDSCleanupIndex]
-ADD CONSTRAINT [PK_QDSCleanupIndex] PRIMARY KEY CLUSTERED
+ALTER TABLE [dbo].[QDSCacheCleanupIndex]
+ADD CONSTRAINT [PK_QDSCacheCleanupIndex] PRIMARY KEY CLUSTERED
 (
 	 [ReportID] ASC,
 	 [QueryType] ASC

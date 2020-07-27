@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS [dbo].[QDSCleanupDetails]
-CREATE TABLE [dbo].[QDSCleanupDetails]
+DROP TABLE IF EXISTS [dbo].[QDSCacheCleanupDetails]
+CREATE TABLE [dbo].[QDSCacheCleanupDetails]
 (
 	[ReportID]			BIGINT				NOT	NULL,
 	[QueryType]			NVARCHAR(16)		NOT NULL,
@@ -9,8 +9,8 @@ CREATE TABLE [dbo].[QDSCleanupDetails]
 	[ExecutionCount]	BIGINT					NULL,
 	[QueryText]			VARBINARY(MAX)			NULL
 )
-ALTER TABLE [dbo].[QDSCleanupDetails]
-ADD CONSTRAINT [PK_QDSCleanupDetails] PRIMARY KEY CLUSTERED 
+ALTER TABLE [dbo].[QDSCacheCleanupDetails]
+ADD CONSTRAINT [PK_QDSCacheCleanupDetails] PRIMARY KEY CLUSTERED 
 (
 	[ReportID]			ASC,
 	[QueryType]        ASC,

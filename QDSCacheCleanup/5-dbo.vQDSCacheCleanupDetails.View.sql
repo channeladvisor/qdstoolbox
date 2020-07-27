@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW [dbo].[vQDSCleanupDetails]
+CREATE OR ALTER VIEW [dbo].[vQDSCacheCleanupDetails]
 AS
 SELECT
 	 [ReportID]		
@@ -8,4 +8,4 @@ SELECT
 	,[LastExecutionTime]
 	,[ExecutionCount]
 	,CAST(DECOMPRESS([QueryText]) AS NVARCHAR(MAX)) AS [QueryText]
-FROM [dbo].[QDSCleanupDetails]
+FROM [dbo].[QDSCacheCleanupDetails]

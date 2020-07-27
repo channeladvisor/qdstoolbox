@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ----------------------------------------------------------------------------------
--- Procedure Name: [dbo].[QDSCleanup]
+-- Procedure Name: [dbo].[QDSCacheCleanup]
 --
 -- Desc: This script clears entries from the QDS data release space and avoid the automated space-based cleanup
 --
@@ -31,15 +31,20 @@ GO
 --
 --		@Retention					INT				--	Hours since the last execution of the query 
 --														[Default: 168 (24*7), one week]
+--														IF @Retention = 0, ALL queries will be flagged for deletion
 --
 --		@MinExecutionCount			INT				--	Minimum number of executions NOT delete the query .
 --														[Default :2; deletes queries executed only once]
+--														IF @MinExecutionCount = 0, ALL queries will be flagged for deletion
 --
 --		@CleanOrphan				BIT				--	Flag clean queries associated with deleted objects. 
 --														[Default: 1]
 --
 --		@CleanInternal				BIT				--	Flag clean queries identified as internal ones by QDS (UPDATE STATISTICS, INDEX REBUILD....).
 --														[Default: 1]
+--
+--		@CleanStatsOnly				BIT				--	Changes the behavior of the clean process so only the stats will be cleaned, but not the plans, queries and queries' texts.
+--														[Default: 0]
 --
 --		@ReportAsText				BIT				--	Flag print out a report on the space released after the removal of the queries' information (in a text format). 
 --														[Default: 0]
@@ -49,7 +54,7 @@ GO
 --
 --		@ReportIndexOutputTable			NVARCHAR(800)	--	Table store the summary of the report, such as parameters used.
 --														[Default: NULL, results returned user]
---														Table definition available in the dbo.QDSCleanupIndex script
+--														Table definition available in the dbo.QDSCacheCleanupIndex script
 --
 --		@ReportDetailsAsTable		BIT				--	Flag print out a report with the details of each query targeted for deletion,
 --														including the query text and the parameters used select the query
@@ -74,7 +79,7 @@ GO
 --
 --		*** Report-Only: this execution is recommended before applying any change into a live environment in order review the impact of the different parameters would have
 --
---		EXECUTE [dbo].[QDSCleanup]
+--		EXECUTE [dbo].[QDSCacheCleanup]
 --			 @DatabaseName = 'Database01'
 --			,@CleanAdhocStale = 0
 --			,@CleanStale = 1
@@ -99,10 +104,10 @@ GO
 --
 --		*** Basic-logged cleanup: this execution is recommended when a cleanup is required but logging is necessary for further analysis afterwards
 --
---		EXECUTE [dbo].[QDSCleanup]
+--		EXECUTE [dbo].[QDSCacheCleanup]
 --			 @DatabaseName				= 'Database01'
---			,@ReportIndexOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCleanupIndex]'
---			,@ReportDetailsOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCleanupDetails]'
+--			,@ReportIndexOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCacheCleanupIndex]'
+--			,@ReportDetailsOutputTable	= '[LinkedSQL].[CentralMaintenanceDB].[dbo].[QDSCacheCleanupDetails]'
 --
 --		This execution will generate 2 separate reports:
 --			Stored in the table [dbo].[QDSCleanSummary] on the database [CentralMaintenanceDB] on the linked server [LinkedSQL] : Estimated space used by the queries be deleted (including query text, execution plans, and both runtime and wait statistics
@@ -115,7 +120,7 @@ GO
 -- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
-CREATE OR ALTER PROCEDURE [dbo].[QDSCleanup]
+CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 (
 	 @ServerIdentifier			SYSNAME			=	NULL
 	,@DatabaseName				SYSNAME			=	NULL
@@ -125,6 +130,7 @@ CREATE OR ALTER PROCEDURE [dbo].[QDSCleanup]
 	,@MinExecutionCount			INT				=	2
 	,@CleanOrphan				BIT				=	1
 	,@CleanInternal				BIT				=	1
+	,@CleanStatsOnly			BIT				=	1
 	,@ReportAsText				BIT				=	0
 	,@ReportAsTable				BIT				=	0
 	,@ReportIndexOutputTable	NVARCHAR(800)	=	NULL
@@ -132,7 +138,7 @@ CREATE OR ALTER PROCEDURE [dbo].[QDSCleanup]
 	,@ReportDetailsOutputTable	NVARCHAR(800)	=	NULL
 	,@TestMode					BIT				=	0
 	,@VerboseMode				BIT				=	0
-	,@ReportID					BIGINT		OUTPUT
+	,@ReportID					BIGINT			=	NULL	OUTPUT
 )
 AS
 BEGIN
@@ -187,7 +193,6 @@ BEGIN
 END
 -- Count total # of queries in @DatabaseName's QDS - END
 
-
 -- Create table #DeleteableQueryTable store the list of queries and plans (when forced on a query) be deleted - START
 DROP TABLE IF EXISTS #DeleteableQueryTable
 CREATE TABLE #DeleteableQueryTable
@@ -201,8 +206,7 @@ CREATE TABLE #DeleteableQueryTable
 
 
 -- Load ad-hoc stale queries into #DeleteableQueryTable - START
- -- When a full cleanup of all stale queries is selected, this is ignored avoid scaning the QDS tables twice
-IF (@CleanAdhocStale = 1) AND (@CleanStale = 0)
+IF (@CleanAdhocStale = 1)
 BEGIN
 	SET @SqlCmd = 'INSERT INTO #DeleteableQueryTable
 	SELECT ''AdhocStale'', [qsq].[query_id], [qsp].[plan_id], [qsp].[is_forced_plan] 
@@ -213,10 +217,21 @@ BEGIN
 		ON [qsrs].[plan_id] = [qsp].[plan_id]
 	WHERE [qsq].[object_id] = 0
 	GROUP BY [qsq].[query_id], [qsp].[plan_id], [qsp].[is_forced_plan] 
-	HAVING SUM([qsrs].[count_executions]) < {@MinExecutionCount}
-	AND MAX([qsq].[last_execution_time]) < DATEADD (HOUR, -{@Retention}, GETUTCDATE())
+	{@QueryClause}
 
 	INSERT INTO #Rows (r) VALUES (@@ROWCOUNT)'
+	
+	-- If @MinExecutionCount = 0 or @Retention = 0, all adhoc queries will be deleted - START
+	IF ( (@MinExecutionCount * @Retention) <> 0)
+	BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@QueryClause}',			'HAVING SUM([qsrs].[count_executions]) < {@MinExecutionCount}
+	AND MAX([qsq].[last_execution_time]) < DATEADD (HOUR, -{@Retention}, GETUTCDATE())')
+	END
+	ELSE
+	BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@QueryClause}',			'')
+	END
+	-- If @MinExecutionCount = 0 or @Retention = 0, all adhoc queries will be deleted - END
 
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@DatabaseName}',			QUOTENAME(@DatabaseName))
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@MinExecutionCount}',		CAST(@MinExecutionCount AS NVARCHAR(16)))
@@ -230,7 +245,10 @@ BEGIN
 
 	IF (@VerboseMode = 1)
 	BEGIN
-		PRINT 'Adhoc stale queries criteria: executed less than ' + CAST(@MinExecutionCount AS VARCHAR(8)) + ' times, and not executed for the last '+ CAST (@Retention AS VARCHAR(8)) +' hours'
+		IF ( (@MinExecutionCount * @Retention) > 0)
+			PRINT 'Adhoc stale queries criteria: executed less than ' + CAST(@MinExecutionCount AS VARCHAR(8)) + ' times, and not executed for the last '+ CAST (@Retention AS VARCHAR(8)) +' hours'
+		IF ( (@MinExecutionCount * @Retention) = 0)
+			PRINT 'Adhoc stale queries criteria: all adhoc queries'
 		PRINT 'Adhoc stale queries found: ' + CAST(@Rows AS VARCHAR(20))
 	END
 END
@@ -250,11 +268,23 @@ BEGIN
 		ON [qsp].[query_id] = [qsq].[query_id]
 	JOIN {@DatabaseName}.[sys].[query_store_runtime_stats] AS [qsrs]
 		ON [qsrs].[plan_id] = [qsp].[plan_id]
-	GROUP BY [qsq].[query_id], [qsp].[plan_id], [qsp].[is_forced_plan]
-	HAVING SUM([qsrs].[count_executions]) < {@MinExecutionCount}
-	AND MAX([qsq].[last_execution_time]) < DATEADD (HOUR, -{@Retention}, GETUTCDATE())
+	WHERE [qsq].[object_id] <> 0
+	GROUP BY [qsq].[query_id], [qsp].[plan_id], [qsp].[is_forced_plan] 
+	{@QueryClause}
 
 	INSERT INTO #Rows (r) VALUES (@@ROWCOUNT)'
+
+	-- If @MinExecutionCount = 0 or @Retention = 0, all queries will be deleted - START
+	IF ( (@MinExecutionCount * @Retention) <> 0)
+	BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@QueryClause}',			'HAVING SUM([qsrs].[count_executions]) < {@MinExecutionCount}
+	AND MAX([qsq].[last_execution_time]) < DATEADD (HOUR, -{@Retention}, GETUTCDATE())')
+	END
+	ELSE
+	BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@QueryClause}',			'')
+	END
+	-- If @MinExecutionCount = 0 or @Retention = 0, all  queries will be deleted - END
 
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@DatabaseName}',			QUOTENAME(@DatabaseName))
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@MinExecutionCount}',		CAST(@MinExecutionCount AS NVARCHAR(16)))
@@ -273,7 +303,6 @@ BEGIN
 	END
 END
 -- Load stale queries into #StaleQueryTable - END
-
 
 -- Load internal queries into #InternalQueryTable - START 
 IF (@CleanInternal = 1)
@@ -344,7 +373,6 @@ CREATE CLUSTERED INDEX [CIX_DeleteableQueryTable_QueryID] ON #DeleteableQueryTab
 CREATE NONCLUSTERED INDEX [NCIX_DeleteableQueryTable_PlanID] ON #DeleteableQueryTable ([PlanID])
 -- Create indexes order the queries and plans be deleted reduce the effort when querying #DeleteableQueryTable - END
 
-
 -- Summary Report: Prepare user-friendly output (as table or text) - START
 IF ( (@ReportAsTable = 1) OR (@ReportAsText = 1)  OR (@ReportIndexOutputTable IS NOT NULL) )
 BEGIN
@@ -364,30 +392,62 @@ BEGIN
 	-- Summary Report: Create table #Report store metrics before outputing them - END
 	
 	-- Summary Report: Use @SqlCmd load details into #Report - START
-	SET @SqlCmd = 'INSERT INTO #Report
-		SELECT 
-			 [QueryType]		=	[dqt].[QueryType]
-			,[QueryCount]		=	COUNT_BIG(DISTINCT [dqt].[QueryID])
-			,[PlanCount]		=	COUNT_BIG(DISTINCT [dqt].[PlanID])
-			,[QueryTextKBs]		=	SUM(DATALENGTH([qsqt].[query_sql_text])) / 1024
-			,[PlanXMLKBs]		=	SUM(DATALENGTH([qsp].[query_plan])) / 1024
-			,[RunStatsKBs]		=	( COUNT_BIG([qsrs].[runtime_stats_id]) * 653 ) / 1024
-			,[WaitStatsKBs]		=	( COUNT_BIG([qsws].[wait_stats_id]) * 315 ) / 1024
-		FROM #DeleteableQueryTable [dqt]
-			INNER JOIN {@DatabaseName}.[sys].[query_store_query] [qsq]
-				ON [dqt].[QueryID] = [qsq].[query_id]
-			INNER JOIN {@DatabaseName}.[sys].[query_store_plan] [qsp]
-				ON [dqt].[PlanID] = [qsp].[plan_id]
-			LEFT JOIN {@DatabaseName}.[sys].[query_store_query_text] [qsqt]
-				ON [qsq].[query_text_id] = [qsqt].[query_text_id]
-			LEFT JOIN {@DatabaseName}.[sys].[query_store_runtime_stats] [qsrs]
-				ON [dqt].[PlanID] = [qsrs].[plan_id]
-			LEFT JOIN {@DatabaseName}.[sys].[query_store_wait_stats] [qsws]
-				ON [dqt].[PlanID] = [qsws].[plan_id]
-		GROUP BY [dqt].[QueryType]'
+	--SET @SqlCmd = 'INSERT INTO #Report
+	SET @SqlCmd = 'WITH [qsws]
+AS
+(
+SELECT
+	 [QueryType]	= [dqt].[QueryType]
+	,[WaitStatsKBs]	=	( COUNT_BIG([qsws].[wait_stats_id]) * 315 ) / 1024
+FROM #DeleteableQueryTable [dqt]
+LEFT JOIN [DBA].[sys].[query_store_wait_stats] [qsws]
+	ON [dqt].[PlanID] = [qsws].[plan_id]
+GROUP BY [dqt].[QueryType]
+), [qsrs]
+AS
+(
+SELECT
+	[QueryType]		= [dqt].[QueryType]
+	,[RunStatsKBs]	=	( COUNT_BIG([qsrs].[runtime_stats_id]) * 653 ) / 1024
+FROM #DeleteableQueryTable [dqt]
+LEFT JOIN [DBA].[sys].[query_store_runtime_stats] [qsrs]
+	ON [dqt].[PlanID] = [qsrs].[plan_id]
+GROUP BY [dqt].[QueryType]
+), [q]
+AS
+(
+SELECT
+	 [QueryType]		=	[dqt].[QueryType]
+	,[QueryCount]		=	COUNT_BIG(DISTINCT [dqt].[QueryID])
+	,[PlanCount]		=	COUNT_BIG(DISTINCT [dqt].[PlanID])
+	,[QueryTextKBs]		=	SUM(DATALENGTH([qsqt].[query_sql_text])) / 1024
+	,[PlanXMLKBs]		=	SUM(DATALENGTH([qsp].[query_plan])) / 1024
+FROM #DeleteableQueryTable [dqt]
+	INNER JOIN [DBA].[sys].[query_store_query] [qsq]
+		ON [dqt].[QueryID] = [qsq].[query_id]
+	INNER JOIN [DBA].[sys].[query_store_plan] [qsp]
+		ON [dqt].[PlanID] = [qsp].[plan_id]
+	LEFT JOIN [DBA].[sys].[query_store_query_text] [qsqt]
+		ON [qsq].[query_text_id] = [qsqt].[query_text_id]
+GROUP BY [dqt].[QueryType]
+)
+INSERT INTO #Report
+SELECT
+	 [q].[QueryType]
+	,[q].[QueryCount]
+	,[q].[PlanCount]
+	,[q].[QueryTextKBs]
+	,[q].[PlanXMLKBs]
+	,[qsrs].[RunStatsKBs]
+	,[qsws].[WaitStatsKBs]
+FROM [q]
+	LEFT JOIN [qsrs]
+		ON [q].[QueryType] = [qsrs].[QueryType]
+	LEFT JOIN [qsws]
+		ON [q].[QueryType] = [qsws].[QueryType]'
 	
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@DatabaseName}',			QUOTENAME(@DatabaseName))
-	
+
 	IF (@VerboseMode = 1) PRINT (@SqlCmd)
 	EXECUTE (@SqlCmd)
 
@@ -563,7 +623,7 @@ IF (@ReportIndexOutputTable IS NOT NULL)
 BEGIN
 	DECLARE @ReportOutputInsert NVARCHAR(MAX)
 	SET @ReportOutputInsert = '
-	INSERT INTO ' + @ReportIndexOutputTable + ' (
+	INSERT INTO {@ReportIndexOutputTable} (
 		 [ReportID]
 		,[ReportDate] 
 		,[ServerIdentifier]	
@@ -603,6 +663,7 @@ BEGIN
 	FROM #Report
 	ORDER BY [QueryType] ASC'
 
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportIndexOutputTable}',				@ReportIndexOutputTable)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportID}',				CAST(@ReportID AS NVARCHAR(20)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportDate}',				CAST(@ExecutionTime AS NVARCHAR(34)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ServerIdentifier}',		@ServerIdentifier)
@@ -789,44 +850,80 @@ END
 DECLARE @DeleteableQueryID BIGINT
 DECLARE @DeleteablePlanID BIGINT
 
-DECLARE @DeleteableQueryDeletedTable TABLE (QueryID BIGINT, PlanID BIGINT, PRIMARY KEY (QueryID ASC, PlanID))
-DECLARE @UnforcePlanCmd VARCHAR(MAX)
-DECLARE @RemoveQueryCmd VARCHAR(MAX)
-WHILE (SELECT COUNT(1) FROM #DeleteableQueryTable) > 0
--- Loop through each query in the list, starting with the ones having a forced plan on then (plan_id <> 0) - START
+-- Deletion of query & plans, when @CleanStatsOnly = 0 - START
+IF (@CleanStatsOnly = 0)
 BEGIN
-	;WITH dqt AS ( SELECT TOP(1) * FROM #DeleteableQueryTable ORDER BY PlanID DESC)
-	DELETE FROM dqt
-	OUTPUT DELETED.QueryID, DELETED.PlanID INTO @DeleteableQueryDeletedTable
-	SELECT TOP(1) @DeleteableQueryID = QueryID, @DeleteablePlanID = PlanID FROM @DeleteableQueryDeletedTable
-	DELETE FROM @DeleteableQueryDeletedTable
-
-	-- If there is a forced plan for the query, unforce it before removing the query (queries with forced plans cna't be removed) - START
-	IF (@DeleteablePlanID <> 0)
+	DECLARE @DeleteableQueryDeletedTable TABLE (QueryID BIGINT, PlanID BIGINT, PRIMARY KEY (QueryID ASC, PlanID ASC))
+	DECLARE @UnforcePlanCmdTemplate	VARCHAR(MAX) = QUOTENAME(@DatabaseName)+'..sp_query_store_unforce_plan @query_id = {@QueryID}, @plan_id = {@PlanID};'
+	DECLARE @UnforcePlanCmd			VARCHAR(MAX)
+	DECLARE @RemoveQueryCmdTemplate	VARCHAR(MAX) = QUOTENAME(@DatabaseName)+'..sp_query_store_remove_query @query_id = {@QueryID};'
+	DECLARE @RemoveQueryCmd			VARCHAR(MAX)
+	WHILE (SELECT COUNT(1) FROM #DeleteableQueryTable) > 0
+	-- Loop through each query in the list, starting with the ones having a forced plan on then ([ForcedPlan] = 1) - START
 	BEGIN
-		-- Unforce the plan (if any) - START
-		IF (@VerboseMode = 1) PRINT 'Unforce plan : ' + CAST(@DeleteablePlanID AS VARCHAR(19)) + ' for query :' + CAST(@DeleteableQueryID AS VARCHAR(19))
-		SET @UnforcePlanCmd = @DatabaseName+'..sp_query_store_unforce_plan @query_id = ' + CAST(@DeleteableQueryID AS VARCHAR(19))+ ', @plan_id = '+ CAST(@DeleteablePlanID AS VARCHAR(19))+';'
-		IF (@VerboseMode = 1) PRINT (@UnforcePlanCmd)
-		IF (@TestMode = 0) EXECUTE (@UnforcePlanCmd)
-		-- Unforce the plan (if any) - END
+		;WITH dqt AS ( SELECT TOP(1) * FROM #DeleteableQueryTable ORDER BY [ForcedPlan] DESC)
+		DELETE FROM dqt
+		OUTPUT DELETED.QueryID, DELETED.PlanID INTO @DeleteableQueryDeletedTable
+		SELECT TOP(1) @DeleteableQueryID = QueryID, @DeleteablePlanID = PlanID FROM @DeleteableQueryDeletedTable
+		DELETE FROM @DeleteableQueryDeletedTable
+
+		-- If there is a forced plan for the query, unforce it before removing the query (queries with forced plans can't be removed) - START
+		IF (@DeleteablePlanID <> 0)
+		BEGIN
+			-- Unforce the plan (if any) - START
+			IF (@VerboseMode = 1) PRINT 'Unforce plan : ' + CAST(@DeleteablePlanID AS VARCHAR(19)) + ' for query :' + CAST(@DeleteableQueryID AS VARCHAR(19))
+			SET @UnforcePlanCmd = REPLACE(@UnforcePlanCmdTemplate,	'{@QueryID}',	CAST(@DeleteableQueryID AS NVARCHAR(20)))
+			SET @UnforcePlanCmd = REPLACE(@UnforcePlanCmd,			'{@PlanID}',	CAST(@DeleteablePlanID AS NVARCHAR(20)))
+			IF (@VerboseMode = 1) PRINT (@UnforcePlanCmd)
+			IF (@TestMode = 0) EXECUTE (@UnforcePlanCmd)
+			-- Unforce the plan (if any) - END
+		END
+		-- If there is a forced plan for the query, unforce it before removing the query (queries with forced plans can't be removed) - END
+
+		-- Delete the query from Query Store - START
+		IF (@VerboseMode = 1) PRINT 'Remove query : ' + CAST(@DeleteableQueryID AS VARCHAR(19))
+		SET @UnforcePlanCmd = REPLACE(@RemoveQueryCmdTemplate,	'{@QueryID}',	CAST(@DeleteableQueryID AS NVARCHAR(20)))
+		IF (@VerboseMode = 1) PRINT (@RemoveQueryCmd)
+		IF (@TestMode = 0) EXECUTE (@RemoveQueryCmd) 
+		-- Delete the query from Query Store - END
+
+		-- Delete the query from #DeleteableQueryTable prevent the loop from trying remove the same query multiple times - START
+		DELETE FROM #DeleteableQueryTable WHERE QueryID = @DeleteableQueryID
+		-- Delete the query from #DeleteableQueryTable prevent the loop from trying remove the same query multiple times - END
 	END
-	-- If there is a forced plan for the query, unforce it before removing the query (queries with forced plans can't be removed) - END
-
-	-- Delete the query from Query Store - START
-	IF (@VerboseMode = 1) PRINT 'Remove query : ' + CAST(@DeleteableQueryID AS VARCHAR(19))
-	SET @RemoveQueryCmd = @DatabaseName+'..sp_query_store_remove_query @query_id = ' + CAST(@DeleteableQueryID AS VARCHAR(19))+';'
-	IF (@VerboseMode = 1) PRINT (@RemoveQueryCmd)
-	IF (@TestMode = 0) EXECUTE (@RemoveQueryCmd) 
-	-- Delete the query from Query Store - END
-
-	-- Delete the query from #DeleteableQueryTable prevent the loop from trying remove the same query multiple times - START
-	DELETE FROM #DeleteableQueryTable WHERE QueryID = @DeleteableQueryID
-	-- Delete the query from #DeleteableQueryTable prevent the loop from trying remove the same query multiple times - END
+	-- Loop through each query in the list, starting with the ones having a forced plan on then (plan_id <> 0) - END
 END
--- Loop through each query in the list, starting with the ones having a forced plan on then (plan_id <> 0) - END
+-- Deletion of query & plans, when @CleanStatsOnly = 0 - END
+
+-- Deletion of plan execution stats only, when @CleanStatsOnly = 1 - START
+IF (@CleanStatsOnly = 1)
+BEGIN
+	DECLARE @DeleteablePlanStatsDeletedTable TABLE ([PlanID] BIGINT, PRIMARY KEY ([PlanID] ASC))
+	DECLARE @ResetPlanStatsCmdTemplate	VARCHAR(MAX) = QUOTENAME(@DatabaseName)+'..sp_query_store_reset_exec_stats @plan_id = {@PlanID};'
+	DECLARE @ResetPlanStatsCmd			VARCHAR(MAX)
+	WHILE (SELECT COUNT(1) FROM #DeleteableQueryTable) > 0
+	-- Loop through each plan in the list - START
+	BEGIN
+		;WITH dqt AS ( SELECT TOP(1) * FROM #DeleteableQueryTable ORDER BY [PlanID] ASC)
+		DELETE FROM dqt
+		OUTPUT DELETED.PlanID INTO @DeleteablePlanStatsDeletedTable
+		SELECT TOP(1) @DeleteablePlanID = PlanID FROM @DeleteablePlanStatsDeletedTable
+		DELETE FROM @DeleteablePlanStatsDeletedTable
+
+		-- Delete the stats for the current plan - START
+		IF (@VerboseMode = 1) PRINT 'Reset stats for plan : ' + CAST(@DeleteablePlanID AS VARCHAR(19))
+		SET @ResetPlanStatsCmd = REPLACE(@ResetPlanStatsCmdTemplate,	'{@PlanID}',	CAST(@DeleteablePlanID AS NVARCHAR(20)))
+		IF (@VerboseMode = 1) PRINT (@ResetPlanStatsCmd)
+		IF (@TestMode = 0) EXECUTE (@ResetPlanStatsCmd) 
+		-- Delete the stats for the current plan - END
+
+		DELETE FROM #DeleteableQueryTable WHERE PlanID = @DeleteablePlanID
+	END
+	-- Loop through each plan in the list - END
+END
+-- Deletion of plan execution stats only, when @CleanStatsOnly = 1 - END
 
 DROP TABLE IF EXISTS #DeleteableQueryTable
--- Perform actual cleanup operations - START
+-- Perform actual cleanup operations - END
 
 END

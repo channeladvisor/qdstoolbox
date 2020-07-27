@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW [dbo].[vQDSCleanupIndex]
+CREATE OR ALTER VIEW [dbo].[vQDSCacheCleanupIndex]
 AS
 SELECT
 	 [ReportID]			
@@ -19,4 +19,4 @@ SELECT
 	,[CleanupParameters].value('(/Root/CleanupParameters/MinExecutionCount)[1]','BIT')	AS [MinExecutionCount]
 	,[CleanupParameters].value('(/Root/CleanupParameters/CleanOrphan)[1]','BIT')		AS [CleanOrphan]
 	,[CleanupParameters].value('(/Root/CleanupParameters/CleanInternal)[1]','BIT')		AS [CleanInternal]
-FROM [dbo].[QDSCleanupIndex]
+FROM [dbo].[QDSCacheCleanupIndex]
