@@ -1,6 +1,13 @@
 # QDS Tools
-This is a collection of tools (comprised on a combination of views, procedures, functions...) developed using the Query Store functionality as a base to facilitate its usage and report generation.
+This is a collection of tools (comprised on a combination of views, procedures, functions...) developed using the Query Store functionality as a base to facilitate its usage and reports' generation.
+---
 
+---
+## Pivoted Wait Stats
+The design of the <b>sys.query_store_wait_stats</b> differs from <b> sys.query_store_runtime_stats</b> , by having on row for each wait type, per plan, per runtime stats interval. This reduces the space requirements since most plans will have no wait times, or only a few types of them, but makes it difficult to compare it with the runtime stats.\
+This view pivots the different rows into Total & Average columns for each wait type.
+
+---
 ## QDSCacheClean
 This tools uses the SPs sp_query_store_remove_query, sp_query_store_remove_plan and sp_query_store_reset_exec_stats to delete stored data for specific queries/plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
 
@@ -52,7 +59,6 @@ EXECUTE [dbo].[QDSCacheClean]
 ---
 
 ## QueryVariation
-### What does QueryVariation do?
 Analyzes metrics from two different periods and returns the queries whose performance has changed based on a number of parameters (CPU usage, duration, IO operations...) and the metric in use (average, total, max...), offering a report similar to that of Query Store's GUI as seen in SSMS.\
 Allows for an analysis based on the number of different plans in use, filtering queries that have a minimum/maximum number of execution plans.\
 \
@@ -94,6 +100,7 @@ EXECUTE [dbo].[QueryVariationReport]
 
 
 ### Suggested uses
+This tool can be used to extract the same reports as the "Regressed Queries" SSMS GUI can, with the added functionality of storing the reports into tables for later analysis.
 #### Hardware changes
 When performing load & performance tests, allows for measuring the impact of applying changes to the SQL instance and box (such as changing the amount of CPUs of the SQL instance, its memory usage or its disks' IO performance), by looking for changes in performance of queries excluding changes caused my a modification of the execution plans used.
 #### Index & statistics changes

@@ -400,7 +400,7 @@ SELECT
 	 [QueryType]	= [dqt].[QueryType]
 	,[WaitStatsKBs]	=	( COUNT_BIG([qsws].[wait_stats_id]) * 315 ) / 1024
 FROM #DeleteableQueryTable [dqt]
-LEFT JOIN [DBA].[sys].[query_store_wait_stats] [qsws]
+LEFT JOIN {@DatabaseName}.[sys].[query_store_wait_stats] [qsws]
 	ON [dqt].[PlanID] = [qsws].[plan_id]
 GROUP BY [dqt].[QueryType]
 ), [qsrs]
@@ -410,7 +410,7 @@ SELECT
 	[QueryType]		= [dqt].[QueryType]
 	,[RunStatsKBs]	=	( COUNT_BIG([qsrs].[runtime_stats_id]) * 653 ) / 1024
 FROM #DeleteableQueryTable [dqt]
-LEFT JOIN [DBA].[sys].[query_store_runtime_stats] [qsrs]
+LEFT JOIN {@DatabaseName}.[sys].[query_store_runtime_stats] [qsrs]
 	ON [dqt].[PlanID] = [qsrs].[plan_id]
 GROUP BY [dqt].[QueryType]
 ), [q]
@@ -423,11 +423,11 @@ SELECT
 	,[QueryTextKBs]		=	SUM(DATALENGTH([qsqt].[query_sql_text])) / 1024
 	,[PlanXMLKBs]		=	SUM(DATALENGTH([qsp].[query_plan])) / 1024
 FROM #DeleteableQueryTable [dqt]
-	INNER JOIN [DBA].[sys].[query_store_query] [qsq]
+	INNER JOIN {@DatabaseName}.[sys].[query_store_query] [qsq]
 		ON [dqt].[QueryID] = [qsq].[query_id]
-	INNER JOIN [DBA].[sys].[query_store_plan] [qsp]
+	INNER JOIN {@DatabaseName}.[sys].[query_store_plan] [qsp]
 		ON [dqt].[PlanID] = [qsp].[plan_id]
-	LEFT JOIN [DBA].[sys].[query_store_query_text] [qsqt]
+	LEFT JOIN {@DatabaseName}.[sys].[query_store_query_text] [qsqt]
 		ON [qsq].[query_text_id] = [qsqt].[query_text_id]
 GROUP BY [dqt].[QueryType]
 )
