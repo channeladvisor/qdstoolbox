@@ -3,7 +3,7 @@ This is a collection of tools (comprised on a combination of views, procedures, 
 ---
 
 ---
-## Pivoted Wait Stats
+## PivotedWaitStats
 The design of the <b>sys.query_store_wait_stats</b> differs from <b> sys.query_store_runtime_stats</b> , by having on row for each wait type, per plan, per runtime stats interval. This reduces the space requirements since most plans will have no wait times, or only a few types of them, but makes it difficult to compare it with the runtime stats.\
 This view pivots the different rows into Total & Average columns for each wait type.
 
@@ -105,3 +105,37 @@ This tool can be used to extract the same reports as the "Regressed Queries" SSM
 When performing load & performance tests, allows for measuring the impact of applying changes to the SQL instance and box (such as changing the amount of CPUs of the SQL instance, its memory usage or its disks' IO performance), by looking for changes in performance of queries excluding changes caused my a modification of the execution plans used.
 #### Index & statistics changes
 Identify queries whose performance has changed due to changes in execution plans after performing maintenance operations (index rebuild, statistics recalculation), or creating/dropping/altering existing indexes.
+
+---
+
+## ServerTopQueries
+This tool provides uses the runtime stats for each database on the server to get a list of the TOP XX queries on each database, ordered by any of the measurements Query Store keeps track off (totals).
+### Use cases and examples
+#### Queries with a high CPU consumption
+Get a list of queries (top 10 per database) along with their query text
+```
+EXECUTE [dbo].[GetServerTopQueries]
+	@Measurement 		= 	'cpu_time,
+	@Top 				= 	10,
+	@IncludeQueryText 	= 	1
+```
+#### Queries with highest TempDB usage for a given database
+Store a list with the top 50 queries with the highest TempDB usage for the database Target, along with their query text
+```
+EXECUTE [dbo].[GetServerTopQueries]
+	@DatabaseName		=	'TargetDB',
+	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
+	@ReportStore		=	'dbo.ServerTopQueriesStore',
+	@Measurement 		= 	'tempdb_space_used',
+	@Top 				= 	50
+	@IncludeQueryText 	= 	1
+```
+#### Aggregate all queries for a particular database, executed in a given data, and store the information
+```
+EXECUTE [dbo].[GetServerTopQueries]
+	@DatabaseName		=	'TargetDB',
+	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
+	@ReportStore		=	'dbo.ServerTopQueriesStore',
+	@Top 				= 	0,
+	@IncludeQueryText 	= 	0
+```

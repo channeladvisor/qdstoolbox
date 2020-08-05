@@ -86,8 +86,8 @@ BEGIN
 	SET	@EndTime	= GETUTCDATE()
 END
 	
-IF (@Top <= 0) OR (@Top IS NULL)
-	SET @Top = 25
+IF (@Top < 0) OR (@Top IS NULL)
+	SET @Top = 0
 
 IF	(@Measurement NOT IN 
 		(
@@ -197,15 +197,15 @@ SELECT
        ISNULL(OBJECT_NAME([obs].[object_id]), '''') AS [ProcedureName],
        [qsrs].[execution_type_desc],
        SUM([qsrs].[count_executions]) AS [count_executions],
-       CAST(SUM([qsrs].[avg_duration]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [duration],
-       CAST(SUM([qsrs].[avg_cpu_time]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [cpu_time],
-       CAST(SUM([qsrs].[avg_logical_io_reads])  * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [logical_io_reads],
-       CAST(SUM([qsrs].[avg_logical_io_writes]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [logical_io_writes],
-       CAST(SUM([qsrs].[avg_physical_io_reads]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [physical_io_reads],
-       CAST(SUM([qsrs].[avg_clr_time]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [clr_time],
-       CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [query_used_memory],
-       CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [log_bytes_used],
-       CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS DECIMAL(16,2)) AS [tempdb_space_used]
+       CAST(SUM([qsrs].[avg_duration]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [duration],
+       CAST(SUM([qsrs].[avg_cpu_time]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [cpu_time],
+       CAST(SUM([qsrs].[avg_logical_io_reads])  * SUM([qsrs].[count_executions]) AS BIGINT) AS [logical_io_reads],
+       CAST(SUM([qsrs].[avg_logical_io_writes]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [logical_io_writes],
+       CAST(SUM([qsrs].[avg_physical_io_reads]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [physical_io_reads],
+       CAST(SUM([qsrs].[avg_clr_time]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [clr_time],
+       CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [query_used_memory],
+       CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [log_bytes_used],
+       CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [tempdb_space_used]
 FROM
 {@DatabaseName}.[sys].[query_store_runtime_stats] [qsrs]
 INNER JOIN {@DatabaseName}.[sys].[query_store_runtime_stats_interval] [qsrsi]
@@ -222,29 +222,44 @@ GROUP BY [qsrs].[plan_id], [qsp].[query_id], [qsq].[query_text_id], [obs].[schem
  
 INSERT INTO #ServerTopQueriesStore
 SELECT
-    TOP ({@Top})
+    {@Top}
     ''{@DatabaseName_NoQuotes}''
 	,[dbdata].*
 	,{@IncludeQueryText_Value} AS [query_sql_text] 
 FROM [dbdata]
 {@IncludeQueryText_Join}
-ORDER BY
-	{@Measurement} DESC'
+{@Order}'
 
-SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@StartTime}',				CAST(@StartTime AS NVARCHAR(34)))
-SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
-SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Top}',					CAST(@Top AS NVARCHAR(8)))
-SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Measurement}',			QUOTENAME(@Measurement))
-IF (@IncludeQueryText = 0)
-BEGIN
-	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'NULL')
-	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'')
-END
-IF (@IncludeQueryText = 1)
-BEGIN
-	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'INNER JOIN {@DatabaseName}.[sys].[query_store_query_text] [qsqt] ON [dbdata].[query_text_id] = [qsqt].[query_text_id]')
-	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'COMPRESS([qsqt].[query_sql_text])')
-END
+	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@StartTime}',				CAST(@StartTime AS NVARCHAR(34)))
+	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+
+	-- Based on @IncludeQueryText, include the query text in the reports or not - START
+	IF (@IncludeQueryText = 0)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'NULL')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'')
+	END
+	IF (@IncludeQueryText = 1)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'INNER JOIN {@DatabaseName}.[sys].[query_store_query_text] [qsqt] ON [dbdata].[query_text_id] = [qsqt].[query_text_id]')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'COMPRESS([qsqt].[query_sql_text])')
+	END
+	-- Based on @IncludeQueryText, include the query text in the reports or not - END
+
+	-- Based on @Top, return only the @Top queries or all - START
+	IF (@Top > 0)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Top}',				'TOP('+CAST(@Top AS NVARCHAR(8))+')')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Order}',				'ORDER BY {@Measurement} DESC')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Measurement}',		QUOTENAME(@Measurement))
+	END
+	IF (@Top = 0)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Top}',				'')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@Order}',				'')
+	END
+	-- Based on @Top, return only the @Top queries or all - END
+
 -- Query to extract the details for any given @DatabaseName - END 
  
  
