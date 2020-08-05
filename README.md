@@ -28,27 +28,27 @@ It can be executed in a Test mode to only return the impact executing it would h
 Analyze the impact executing the report would have, results returned in two tables (with different degrees of details) back to the user:
 ```
 EXECUTE [dbo].[QDSCacheClean]
-	@DatabaseName 			= 'TargetDB',
-	@ReportAsTable 			= 1,
-	@ReportDetailsAsTable 	= 1,
-	@TestMode				= 1
+	@DatabaseName 			=	'TargetDB',
+	@ReportAsTable 			=	1,
+	@ReportDetailsAsTable 		=	1,
+	@TestMode			=	1
 ```
 
 Deletes the stats for all existing queries but not the actual plans, queries, or texts\
 ```
 EXECUTE [dbo].[QDSCacheClean]
-	@DatabaseName 			= 'TargetDB',
-	@Retention 				= 0,
-	@CleanStatsOnly			= 1
+	@DatabaseName 			=	'TargetDB',
+	@Retention 			=	0,
+	@CleanStatsOnly			=	1
 ```
 
 Delete internal and adhoc queries along with their execution stats\
 ```
 EXECUTE [dbo].[QDSCacheClean]
-	@DatabaseName			= 'TargetDB',
-	@CleanAdhocStale 		= 1,
-	@Retention				= 1,
-	@CleanInternal			= 1
+	@DatabaseName			=	'TargetDB',
+	@CleanAdhocStale 		=	1,
+	@Retention			=	1,
+	@CleanInternal			=	1
 ```
 
 ### Suggested uses
@@ -73,29 +73,29 @@ It can be executed in a Test mode to only return the impact executing it would h
 Queries whose average CPU has regressed and used at least 2 different execution plans, when comparing the period between (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
 ``` 
 EXECUTE [dbo].[QueryVariationReport]
-	@DatabaseName		= 'Target',
-	@Measurement		= 'cpu',
-	@Metric			= 'avg',
-	@VariationType		= 'R',
-	@MinPlanCount		= 2,
-	@RecentStartTime	= '2020-02-01 00:00',
-	@RecentEndTime		= '2020-02-01 01:00',
-	@HistoryStartTime	= '2020-01-01 00:00',
-	@HistoryEndTime		= '2020-02-01 00:00'
+	@DatabaseName		=	'Target',
+	@Measurement		=	'cpu',
+	@Metric			=	'avg',
+	@VariationType		=	'R',
+	@MinPlanCount		=	2,
+	@RecentStartTime	=	'2020-02-01 00:00',
+	@RecentEndTime		=	'2020-02-01 01:00',
+	@HistoryStartTime	=	'2020-01-01 00:00',
+	@HistoryEndTime		=	'2020-02-01 00:00'
 ```
 
 #### Max duration improvement
 Queries whose maximum duration has improved, when comparing the period between (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
 ```
 EXECUTE [dbo].[QueryVariationReport]
-	@DatabaseName		= 'Target',
-	@Measurement		= 'duration',
-	@Metric			= 'max',
-	@VariationType		= 'I',
-	@RecentStartTime	= '2020-02-01 00:00',
-	@RecentEndTime		= '2020-02-01 01:00',
-	@HistoryStartTime	= '2020-01-01 00:00',
-	@HistoryEndTime		= '2020-02-01 00:00'
+	@DatabaseName		=	'Target',
+	@Measurement		=	'duration',
+	@Metric			=	'max',
+	@VariationType		=	'I',
+	@RecentStartTime	=	'2020-02-01 00:00',
+	@RecentEndTime		=	'2020-02-01 01:00',
+	@HistoryStartTime	=	'2020-01-01 00:00',
+	@HistoryEndTime		=	'2020-02-01 00:00'
 ```
 
 
