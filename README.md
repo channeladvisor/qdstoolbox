@@ -75,7 +75,7 @@ Queries whose average CPU has regressed and used at least 2 different execution 
 EXECUTE [dbo].[QueryVariationReport]
 	@DatabaseName		= 'Target',
 	@Measurement		= 'cpu',
-	@Metric				= 'avg',
+	@Metric			= 'avg',
 	@VariationType		= 'R',
 	@MinPlanCount		= 2,
 	@RecentStartTime	= '2020-02-01 00:00',
@@ -90,7 +90,7 @@ Queries whose maximum duration has improved, when comparing the period between (
 EXECUTE [dbo].[QueryVariationReport]
 	@DatabaseName		= 'Target',
 	@Measurement		= 'duration',
-	@Metric				= 'max',
+	@Metric			= 'max',
 	@VariationType		= 'I',
 	@RecentStartTime	= '2020-02-01 00:00',
 	@RecentEndTime		= '2020-02-01 01:00',
@@ -116,7 +116,7 @@ Get a list of queries (top 10 per database) along with their query text
 ```
 EXECUTE [dbo].[GetServerTopQueries]
 	@Measurement 		= 	'cpu_time,
-	@Top 				= 	10,
+	@Top 			= 	10,
 	@IncludeQueryText 	= 	1
 ```
 #### Queries with highest TempDB usage for a given database
@@ -127,15 +127,16 @@ EXECUTE [dbo].[GetServerTopQueries]
 	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
 	@ReportStore		=	'dbo.ServerTopQueriesStore',
 	@Measurement 		= 	'tempdb_space_used',
-	@Top 				= 	50
+	@Top 			= 	50
 	@IncludeQueryText 	= 	1
 ```
 #### Aggregate all queries for a particular database, executed in a given data, and store the information
+It is possible to use this tool to aggregate the runtime statistics per hour/day/week/month... to allow some historical data to be stored without impacting the databases' 
 ```
 EXECUTE [dbo].[GetServerTopQueries]
 	@DatabaseName		=	'TargetDB',
 	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
 	@ReportStore		=	'dbo.ServerTopQueriesStore',
-	@Top 				= 	0,
+	@Top 			= 	0,
 	@IncludeQueryText 	= 	0
 ```
