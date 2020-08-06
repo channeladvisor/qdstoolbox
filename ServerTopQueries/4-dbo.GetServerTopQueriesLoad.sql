@@ -54,6 +54,8 @@ GO
 --		@TestMode					BIT				--	Flag to determine whether the actual T-SQL commands that generate the report will be executed.
 --														[Default: 0]
 --
+--	OUTPUT
+--		@ReportID					BIGINT			--	Returns the ReportID (when the report is being logged into a table)
 --
 -- Date: 2019-08-28
 -- Auth: Pablo Lozano
@@ -71,7 +73,8 @@ CREATE OR ALTER PROCEDURE [dbo].[GetServerTopQueries]
 	@Measurement			NVARCHAR(32)	= 'cpu_time',
 	@IncludeQueryText		BIT				= 0,
 	@VerboseMode			BIT				= 0,
-	@TestMode				BIT				= 0
+	@TestMode				BIT				= 0,
+	@ReportID				BIGINT			=	NULL	OUTPUT
 )
 AS
 BEGIN
@@ -330,7 +333,7 @@ BEGIN
 	IF (@VerboseMode = 1)	PRINT (@SqlCmdIndex)
 	IF (@TestMode = 0)		EXEC (@SqlCmdIndex)
 
-	DECLARE @ReportID BIGINT = IDENT_CURRENT(@ReportIndex)
+	SET @ReportID = IDENT_CURRENT(@ReportIndex)
 	-- Log report entry in [dbo].[ServerLoadIndex] - END
 
 
@@ -368,5 +371,6 @@ END
 
 DROP TABLE IF EXISTS #ServerTopQueriesStore
 
+RETURN
 END
 GO
