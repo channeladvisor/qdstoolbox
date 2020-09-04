@@ -9,7 +9,7 @@ This view pivots the different rows into Total & Average columns for each wait t
 
 ---
 ## QDSCacheClean
-This tools uses the SPs sp_query_store_remove_query, sp_query_store_remove_plan and sp_query_store_reset_exec_stats to delete stored data for specific queries/plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
+This tools uses the SPs <b>sp_query_store_remove_query</b>, <b>sp_query_store_remove_plan</b> and <b>sp_query_store_reset_exec_stats</b> to delete stored data for specific queries and or plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
 
 - Delete plans/queries and/or not used in the last XX hours.
 - Delete plans/queries not part of an object (stored procedure/function/trigger...) not used in the last XX hours.
@@ -63,9 +63,8 @@ Analyzes metrics from two different periods and returns the queries whose perfor
 Allows for an analysis based on the number of different plans in use, filtering queries that have a minimum/maximum number of execution plans.\
 \
 It can be executed in a Test mode to only return the impact executing it would have. both in Test mode or when executed to perform the actual QDS cache clean operations, the operations's can return an output in different formats:
-- Returned in a readable format (as text).
-- Returned in the form of 1/2 tables (depending on whether the summary of the report of a detailed report is requested).
-- Stored into 1/2 SQL tables (depending on whether the summary of the report of a detailed report is requested).
+- Returned in the form of 2 tables, with one containing the parameters used and another with the detailed results.
+- Stored into 2 SQL tables, with one containing the parameters used and another with the detailed results.
 - Not returned at all.
 
 ### Use cases and examples

@@ -1,11 +1,5 @@
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
 ----------------------------------------------------------------------------------
--- Procedure Name: GetServerTopQueries
+-- Procedure Name: [dbo].[ServerTopQueries]
 --
 -- Desc: This script loops all the accessible user DBs (or just the selected one) and gathers the TOP XX queries based on the selected measurement and generates a report
 --
@@ -20,9 +14,11 @@ GO
 --
 --		@ReportIndex				NVARCHAR(800)	--	Table to store the details of the report, such as parameters used, if no results returned to the user are required
 --														[Default: NULL, results returned to user]
+--														Table available in dbo.ServerTopQueriesIndex
 --
 --		@ReportTable				NVARCHAR(800)	--	Table to store the results of the report, if no results returned to the user are required. 
 --														[Default: NULL, results returned to user]
+--														Table available in dbo.ServerTopQueriesStore
 --
 --		@StartTime					DATETIME		--	Start time of the period to analyze, in UTC format.
 --														[Default: DATEADD(HOUR,-1,GETUTCDATE()]
@@ -48,6 +44,12 @@ GO
 --		@IncludeQueryText			BIT				--	Flag to include the query text in the results.
 --														[Default: 0]
 --
+--		@ExcludeAdhoc				BIT				--	Flag to define whether to ignore adhoc queries (not part of a DB object) from the analysis
+--														[Default: 0]
+--
+--		@ExcludeInternal			BIT				--	Flag to define whether to ignore internal queries (backup, index rebuild, statistics update...) from the analysis
+--														[Default: 0]
+--
 --		@VerboseMode				BIT				--	Flag to determine whether the T-SQL commands that compose this report will be returned to the user.
 --														[Default: 0]
 --
@@ -57,11 +59,11 @@ GO
 --	OUTPUT
 --		@ReportID					BIGINT			--	Returns the ReportID (when the report is being logged into a table)
 --
--- Date: 2019-08-28
+-- Date: 2020.08.06
 -- Auth: Pablo Lozano
 ----------------------------------------------------------------------------------
 
-CREATE OR ALTER PROCEDURE [dbo].[GetServerTopQueries]
+CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 (
 	@ServerIdentifier		SYSNAME			= NULL,	
 	@DatabaseName			SYSNAME			= NULL,
@@ -72,6 +74,8 @@ CREATE OR ALTER PROCEDURE [dbo].[GetServerTopQueries]
 	@Top					INT				= 25,
 	@Measurement			NVARCHAR(32)	= 'cpu_time',
 	@IncludeQueryText		BIT				= 0,
+	@ExcludeAdhoc			BIT				= 0,
+	@ExcludeInternal		BIT				= 1,
 	@VerboseMode			BIT				= 0,
 	@TestMode				BIT				= 0,
 	@ReportID				BIGINT			=	NULL	OUTPUT
@@ -115,7 +119,7 @@ BEGIN
 		[clr_time]
 		[query_used_memory]
 		[log_bytes_used]
-		[tempdb_space_used]', 16, 0, @DatabaseName)
+		[tempdb_space_used]', 16, 0, @Measurement)
 	RETURN
 END
 
@@ -210,23 +214,28 @@ SELECT
        CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [log_bytes_used],
        CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [tempdb_space_used]
 FROM
-{@DatabaseName}.[sys].[query_store_runtime_stats] [qsrs]
-INNER JOIN {@DatabaseName}.[sys].[query_store_runtime_stats_interval] [qsrsi]
-ON [qsrs].[runtime_stats_interval_id] = [qsrsi].[runtime_stats_interval_id]
-INNER JOIN {@DatabaseName}.[sys].[query_store_plan] [qsp]
+[{@DatabaseName}].[sys].[query_store_runtime_stats] [qsrs]
+INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
 ON [qsrs].[plan_id] = [qsp].[plan_id]
-INNER JOIN {@DatabaseName}.[sys].[query_store_query] [qsq]
+INNER JOIN [{@DatabaseName}].[sys].[query_store_query] [qsq]
 ON [qsp].[query_id] = [qsq].[query_id]
-LEFT JOIN {@DatabaseName}.[sys].[objects] [obs]
+LEFT JOIN [{@DatabaseName}].[sys].[objects] [obs]
 ON [qsq].[object_id] = [obs].[object_id]
-WHERE [qsrsi].[end_time] >= ''{@StartTime}'' AND [qsrsi].[start_time] <= ''{@EndTime}''
+WHERE
+	(
+			(qsrs.first_execution_time >= ''{@StartTime}'' AND qsrs.last_execution_time < ''{@EndTime}'')
+        OR (qsrs.first_execution_time  <= ''{@StartTime}'' AND qsrs.last_execution_time > ''{@StartTime}'')
+        OR (qsrs.first_execution_time  <= ''{@EndTime}''   AND qsrs.last_execution_time > ''{@EndTime}'')
+	)
+	{@ExcludeAdhoc}
+	{@ExcludeInternal}
 GROUP BY [qsrs].[plan_id], [qsp].[query_id], [qsq].[query_text_id], [obs].[schema_id], [obs].[object_id], [qsrs].[execution_type_desc]
 )
  
 INSERT INTO #ServerTopQueriesStore
 SELECT
     {@Top}
-    ''{@DatabaseName_NoQuotes}''
+    ''{@DatabaseName}''
 	,[dbdata].*
 	,{@IncludeQueryText_Value} AS [query_sql_text] 
 FROM [dbdata]
@@ -244,10 +253,33 @@ FROM [dbdata]
 	END
 	IF (@IncludeQueryText = 1)
 	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'INNER JOIN {@DatabaseName}.[sys].[query_store_query_text] [qsqt] ON [dbdata].[query_text_id] = [qsqt].[query_text_id]')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'INNER JOIN [{@DatabaseName}].[sys].[query_store_query_text] [qsqt] ON [dbdata].[query_text_id] = [qsqt].[query_text_id]')
 		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'COMPRESS([qsqt].[query_sql_text])')
 	END
 	-- Based on @IncludeQueryText, include the query text in the reports or not - END
+
+	-- Based on @ExcludeAdhoc, exclude Adhoc queries from the analysis - START
+	IF (@ExcludeAdhoc = 0)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeAdhoc}',		'')	
+	END
+	IF (@ExcludeAdhoc = 1)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeAdhoc}',		'AND (qsq.object_id <> 0)')
+	END
+	-- Based on @ExcludeAdhoc, exclude Adhoc queries from the analysis - END
+	
+	-- Based on @ExcludeInternal, exclude internal queries from the analysis - START
+	IF (@ExcludeInternal = 0)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeInternal}',	'')	
+	END
+	IF (@ExcludeInternal = 1)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeInternal}',	'AND (qsq.is_internal_query = 0)')	
+	END
+	-- Based on @ExcludeInternal, exclude internal queries from the analysis - END
+
 
 	-- Based on @Top, return only the @Top queries or all - START
 	IF (@Top > 0)
@@ -278,8 +310,7 @@ BEGIN
     DELETE TOP(1) FROM @dbs
     OUTPUT deleted.DatabaseName INTO @CurrentDBTable
     SELECT @CurrentDB = DatabaseName FROM @CurrentDBTable
-    SET @SqlCommand2PopulateTempTable	=	REPLACE(@SqlCommand2PopulateTempTableTemplate,	'{@DatabaseName}',			QUOTENAME(@CurrentDB))
-	SET @SqlCommand2PopulateTempTable	=	REPLACE(@SqlCommand2PopulateTempTable,			'{@DatabaseName_NoQuotes}',	@CurrentDB)
+    SET @SqlCommand2PopulateTempTable	=	REPLACE(@SqlCommand2PopulateTempTableTemplate,	'{@DatabaseName}',		@CurrentDB)
     IF (@VerboseMode = 1)	PRINT	(@SqlCommand2PopulateTempTable)
 	IF (@TestMode = 0)		EXECUTE	(@SqlCommand2PopulateTempTable)
 END
@@ -289,7 +320,28 @@ END
 -- Output to user - START
 IF (@ReportTable IS NULL) OR (@ReportTable = '') OR (@ReportIndex IS NULL) OR (@ReportIndex = '')
 BEGIN
-	DECLARE @SqlCmd2User NVARCHAR(MAX) = 'SELECT * FROM #ServerTopQueriesStore ORDER BY {@Measurement} DESC'
+	DECLARE @SqlCmd2User NVARCHAR(MAX) = 'SELECT
+	 [DatabaseName]			
+	,[PlanID]				
+	,[QueryID]				
+	,[QueryTextID]			
+	,[ObjectID]				
+	,[SchemaName]			
+	,[ObjectName]			
+	,[ExecutionTypeDesc]		
+	,[ExecutionCount]		
+	,[duration]				AS [Duration]
+	,[cpu_time]				AS [CPU]
+	,[logical_io_reads]		AS [LogicalIOReads]
+	,[logical_io_writes]	AS [LogicalIOWrites]
+	,[physical_io_reads]	AS [PhysicalIOReads]
+	,[clr_time]				AS [CLR]
+	,[query_used_memory]	AS [Memory]
+	,[log_bytes_used]		AS [LogBytesUsed]
+	,[tempdb_space_used]	AS [TempDB]
+	,[QuerySqlText]			
+	FROM #ServerTopQueriesStore
+	ORDER BY {@Measurement} DESC'
 	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@Measurement}', QUOTENAME(@Measurement))
 	IF (@VerboseMode = 1)	PRINT (@SqlCmd2User)
 	IF (@TestMode = 0)		EXEC (@SqlCmd2User)
@@ -306,29 +358,34 @@ BEGIN
 		[CaptureDate],
 		[ServerIdentifier],
 		[DatabaseName],
-		[Top],
-		[Measurement],
-		[StartTime],
-		[EndTime]
+		[Parameters]
 	)
-	VALUES
-	(
+	SELECT
 		SYSUTCDATETIME(),
 		''{@ServerIdentifier}'',
 		''{@DatabaseName}'',
-		{@Top},
-		''{@Measurement}'',
-		''{@StartTime}'',
-		''{@EndTime}''
-	)'
+		(
+		SELECT
+			''{@StartTime}''		AS [StartTime],
+			''{@EndTime}''			AS [EndTime],
+			{@Top}					AS [Top],
+			''{@Measurement}''		AS [Measurement],
+			{@IncludeQueryText}		AS [IncludeQueryText],
+			{@ExcludeAdhoc}			AS [ExcludeAdhoc],
+			{@ExcludeInternal}		AS [ExcludeInternal]
+		FOR XML PATH(''ServerTopQueriesParameters''), ROOT(''Root'')
+		)	AS [Parameters]'
 
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',		@ReportIndex)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',	@ServerIdentifier)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',		ISNULL(@DatabaseName,'*'))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',				@Top)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',		@Measurement)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',		CAST(@StartTime AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',			CAST(@EndTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',			@ReportIndex)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',		@ServerIdentifier)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',			ISNULL(@DatabaseName,'*'))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',					@Top)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',			@Measurement)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',		@IncludeQueryText)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeAdhoc}',			@ExcludeAdhoc)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeInternal}',		@ExcludeInternal)
 
 	IF (@VerboseMode = 1)	PRINT (@SqlCmdIndex)
 	IF (@TestMode = 0)		EXEC (@SqlCmdIndex)

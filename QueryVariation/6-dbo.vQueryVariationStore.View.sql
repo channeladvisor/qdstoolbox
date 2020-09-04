@@ -1,17 +1,14 @@
 CREATE OR ALTER VIEW [dbo].[vQueryVariationStore]
 AS
 SELECT
-	[qvi].[ReportID]				,
-	[qvi].[CaptureDate]				,
-	[qvi].[ServerIdentifier]		,
-	[qvi].[DatabaseName]			,
-	[qvi].[Measurement]				,
-	[qvi].[Metric]					,
-	[qvi].[VariationType]			,
+	[qvs].[ReportID]				,
 	[qvs].[QueryID]					,
 	[qvs].[ObjectID]				,
 	[qvs].[SchemaName]				,
 	[qvs].[ObjectName]				,
+	[ma].[Measurement]				,
+	[ma].[Metric]					,
+	[ma].[Unit]						,
 	[qvs].[MeasurementChange]		,
 	[qvs].[MeasurementRecent]		,
 	[qvs].[MeasurementHist]			,
@@ -19,6 +16,9 @@ SELECT
 	[qvs].[ExecutionCountHist]		,
 	[qvs].[NumPlans]				,
 	CAST(DECOMPRESS([qvs].[QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
-FROM [dbo].[QueryVariationIndex] [qvi]
-INNER JOIN [dbo].[QueryVariationStore] [qvs]
-ON [qvi].[ReportID] = [qvs].[ReportID]
+FROM [dbo].[QueryVariationStore] [qvs]
+INNER JOIN [dbo].[vQueryVariationIndex] [qvi]
+ON [qvs].[ReportID] = [qvi].[ReportID]
+INNER JOIN [dbo].[QDSMetricArchive] [ma]
+ON [qvi].[Measurement] = [ma].[Measurement]
+AND [qvi].[Metric] = [ma].[Metric]
