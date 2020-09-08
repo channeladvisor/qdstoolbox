@@ -1,7 +1,7 @@
 # WaitsVariation
 Similar to the QueryVariation tool, compares the Wait metrics for a given query between two different periods of time.
 
-It can be executed in a Test mode to only return the impact executing it would have. both in Test mode or when executed to perform the actual QDS cache clean operations, the operations's can return an output in different formats:
+It can be executed in a Test mode to only return the impact executing it would have. both in Test mode or when executed to generate the actual report, the operations's can return an output in different formats:
 - One table, containing the detailed results.
 - Stored into 2 SQL tables, with one containing the parameters used (both explicitly defined and default values) and another with the detailed results.
 - Not returned at all.
@@ -9,6 +9,7 @@ It can be executed in a Test mode to only return the impact executing it would h
 The waits measured are those captured by Query Store
 https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-query-store-wait-stats-transact-sql
 
+---
 ## Use cases and examples
 ### Avg CPU wait improvement
 Queries whose waits on CPU have decreased when comparing the periods (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
@@ -23,7 +24,7 @@ EXECUTE [dbo].[WaitsVariation]
 	@HistoryStartTime	=	'2020-01-01 00:00',
 	@HistoryEndTime		=	'2020-02-01 00:00'
 ```
-
+---
 ## Suggested uses
 This tool can be used to extract reports similar to the "Regressed Queries" ones SSMS GUI generates, but based on wait times and with the added functionality of storing the reports into tables for later analysis.
 ### CPU changes
