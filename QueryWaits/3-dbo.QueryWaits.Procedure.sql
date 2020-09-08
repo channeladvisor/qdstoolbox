@@ -1,7 +1,92 @@
-USE [DBA]
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE OR ALTER PROCEDURE [DBE].[QueryWaits]
+----------------------------------------------------------------------------------
+-- Procedure Name: [dbo].[QueryWaits]
+--
+-- Desc: This script queries the QDS data and generates a report based on those queries whose performance has changed when comparing two periods of time
+--
+--
+-- Parameters:
+--	INPUT
+--		@ServerIdentifier			SYSNAME			--	Identifier assigned to the server.
+--														[Default: @@SERVERNAME]
+--
+--		@DatabaseName				SYSNAME			--	Name of the database to generate this report on.
+--														[Default: DB_NAME()]
+--
+--		@ReportIndex				NVARCHAR(800)	--	Table to store the details of the report, such as parameters used, if no results returned to the user are required
+--														[Default: NULL, results returned to user]
+--
+--		@ReportTable				NVARCHAR(800)	--	Table to store the results of the report, if no results returned to the user are required. 
+--														[Default: NULL, results returned to user]
+--
+--		@StartTime					DATETIME2		--	Start of the time period to be analyzed. Must be expressed in UTC.
+--														[Default: DATEADD(HOUR, -1, SYSUTCDATETIME()]
+--
+--		@EndTime					DATETIME2		--	End of the time period to be analyzed. Must be expressed in UTC.
+--														[Default: SYSUTCDATETIME()]
+--
+---------------------------------------------------------------------------------------------------
+--			NOTE:	Only one of the three parameters (@ObjectName, @PlanID, @QueryID)		     --
+---------------------------------------------------------------------------------------------------
+--
+--		@ObjectName					NVARCHAR(256)	--	Name of the object whose waits are to be analyzed, in format schema.name or [schema].[name]
+--
+--
+--		@PlanID						BIGINT			--	PlanID whose waits are to be analyzed.
+--
+--
+--		@QueryID					BIGINT			--	QueryID whose waits are to be analyzed.
+--
+--
+--		@VerboseMode				BIT				--	Flag to determine whether the T-SQL commands that compose this report will be returned to the user.
+--														[Default: 0]
+--
+--		@TestMode					BIT				--	Flag to determine whether the actual T-SQL commands that generate the report will be executed.
+--														[Default:0]
+--
+--	OUTPUT
+--		@ReportID					BIGINT			--	Returns the ReportID (when the report is being logged into a table)
+--
+-- Sample execution:
+--
+--	Sample 1: Return the wait details for a given object over the last hour
+--		EXECUTE [dbo].[QueryWaits]
+--			@DatabaseName	= 'TargetDB',
+--			@ObjectName		= 'Schema.Object'
+--
+--
+--	Sample 2: Get the wait details of a given plan ID during the last month
+--		DECLARE @EndTime		DATETIME2 = SYSUTCDATETIME()
+--		DECLARE @StartTime		DATETIME2 = DATEADD(MONTH, -7, @EndTime)
+--		EXECUTE [dbo].[QueryWaits]
+--			@DatabaseName		= 'TargetDB',
+--			@PlandID			= 321321,
+--			@StartTime			= @StartTime,
+--			@EndTime			= @EndTime
+--
+--	Sample 3: Save a query's waits for the last week into a table in a linked server [LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryVariationStore],
+--			including the queries' text
+--		DECLARE @EndTime		DATETIME2 = SYSUTCDATETIME()
+--		DECLARE @StartTime		DATETIME2 = DATEADD(DAY, -7, @EndTime)
+--		EXECUTE [dbo].[QueryWaits]
+--			@DatabaseName		= 'TargetDB',
+--			@StartTime			= @StartTime,
+--			@EndTime			= @EndTime,
+--			@QueryID			= 96783,
+--			@ReportIndex		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsIndex]',
+--			@ReportTable		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsStore]',
+--			@IncludeQueryText	= 1
+--			
+--
+-- Date: 2020.07.XX
+-- Auth: Pablo Lozano (@sqlozano)
+--
+----------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 (
 	@ServerIdentifier		SYSNAME			= NULL,	
 	@DatabaseName			SYSNAME			= NULL,
@@ -23,6 +108,27 @@ SET NOCOUNT ON
 -- Check variables and set defaults - START
 IF (@ServerIdentifier IS NULL)
 	SET @ServerIdentifier = @@SERVERNAME
+
+-- If no @DatabaseName is provided, set it to DB_NAME() - START
+IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
+	SET @DatabaseName = DB_NAME()
+-- If no @DatabaseName is provided, set it to DB_NAME() - END
+
+-- Check whether @DatabaseName actually exists - START
+IF NOT EXISTS (SELECT 1 FROM [sys].[databases] WHERE [name] = @DatabaseName)
+BEGIN
+	RAISERROR('The database [%s] does not exist', 16, 0, @DatabaseName)
+	RETURN
+END
+-- Check whether @DatabaseName actually exists - END
+
+-- Check whether @DatabaseName is ONLINE - START
+IF EXISTS (SELECT 1 FROM [sys].[databases] WHERE [name] = @DatabaseName AND [state_desc] <> 'ONLINE')
+BEGIN
+	RAISERROR('The database [%s] is not online', 16, 0, @DatabaseName)
+	RETURN
+END
+-- Check whether @DatabaseName is ONLINE - END
 
 IF (@StartTime IS NULL) OR (@EndTime IS NULL)
 BEGIN
@@ -56,7 +162,10 @@ BEGIN
 	RAISERROR('None of the necessary parameters [@ObjectName, @PlanID, @QueryID] has been provided.', 16, 0)
 	RETURN
 END
+-- Check variables and set defaults - END
 
+
+-- Temporary table to hold the Wait details - START
 DROP TABLE IF EXISTS #WaitDetails
 CREATE TABLE #WaitDetails
 (
@@ -98,7 +207,9 @@ CREATE TABLE #WaitDetails
 	,[Wait_Replication]		BIGINT			NOT NULL
 	,[Wait_LogRateGovernor]	BIGINT			NOT NULL
 )
+-- Temporary table to hold the Wait details - END
 
+-- Load the Wait details into #WaitDetails - START
 DECLARE @SqlCmd NVARCHAR(MAX) =
 'INSERT INTO #WaitDetails
 SELECT
@@ -116,8 +227,8 @@ SELECT
 	{@LookingForQueryID}{@LookingForPlanID} 0
 	,[qsrsi].[start_time]	AS [StartTime]
 	,[qsrsi].[end_time]		AS [EndTime]
-	,[DifferentPlansUsed] = COUNT(DISTINCT [qsp].[plan_id])
-	,[DifferentQueriesUsed] = COUNT(DISTINCT [qsp].[query_id])
+	,[DifferentPlansUsed]		= COUNT(DISTINCT [qsp].[plan_id])
+	,[DifferentQueriesUsed]		= COUNT(DISTINCT [qsp].[query_id])
 	,[Total_Duration]			=	SUM([qsrs].[count_executions]*[qsrs].[avg_duration])
 	,[Total_CpuTime]			=	SUM([qsrs].[count_executions]*[qsrs].[avg_cpu_time])
 	,[Total_ClrTime]			=	SUM([qsrs].[count_executions]*[qsrs].[avg_clr_time])
@@ -270,23 +381,27 @@ GROUP BY
 	 [qsrsi].[start_time]
 	,[qsrsi].[end_time]
 	{@LookingForObjectName}{@LookingForQueryID}	,[qsrs].[plan_id]
-	{@LookingForObjectName}	,[qsp].[query_id]
+	{@LookingForObjectName}						,[qsp].[query_id]
 	,[s].[name]
 	,[o].[name]
 	,[qsq].[object_id]
-	,[qsq].[query_text_id]'
+	{@LookingForObjectName}						,[qsq].[query_text_id]'
 
 SET @SqlCmd = REPLACE(@SqlCmd,	'{@DatabaseName}',	@DatabaseName)
 SET @SqlCmd = REPLACE(@SqlCmd,	'{@StartTime}',		CAST(@StartTime AS NVARCHAR(34)))
 SET @SqlCmd = REPLACE(@SqlCmd,	'{@EndTime}',		CAST(@EndTime AS NVARCHAR(34)))
 
+-- @ObjectName provided - START
 IF(@ObjectName IS NOT NULL)
 BEGIN
-	SET @SqlCmd = REPLACE(@SqlCmd,	'{@ObjectName}',				@ObjectName)
+	SET @SqlCmd = REPLACE(@SqlCmd,	'{@ObjectName}',			@ObjectName)
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForObjectName}',	'--')
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForPlanID}',		'')
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForQueryID}',		'')
 END
+-- @ObjectName provided - END
+
+-- @PlanID provided - START
 IF(@PlanID IS NOT NULL)
 BEGIN
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@PlanID}',				CAST(@PlanID AS NVARCHAR(20)))
@@ -294,6 +409,9 @@ BEGIN
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForPlanID}',		'--')
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForQueryID}',		'')
 END
+-- @PlanID provided - END
+
+-- @QueryID provided - START
 IF(@QueryID IS NOT NULL)
 BEGIN
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@QueryID}',				CAST(@QueryID AS NVARCHAR(20)))
@@ -301,11 +419,12 @@ BEGIN
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForPlanID}',		'')
 	SET @SqlCmd = REPLACE(@SqlCmd,	'{@LookingForQueryID}',		'--')
 END
+-- @QueryID provided - END
 
 
 IF (@VerboseMode = 1)	PRINT (@SqlCmd)
 IF (@TestMode = 0)		EXEC (@SqlCmd)
-
+-- Load the Wait details into #WaitDetails - START
 
 -- Output to user - START
 IF (@ReportTable IS NULL) OR (@ReportTable = '') OR (@ReportIndex IS NULL) OR (@ReportIndex = '')
@@ -338,23 +457,24 @@ BEGIN
 		SYSUTCDATETIME(),
 		''{@ServerIdentifier}'',
 		''{@DatabaseName}'',
-		[wd].[ObjectID],
-		[wd].[SchemaName],
-		[wd].[ObjectName],
+		COALESCE([wd].[ObjectID],0),
+		COALESCE([wd].[SchemaName],''''),
+		COALESCE([wd].[ObjectName],''''),
 		{@QueryTextID},
 		{@QueryText},
 		(
 		SELECT
 			''{@ObjectName}''		AS [ObjectName],
-			{@PlanID}			AS [PlanID],
-			{@QueryID}			AS [QueryID],
+			{@PlanID}				AS [PlanID],
+			{@QueryID}				AS [QueryID],
 			''{@StartTime}''		AS [StartTime],
 			''{@EndTime}''			AS [EndTime],
 			{@IncludeQueryText}		AS [IncludeQueryText]
 		FOR XML PATH(''WaitDetailsParameters''), ROOT(''Root'')
 		)	AS [Parameters]
 		FROM [{@DatabaseName}].[sys].[query_store_query_text] [qsqt]
-		,#WaitDetails [wd]
+		LEFT JOIN #WaitDetails [wd]
+		ON [wd].[ObjectID] = [wd].[ObjectID]
 		{@QueryTextIDClause}'
 
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',		@ReportIndex)
@@ -382,44 +502,54 @@ BEGIN
 	WHERE {@SearchClause}'
 	SET @SqlCmdQueryTextID = REPLACE(@SqlCmdQueryTextID, '{@DatabaseName}',	@DatabaseName)
 	
+	-- @PlanID provided - START
 	IF (@PlanID IS NOT NULL)
 	BEGIN
 		SET @SqlCmdQueryTextID = REPLACE(@SqlCmdQueryTextID, '{@SearchClause}',	'[qsp].[plan_id] = ' + CAST(@PlanID AS NVARCHAR(20)) )
 		IF (@VerboseMode = 1)	PRINT	(@SqlCmdQueryTextID)
 		IF (@TestMode = 0)		EXEC	(@SqlCmdQueryTextID)
 	END
+	-- @PlanID provided - END
 	
+	-- @QueryID provided - START
 	IF (@QueryID IS NOT NULL)
 	BEGIN
 		SET @SqlCmdQueryTextID = REPLACE(@SqlCmdQueryTextID, '{@SearchClause}',	'[qsq].[query_id] = ' + CAST(@QueryID AS NVARCHAR(20)) )
 		IF (@VerboseMode = 1)	PRINT	(@SqlCmdQueryTextID)
 		IF (@TestMode = 0)		EXEC	(@SqlCmdQueryTextID)
 	END
+	-- @QueryID provided - END
 
 
 
+	-- Check whether different queries are involved in this analysis (when using @ObjectName) - START
 	DECLARE @DifferentQueries INT
 	SELECT @DifferentQueries = COUNT(1) FROM #QueryTextID
+		-- If there is more than 1 query, don't log the QueryText details - START
 	IF (@DifferentQueries <> 1)
 	BEGIN
 		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextID}',				0)
-		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',					NULL)
+		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',					'NULL')
 		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextIDClause}',			'')
 	END
-
+		-- If there is more than 1 query, don't log the QueryText details - END
+	
+		-- If there is only 1 query, include the QueryText details in the report summary - START
 	IF (@DifferentQueries = 1)
 	BEGIN
 		SELECT @QueryTextID = [QueryTextID] FROM #QueryTextID
-		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextID}',				CAST(@QueryTextID AS NVARCHAR(20)) )
-		IF (@IncludeQueryText = 0) SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',					'NULL')
-		IF (@IncludeQueryText = 1) SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',					'COMPRESS(query_sql_text)')
-		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextIDClause}',			'WHERE [qsqt].[query_text_id] = ' + CAST(@QueryTextID AS NVARCHAR(20)) )
+		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextID}',							CAST(@QueryTextID AS NVARCHAR(20)) )
+		IF (@IncludeQueryText = 0) SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',		'NULL')
+		IF (@IncludeQueryText = 1) SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryText}',		'COMPRESS(query_sql_text)')
+		SET @SqlCmdIndex = REPLACE(@SqlCmdIndex,	'{@QueryTextIDClause}',						'WHERE [qsqt].[query_text_id] = ' + CAST(@QueryTextID AS NVARCHAR(20)) )
 	END
-	
+		-- If there is only 1 query, include the QueryText details in the report summary - END
 
+	-- Check whether different queries are involved in this analysis (when using @ObjectName) - END
+	
 	IF (@VerboseMode = 1)	PRINT (@SqlCmdIndex)
 	IF (@TestMode = 0)		EXEC  (@SqlCmdIndex)
-
+	
 
 	SET @ReportID = IDENT_CURRENT(@ReportIndex)
 	-- Log report entry - END

@@ -37,7 +37,7 @@ BEGIN
 		,[Wait_OtherDiskIO]		BIGINT			NOT NULL
 		,[Wait_Replication]		BIGINT			NOT NULL
 		,[Wait_LogRateGovernor]	BIGINT			NOT NULL
-	)  ON [Tables] WITH (DATA_COMPRESSION = PAGE)
+	)
 	ALTER TABLE [dbo].[QueryWaitsStore]
 	ADD CONSTRAINT [PK_QueryWaitsStore] PRIMARY KEY CLUSTERED
 	(
@@ -45,5 +45,5 @@ BEGIN
 		 ,[StartTime]	ASC
 		 ,[PlanID]		ASC
 		 ,[QueryID]		ASC
-	)  WITH (DATA_COMPRESSION = PAGE) ON [Indexes]
+	)
 END

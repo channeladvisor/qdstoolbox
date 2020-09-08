@@ -24,6 +24,6 @@ SELECT
 	,[stqs].[LogBytes]
 	,[stqs].[TempDBSpace]
 	,CAST(DECOMPRESS([stqs].[QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
-FROM [dbo].[ServerTopQueriesIndex] [stqi]
+FROM [dbo].[vServerTopQueriesIndex] [stqi]
 INNER JOIN [dbo].[ServerTopQueriesStore] [stqs]
 ON [stqi].[ReportID] = [stqs].[ReportID]

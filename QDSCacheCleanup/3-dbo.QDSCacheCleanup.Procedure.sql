@@ -692,7 +692,7 @@ BEGIN
 	CREATE TABLE #QueryDetailsStagingTable
 	(
 			 [QueryType] NVARCHAR(16) NOT NULL
-			,[QueryId] BIGINT NOT NULL
+			,[QueryID] BIGINT NOT NULL
 			,[ObjectID] INT NOT NULL
 			,[LastExecutionTime] DATETIMEOFFSET(7) NULL
 			,[ExecutionCount] BIGINT NULL
@@ -736,7 +736,7 @@ BEGIN
 	(
 			 [QueryType] NVARCHAR(16) NOT NULL
 			,[ObjectName] NVARCHAR(270) NOT NULL
-			,[QueryId] BIGINT NOT NULL
+			,[QueryID] BIGINT NOT NULL
 			,[LastExecutionTime] DATETIMEOFFSET(7) NULL
 			,[ExecutionCount] BIGINT NULL
 			,[QueryText] VARBINARY(MAX) NULL
@@ -754,7 +754,7 @@ BEGIN
 			,[qdst].[QueryText]
 		FROM #QueryDetailsStagingTable [qdst]
 		INNER JOIN {@DatabaseName}.[sys].[objects] [o]
-			ON [qdst].[ObjectId] = [o].[object_id]
+			ON [qdst].[ObjectID] = [o].[object_id]
 		INNER JOIN [sys].[schemas] [s]
 			ON [o].[schema_id] = [s].[schema_id]
 
@@ -768,7 +768,7 @@ BEGIN
 			,[qdst].[ExecutionCount]
 			,[qdst].[QueryText]
 		FROM #QueryDetailsStagingTable [qdst]
-		WHERE [qdst].[ObjectId] = 0
+		WHERE [qdst].[ObjectID] = 0
 
 		UNION ALL
 
@@ -780,8 +780,8 @@ BEGIN
 			,[qdst].[ExecutionCount]
 			,[qdst].[QueryText]
 		FROM #QueryDetailsStagingTable [qdst]
-		WHERE [qdst].[ObjectId]  <> 0 
-			AND [qdst].[ObjectId] NOT IN (SELECT [object_id] FROM {@DatabaseName}.[sys].[objects])'
+		WHERE [qdst].[ObjectID]  <> 0 
+			AND [qdst].[ObjectID] NOT IN (SELECT [object_id] FROM {@DatabaseName}.[sys].[objects])'
 
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@DatabaseName}',			QUOTENAME(@DatabaseName))
 
@@ -799,7 +799,7 @@ BEGIN
 			,@DatabaseName AS [DatabaseName]
 			,[qdt].[QueryType]
 			,[qdt].[ObjectName]
-			,[qdt].[QueryId]
+			,[qdt].[QueryID]
 			,[qdt].[LastExecutionTime]
 			,[qdt].[ExecutionCount]
 			,CAST(DECOMPRESS([qdt].[QueryText]) AS NVARCHAR(MAX)) AS [QueryText]

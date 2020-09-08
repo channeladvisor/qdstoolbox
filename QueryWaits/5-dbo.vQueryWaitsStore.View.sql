@@ -1,6 +1,4 @@
-USE [DBA]
-GO
-CREATE OR ALTER VIEW [DBE].[vQueryWaitsStore]
+CREATE OR ALTER VIEW [dbo].[vQueryWaitsStore]
 AS
 SELECT
 	 [wdi].[ReportID]				
@@ -42,6 +40,6 @@ SELECT
 	,[wds].[Wait_Replication]		
 	,[wds].[Wait_LogRateGovernor]	
 	--,CAST(DECOMPRESS([wdi].[QueryText]) AS NVARCHAR(MAX))	AS [QueryText]
-FROM [DBE].[QueryWaitsStore] [wds]
-INNER JOIN [DBE].[QueryWaitsIndex] [wdi]
+FROM [dbo].[QueryWaitsStore] [wds]
+INNER JOIN [dbo].[QueryWaitsIndex] [wdi]
 ON [wds].[ReportID] = [wdi].[ReportID]

@@ -1,10 +1,4 @@
-USE [DBA]
-GO
-
-SET QUOTED_IDENTIFIER OFF
-GO
-
-CREATE OR ALTER VIEW [DBE].[vQueryWaitsIndex]
+CREATE OR ALTER VIEW [dbo].[vQueryWaitsIndex]
 AS
 SELECT
 	 [wdi].[ReportID]
@@ -22,6 +16,6 @@ SELECT
 	,[q].[n].value('StartTime[1]',			'DATETIME2')		AS [RecentStartTime]
 	,[q].[n].value('EndTime[1]',				'DATETIME2')		AS [RecentEndTime] 
 	,[q].[n].value('IncludeQueryText[1]',	'BIT')				AS [IncludeQueryText]
-FROM [DBE].[QueryWaitsIndex] [wdi]
+FROM [dbo].[QueryWaitsIndex] [wdi]
 CROSS APPLY [wdi].[Parameters].nodes('/Root/WaitDetailsParameters') AS q(n)
 GO

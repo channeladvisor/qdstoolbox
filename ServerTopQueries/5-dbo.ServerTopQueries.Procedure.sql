@@ -124,7 +124,7 @@ BEGIN
 END
 
 IF (@IncludeQueryText IS NULL)
-	SET @IncludequeryText = 0
+	SET @IncludeQueryText = 0
 -- Check variables and set defaults - END
 
 

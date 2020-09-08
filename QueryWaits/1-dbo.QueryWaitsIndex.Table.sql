@@ -12,10 +12,10 @@ BEGIN
 		[QueryTextID]			BIGINT			NOT NULL,
 		[QueryText]				VARBINARY(MAX)	NULL,
 		[Parameters]			XML				NOT NULL,
-	) ON [Tables] WITH (DATA_COMPRESSION = PAGE) 
+	) 
 	ALTER TABLE [dbo].[QueryWaitsIndex]
 	ADD CONSTRAINT [PK_QueryWaitsIndex] PRIMARY KEY CLUSTERED
 	(
 		 [ReportID]	
-	) WITH (DATA_COMPRESSION = PAGE) ON [Indexes]
+	)
 END
