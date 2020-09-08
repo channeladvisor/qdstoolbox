@@ -9,7 +9,7 @@ This view pivots the different rows into Total & Average columns for each wait t
 
 ---
 ## QDSCacheClean
-This tools uses the SPs <b>sp_query_store_remove_query</b>, <b>sp_query_store_remove_plan</b> and <b>sp_query_store_reset_exec_stats</b> to delete stored data for specific queries and or plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
+This tool uses the SPs <b>sp_query_store_remove_query</b>, <b>sp_query_store_remove_plan</b> and <b>sp_query_store_reset_exec_stats</b> to delete stored data for specific queries and or plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
 
 - Delete plans/queries and/or not used in the last XX hours.
 - Delete plans/queries not part of an object (stored procedure/function/trigger...) not used in the last XX hours.
@@ -63,8 +63,8 @@ Analyzes metrics from two different periods and returns the queries whose perfor
 Allows for an analysis based on the number of different plans in use, filtering queries that have a minimum/maximum number of execution plans.\
 \
 It can be executed in a Test mode to only return the impact executing it would have. both in Test mode or when executed to perform the actual QDS cache clean operations, the operations's can return an output in different formats:
-- Returned in the form of 2 tables, with one containing the parameters used and another with the detailed results.
-- Stored into 2 SQL tables, with one containing the parameters used and another with the detailed results.
+- One table, containing the detailed results.
+- Stored into 2 SQL tables, with one containing the parameters used (both explicitly defined and default values) and another with the detailed results.
 - Not returned at all.
 
 ### Use cases and examples
@@ -124,7 +124,7 @@ Store a list with the top 50 queries with the highest TempDB usage for the datab
 EXECUTE [dbo].[GetServerTopQueries]
 	@DatabaseName		=	'TargetDB',
 	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
-	@ReportStore		=	'dbo.ServerTopQueriesStore',
+	@ReportTable		=	'dbo.ServerTopQueriesStore',
 	@Measurement 		= 	'tempdb_space_used',
 	@Top 			= 	50
 	@IncludeQueryText 	= 	1
@@ -132,10 +132,47 @@ EXECUTE [dbo].[GetServerTopQueries]
 #### Aggregate all queries for a particular database, executed in a given data, and store the information
 It is possible to use this tool to aggregate the runtime statistics per hour/day/week/month... to allow some historical data to be stored without impacting the databases' 
 ```
-EXECUTE [dbo].[GetServerTopQueries]
+EXECUTE [dbo].[ServerTopQueries]
 	@DatabaseName		=	'TargetDB',
 	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
-	@ReportStore		=	'dbo.ServerTopQueriesStore',
+	@ReportTable		=	'dbo.ServerTopQueriesStore',
 	@Top 			= 	0,
 	@IncludeQueryText 	= 	0
 ```
+
+---
+
+## WaitsVariation
+Similar to the QueryVariation tool, compares the Wait metrics for a given query between two different periods of time.
+
+It can be executed in a Test mode to only return the impact executing it would have. both in Test mode or when executed to perform the actual QDS cache clean operations, the operations's can return an output in different formats:
+- One table, containing the detailed results.
+- Stored into 2 SQL tables, with one containing the parameters used (both explicitly defined and default values) and another with the detailed results.
+- Not returned at all.
+
+The waits measured are those captured by Query Store
+https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-query-store-wait-stats-transact-sql
+
+### Use cases and examples
+#### Avg CPU wait improvement
+Queries whose waits on CPU have decreased when comparing the periods (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
+``` 
+EXECUTE [dbo].[WaitsVariation]
+	@DatabaseName		=	'Target',
+	@WaitType			=	'CPU',
+	@Metric			=	'avg',
+	@VariationType		=	'I',
+	@RecentStartTime	=	'2020-02-01 00:00',
+	@RecentEndTime		=	'2020-02-01 01:00',
+	@HistoryStartTime	=	'2020-01-01 00:00',
+	@HistoryEndTime		=	'2020-02-01 00:00'
+```
+
+### Suggested uses
+This tool can be used to extract reports similar to the "Regressed Queries" ones SSMS GUI generates, but based on wait times and with the added functionality of storing the reports into tables for later analysis.
+#### CPU changes
+When the count of CPUs available to the SQL instance is modified, waits on CPU are expected to change and this can be used to measure its impact.
+#### Network changes
+Making modifications on the network (such as moving the SQL instance and its clients to a separate network, setting a different network route for SQL traffic...) will impact the waits caused by network IO.
+#### Locking impact on the query
+Changes in the locking mechanism (such as isolation level, indexing or other processes accessing the same tables the investigated query accesses to), will modify the waits on locks.
