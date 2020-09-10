@@ -1,4 +1,14 @@
 # QDSCacheClean
+Query Store includes two cleanup processes:
+- Date-based, that ensure no data older than XX days is kept to reduce the size of Query Store (adjustable)
+- Size-based, which kicks in once a database's Query Store size reaches 90% of its maximum size. It scans the metrics stored and deletes any information (starting with the lest CPU-heavy), and deletes the stored information until the QDS space utilization drops below 80% (if possible)
+
+There are some problems:
+- Queries with a forced plan are not dropped.
+- Dropped object don't have their metrics not removed until either of the two predefined cleanup processes kicks in and targets them.
+- The size-based cleanup has a big impact on high performance environments (up to 60% of CPU allocated to this process on a 8 cores box), and could potentially be triggered every time the data is flushed to disk.
+
+
 This tool uses the SPs <b>sp_query_store_remove_query</b>, <b>sp_query_store_remove_plan</b> and <b>sp_query_store_reset_exec_stats</b> to delete stored data for specific queries and or plans, which can be adapted using multiple parameters to perform different types of cleanups, as for example:
 
 - Delete plans/queries and/or not used in the last XX hours.
@@ -13,6 +23,9 @@ It can be executed in a Test mode to only return the impact executing it would h
 - Returned in the form of 1/2 tables (depending on whether the summary of the report of a detailed report is requested).
 - Stored into 1/2 SQL tables (depending on whether the summary of the report of a detailed report is requested).
 - Not returned at all.
+
+The impact of this cleanup alternative has a much smaller impact on the SQL instance: when executed on the same 8 cores box that had seen a 60% of CPU utilization, this cleanup was executed against 4 databases in parallel (compared to the serial execution of the built-in cleanup), with no noticeable impact on the instance.
+
 ---
 ## Use cases and examples
 Analyze the impact executing the report would have, results returned in two tables (with different degrees of details) back to the user:
