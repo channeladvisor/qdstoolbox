@@ -1,3 +1,44 @@
+----------------------------------------------------------------------------------
+-- Table Name: [dbo].[QueryWaitsIndex]
+--
+-- Desc: This table is used by the procedure [dbo].[QueryWaits] to store its entry parameters
+--
+-- Columns:
+--		[ReportID]				BIGINT			NOT NULL
+--			Unique Identifier for the execution (operations not logged to table have no ReportID)
+--
+--		[ReportDate]			DATETIME2		NOT NULL
+--			UTC Date of the execution's start
+--
+--		[ServerIdentifier]		SYSNAME			NOT NULL
+--			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--
+--		[DatabaseName]			SYSNAME			NOT NULL
+--			Name of the database this operation was executed against
+--
+--		[ObjectID]				BIGINT			NOT NULL
+--			Identifier of the object (if any) whose wait times are being analyzed
+--
+--		[SchemaName]			NVARCHAR(128)	NOT NULL
+--			Name of the schema of the object (if any) whose wait times are being analyzed
+--
+--		[ObjectName]			NVARCHAR(128)	NOT NULL
+--			Name of the object (if any) whose wait times are being analyzed
+--
+--		[QueryTextID]			BIGINT			NOT NULL
+--			Identifier of the Query Text (when only one is being analyzed) whose wait times are being analyzed
+--
+--		[QueryText]				VARBINARY(MAX)	NULL
+--			Compressed Query Text (when only one is being analyzed) whose wait times are being analyzed
+--
+--		[Parameters]			XML				NOT NULL
+--			List of parameters used to invoke the execution of [dbo].[QueryWaits]
+--
+-- Date: 2020.10.22
+-- Auth: Pablo Lozano (@sqlozano)
+--
+----------------------------------------------------------------------------------
+
 IF NOT EXISTS (SELECT 1 FROM [sys].[objects] WHERE [object_id] = OBJECT_ID('dbo.QueryWaitsIndex') )
 BEGIN
 	CREATE TABLE [dbo].[QueryWaitsIndex]

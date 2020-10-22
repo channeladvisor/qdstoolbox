@@ -65,20 +65,20 @@
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 (
-	@ServerIdentifier		SYSNAME			= NULL,	
-	@DatabaseName			SYSNAME			= NULL,
-	@ReportIndex			NVARCHAR(800)	= NULL,
-	@ReportTable			NVARCHAR(800)	= NULL,
-	@StartTime				DATETIME2		= NULL,
-	@EndTime				DATETIME2		= NULL,
-	@Top					INT				= 25,
-	@Measurement			NVARCHAR(32)	= 'cpu_time',
-	@IncludeQueryText		BIT				= 0,
-	@ExcludeAdhoc			BIT				= 0,
-	@ExcludeInternal		BIT				= 1,
-	@VerboseMode			BIT				= 0,
-	@TestMode				BIT				= 0,
-	@ReportID				BIGINT			=	NULL	OUTPUT
+	 @ServerIdentifier		SYSNAME			= NULL
+	,@DatabaseName			SYSNAME			= NULL
+	,@ReportIndex			NVARCHAR(800)	= NULL
+	,@ReportTable			NVARCHAR(800)	= NULL
+	,@StartTime				DATETIME2		= NULL
+	,@EndTime				DATETIME2		= NULL
+	,@Top					INT				= 25
+	,@Measurement			NVARCHAR(32)	= 'cpu_time'
+	,@IncludeQueryText		BIT				= 0
+	,@ExcludeAdhoc			BIT				= 0
+	,@ExcludeInternal		BIT				= 1
+	,@VerboseMode			BIT				= 0
+	,@TestMode				BIT				= 0
+	,@ReportID				BIGINT			= NULL	OUTPUT
 )
 AS
 BEGIN

@@ -58,7 +58,7 @@
 --														[Default: Total]
 --													https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-query-store-wait-stats-transact-sql?view=sql-server-ver15#wait-categories-mapping-table
 --
---		@Metric						NVARCHAR(8)		--	Metric on which to analyze the @Measurement values on, to select from
+--		@Metric						NVARCHAR(8)		--	Metric on which to analyze the @WaitType values on, to select from
 --															Avg
 --															Total
 --														[Default: Avg]
@@ -131,8 +131,8 @@
 --			
 --
 --
--- Date: 2020.08.06
--- Auth: Pablo Lozano
+-- Date: 2020.10.20
+-- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]

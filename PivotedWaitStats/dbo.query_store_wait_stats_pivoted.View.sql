@@ -10,8 +10,8 @@ GO
 -- Desc: This view pivots the contents of the sys.query_store_wait_stats into columns, adding the average wait stats metric to it
 --
 --
--- Date: yyyy.mm.dd
--- Auth: Pablo Lozano @sqlozano
+-- Date: 2020.10.22
+-- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
 

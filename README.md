@@ -1,4 +1,4 @@
-# QDS Tools
+# QDS Toolbox
 This is a collection of tools (comprised of a combination of views, procedures, functions...) developed using the Query Store functionality as a base to facilitate its usage and reports' generation. These include but are not limited to:
 
 - Implementations of SSMS' GUI reports that can be invoked using T-SQL code, with added funcionalities (parameterization, saving results to tables) so they can be programmatically executed and used to send out mails.

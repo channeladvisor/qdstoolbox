@@ -17,13 +17,13 @@ GO
 --
 --		@DatabaseName				SYSNAME			--	Name of the database apply the QDS cleanup process on
 --
---		@CleanAdhocStale			BIT				--	Flag clean queries that:
+--		@CleanAdhocStale			BIT				--	Flag to clean queries that:
 --															Are ad-hoc queries (don't belong any object)
 --															Haven't been executed at least @MinExecutionCount times
 --															Haven't been executed in the last @Retention hours
 --														[Default: 0; is it included in the @CleanStale flag]
 --
---		@CleanStale					BIT				--	Flag clean queries that:
+--		@CleanStale					BIT				--	Flag to clean queries that:
 --															Queries belonging an object and ad-hoc ones (don't belong any object)
 --															Haven't been executed at least @MinExecutionCount times
 --															Haven't been executed in the last @Retention hours
@@ -33,14 +33,14 @@ GO
 --														[Default: 168 (24*7), one week]
 --														IF @Retention = 0, ALL queries will be flagged for deletion
 --
---		@MinExecutionCount			INT				--	Minimum number of executions NOT delete the query .
+--		@MinExecutionCount			INT				--	Minimum number of executions NOT to delete the query
 --														[Default :2; deletes queries executed only once]
---														IF @MinExecutionCount = 0, ALL queries will be flagged for deletion
+--														If @MinExecutionCount = 0, ALL queries will be flagged for deletion
 --
---		@CleanOrphan				BIT				--	Flag clean queries associated with deleted objects. 
+--		@CleanOrphan				BIT				--	Flag to clean queries associated with deleted objects
 --														[Default: 1]
 --
---		@CleanInternal				BIT				--	Flag clean queries identified as internal ones by QDS (UPDATE STATISTICS, INDEX REBUILD....).
+--		@CleanInternal				BIT				--	Flag to clean queries identified as internal ones by QDS (UPDATE STATISTICS, INDEX REBUILD....)
 --														[Default: 1]
 --
 --		@CleanStatsOnly				BIT				--	Changes the behavior of the clean process so only the stats will be cleaned, but not the plans, queries and queries' texts.
@@ -116,7 +116,7 @@ GO
 --		Will also perform the actual cleanup using the default parameters
 --
 --
--- Date: 2020.07.XX
+-- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
@@ -651,12 +651,13 @@ BEGIN
 		,[RunStatsKBs]
 		,[WaitStatsKBs]
 		,(	SELECT 
-				{@CleanAdhocStale}		AS [CleanAdhocStale],
-				{@CleanStale}			AS [CleanStale],
-				{@Retention}			AS [Retention],
-				{@MinExecutionCount}	AS [MinExecutionCount],
-				{@CleanOrphan}			AS [CleanOrphan],
-				{@CleanInternal}		AS [CleanInternal]
+				 {@CleanAdhocStale}		AS [CleanAdhocStale]
+				,{@CleanStale}			AS [CleanStale]
+				,{@Retention}			AS [Retention]
+				,{@MinExecutionCount}	AS [MinExecutionCount]
+				,{@CleanOrphan}			AS [CleanOrphan]
+				,{@CleanInternal}		AS [CleanInternal]
+				,{@CleanStatsOnly}		AS [CleanStatsOnly]
 			FOR XML PATH (''CleanupParameters''), ROOT(''Root'')
 		) as [CleanupParameters]
 		, {@TestMode}
@@ -668,12 +669,13 @@ BEGIN
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportDate}',				CAST(@ExecutionTime AS NVARCHAR(34)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ServerIdentifier}',		@ServerIdentifier)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@DatabaseName}',			@DatabaseName)
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanAdhocStale}',		CAST(@CleanAdhocStale AS NVARCHAR(8)))
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanStale}',				CAST(@CleanStale AS NVARCHAR(8)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanAdhocStale}',		CAST(@CleanAdhocStale AS NVARCHAR(1)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanStale}',				CAST(@CleanStale AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@Retention}',				CAST(@Retention AS NVARCHAR(8)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@MinExecutionCount}',		CAST(@MinExecutionCount AS NVARCHAR(8)))
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanOrphan}',			CAST(@CleanOrphan AS NVARCHAR(8)))
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanInternal}',			CAST(@CleanInternal AS NVARCHAR(8)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanOrphan}',			CAST(@CleanOrphan AS NVARCHAR(1)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanInternal}',			CAST(@CleanInternal AS NVARCHAR(1)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanStatsOnly}',			CAST(@CleanStatsOnly AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@TestMode}',				CAST(@TestMode AS NVARCHAR(1)))
 
 	IF (@VerboseMode = 1) PRINT (@ReportOutputInsert)

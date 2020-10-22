@@ -16,16 +16,16 @@
 --														[Default:0]
 --
 --			
--- Date: 2020.08.06
--- Auth: Pablo Lozano
+-- Date: 2020.10.22
+-- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariationFromStore]
 (
-	@ReportID		BIGINT,
-	@VerboseMode	BIT		=	0,
-	@TestMode		BIT		=	0
+	 @ReportID		BIGINT
+	,@VerboseMode	BIT		=	0
+	,@TestMode		BIT		=	0
 )
 AS
 BEGIN
@@ -52,9 +52,9 @@ DECLARE @WaitType NVARCHAR(16)
 DECLARE @VariationType NVARCHAR(1)
 DECLARE @IncludeQueryText BIT
 SELECT
-	@WaitType			= [WaitType],
-	@VariationType		= [VariationType],
-	@IncludeQueryText 	= [IncludeQueryText]
+	 @WaitType			= [WaitType]
+	,@VariationType		= [VariationType]
+	,@IncludeQueryText 	= [IncludeQueryText]
 FROM [dbo].[vWaitsVariationIndex] WHERE [ReportID] = @ReportID
 -- Gather parameters used to generate the Report in order to prepare the output - END
 

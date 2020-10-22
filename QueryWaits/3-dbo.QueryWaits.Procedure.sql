@@ -6,7 +6,7 @@ GO
 ----------------------------------------------------------------------------------
 -- Procedure Name: [dbo].[QueryWaits]
 --
--- Desc: This script queries the QDS data and generates a report based on those queries whose performance has changed when comparing two periods of time
+-- Desc: This script queries the QDS data and generates a report based on wait statistics of a given Object, Query or Execution plan over a given period of time
 --
 --
 -- Parameters:
@@ -88,19 +88,19 @@ GO
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 (
-	@ServerIdentifier		SYSNAME			= NULL,	
-	@DatabaseName			SYSNAME			= NULL,
-	@ReportIndex			NVARCHAR(800)	= NULL,
-	@ReportTable			NVARCHAR(800)	= NULL,
-	@StartTime				DATETIME2		= NULL,
-	@EndTime				DATETIME2		= NULL,
-	@ObjectName				NVARCHAR(256)	= NULL,
-	@PlanID					BIGINT			= NULL,
-	@QueryID				BIGINT			= NULL,
-	@IncludeQueryText		BIT				= 0,
-	@VerboseMode			BIT				= 0,
-	@TestMode				BIT				= 0,
-	@ReportID				BIGINT			=	NULL	OUTPUT
+	 @ServerIdentifier		SYSNAME			= NULL	
+	,@DatabaseName			SYSNAME			= NULL
+	,@ReportIndex			NVARCHAR(800)	= NULL
+	,@ReportTable			NVARCHAR(800)	= NULL
+	,@StartTime				DATETIME2		= NULL
+	,@EndTime				DATETIME2		= NULL
+	,@ObjectName			NVARCHAR(256)	= NULL
+	,@PlanID				BIGINT			= NULL
+	,@QueryID				BIGINT			= NULL
+	,@IncludeQueryText		BIT				= 0
+	,@VerboseMode			BIT				= 0
+	,@TestMode				BIT				= 0
+	,@ReportID				BIGINT			= NULL	OUTPUT
 )
 AS
 BEGIN
