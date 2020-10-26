@@ -1,4 +1,4 @@
-![QDSToolbox icon](./main/qdstoolbox.svg = 48x)
+<img src="https://raw.githubusercontent.com/channeladvisor/qdstoolbox/main/qdstoolbox.svg" width="200">
 # QDS Toolbox
 This is a collection of tools (comprised of a combination of views, procedures, functions...) developed using the Query Store functionality as a base to facilitate its usage and reports' generation. These include but are not limited to:
 
