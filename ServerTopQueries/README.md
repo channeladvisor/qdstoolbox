@@ -1,5 +1,7 @@
 # ServerTopQueries
 This tool provides uses the runtime stats for each database on the server to get a list of the TOP XX queries on each database, ordered by any of the measurements Query Store keeps track off (totals).
+\
+(SQL 2016 does not support @Measurement = 'log_bytes_used' / 'tempdb_space_used')
 ## Use cases and examples
 ### Queries with a high CPU consumption
 Get a list of queries (top 10 per database) along with their query text

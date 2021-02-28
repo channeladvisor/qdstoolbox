@@ -134,6 +134,9 @@
 -- Date: 2020.10.20
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.02.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	Execution in SQL 2016 will thrown an error (this component was enabled first in SQL 2017)
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]
 (
@@ -158,6 +161,14 @@ CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]
 )
 AS
 SET NOCOUNT ON
+
+-- Get the Version # to ensure it runs SQL2017 or higher
+DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
+IF (@Version <= 13)
+BEGIN
+	RAISERROR(N'[dbo].[WaitsVariation] requires SQL 2017 or higher',16,1)
+	RETURN -1
+END
 
 -- Check variables and set defaults - START
 IF (@ServerIdentifier IS NULL)

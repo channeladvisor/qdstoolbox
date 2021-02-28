@@ -119,6 +119,10 @@ GO
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.02.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	Fixed an error in the dynamic SQL command not properly joining the QDS tables from the target @DatabaseName
+--		 	Added support for SQL 2016
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 (
@@ -143,6 +147,13 @@ CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 AS
 BEGIN
 SET NOCOUNT ON
+-- Get the Version # to ensure it runs SQL2016 or higher
+DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
+IF (@Version < 13)
+BEGIN
+	RAISERROR('[dbo].[QDSCacheCleanup] requires SQL 2016 or higher',16,1)
+	RETURN -1
+END
 
 -- If no @ServerIdentifier is provided, use @@SERVERNAME - START
 IF (@ServerIdentifier IS NULL) OR (@ServerIdentifier = '')
@@ -393,17 +404,19 @@ BEGIN
 	
 	-- Summary Report: Use @SqlCmd load details into #Report - START
 	--SET @SqlCmd = 'INSERT INTO #Report
-	SET @SqlCmd = 'WITH [qsws]
-AS
-(
-SELECT
-	 [QueryType]	= [dqt].[QueryType]
-	,[WaitStatsKBs]	=	( COUNT_BIG([qsws].[wait_stats_id]) * 315 ) / 1024
-FROM #DeleteableQueryTable [dqt]
-LEFT JOIN {@DatabaseName}.[sys].[query_store_wait_stats] [qsws]
-	ON [dqt].[PlanID] = [qsws].[plan_id]
-GROUP BY [dqt].[QueryType]
-), [qsrs]
+	SET @SqlCmd = 'WITH 
+{@SQL2016tables} [qsws]
+{@SQL2016tables} AS
+{@SQL2016tables} (
+{@SQL2016tables} SELECT
+{@SQL2016tables} 	 [QueryType]	= [dqt].[QueryType]
+{@SQL2016tables} 	,[WaitStatsKBs]	=	( COUNT_BIG([qsws].[wait_stats_id]) * 315 ) / 1024
+{@SQL2016tables} FROM #DeleteableQueryTable [dqt]
+{@SQL2016tables} LEFT JOIN {@DatabaseName}.[sys].[query_store_wait_stats] [qsws]
+{@SQL2016tables} 	ON [dqt].[PlanID] = [qsws].[plan_id]
+{@SQL2016tables} GROUP BY [dqt].[QueryType]
+{@SQL2016tables} ), 
+[qsrs]
 AS
 (
 SELECT
@@ -439,14 +452,22 @@ SELECT
 	,[q].[QueryTextKBs]
 	,[q].[PlanXMLKBs]
 	,[qsrs].[RunStatsKBs]
-	,[qsws].[WaitStatsKBs]
+	,{@SQL2016columns} [qsws].[WaitStatsKBs]
 FROM [q]
 	LEFT JOIN [qsrs]
 		ON [q].[QueryType] = [qsrs].[QueryType]
-	LEFT JOIN [qsws]
-		ON [q].[QueryType] = [qsws].[QueryType]'
+{@SQL2016tables}	LEFT JOIN [qsws]
+{@SQL2016tables}		ON [q].[QueryType] = [qsws].[QueryType]'
 	
 	SET @SqlCmd = REPLACE(@SqlCmd, '{@DatabaseName}',			QUOTENAME(@DatabaseName))
+	
+	-- If the SQL version is 2016, exclude components not available on that version - START
+	IF (@Version = 13)
+	BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016columns}',		'NULL --')
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016tables}',		'--')
+	END
+	-- If the SQL version is 2016, exclude components not available on that version - END
 
 	IF (@VerboseMode = 1) PRINT (@SqlCmd)
 	EXECUTE (@SqlCmd)
@@ -757,7 +778,7 @@ BEGIN
 		FROM #QueryDetailsStagingTable [qdst]
 		INNER JOIN {@DatabaseName}.[sys].[objects] [o]
 			ON [qdst].[ObjectID] = [o].[object_id]
-		INNER JOIN [sys].[schemas] [s]
+		INNER JOIN {@DatabaseName}.[sys].[schemas] [s]
 			ON [o].[schema_id] = [s].[schema_id]
 
 		UNION ALL

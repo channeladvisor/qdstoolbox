@@ -54,11 +54,13 @@
 --		[Memory]				BIGINT			NOT NULL
 --			Total Memory usage of all executions of the corresponding [PlanID] in 8 KB pages
 --
---		[LogBytes]				BIGINT			NOT NULL
+--		[LogBytes]				BIGINT				NULL
 --			Total Log bytes usage of all executions of the corresponding [PlanID] in Bytes
+--			NULL for SQL 2016 (the metric is not registered in this version)
 --
---		[TempDBSpace]			BIGINT			NOT NULL
+--		[TempDBSpace]			BIGINT				NULL
 --			Total TempDB space usage of all executions of the corresponding [PlanID] in 8 KB pages
+--			NULL for SQL 2016 (the metric is not registered in this version)
 --
 --		[QuerySqlText]			VARBINARY(MAX)	    NULL
 --			Query Text (compressed) corresponding to the [PlanID]
@@ -66,6 +68,8 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	[LogBytes] and [TempDBSpace] metrics allow NULLs to allow compatibility with SQL 2016 (which did not include this features)
 ----------------------------------------------------------------------------------
 
 IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('dbo.ServerTopQueriesStore') )
@@ -89,8 +93,8 @@ BEGIN
 		,[PhysicalIOReads]		BIGINT			NOT NULL
 		,[CLR]					BIGINT			NOT NULL
 		,[Memory]				BIGINT			NOT NULL
-		,[LogBytes]				BIGINT			NOT NULL
-		,[TempDBSpace]			BIGINT			NOT NULL
+		,[LogBytes]				BIGINT				NULL
+		,[TempDBSpace]			BIGINT				NULL
 		,[QuerySqlText]			VARBINARY(MAX)	    NULL
 	)
 
