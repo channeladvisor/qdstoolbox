@@ -82,9 +82,12 @@ GO
 --			@IncludeQueryText	= 1
 --			
 --
--- Date: 2020.07.XX
+-- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.02.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	Execution in SQL 2016 will thrown an error (this component was enabled first in SQL 2017)
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 (
@@ -105,6 +108,15 @@ CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 AS
 BEGIN
 SET NOCOUNT ON
+
+-- Get the Version # to ensure it runs SQL2017 or higher
+DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
+IF (@Version <= 13)
+BEGIN
+	RAISERROR(N'[dbo].[QueryWaits] requires SQL 2017 or higher',16,1)
+	RETURN -1
+END
+
 -- Check variables and set defaults - START
 IF (@ServerIdentifier IS NULL)
 	SET @ServerIdentifier = @@SERVERNAME

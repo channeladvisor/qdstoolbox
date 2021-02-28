@@ -9,7 +9,8 @@ This is a collection of tools (comprised of a combination of views, procedures, 
 
 - Cleanup of QDS' cache with a smaller footprint than the internal one generates, with customization parameters to enable a customizable cleanup (such as removing information regarding dropped objects, cleaning details of ad-hoc or internal queries executed on the server as index maintenance operations).
 
-All these tools have been tested on SQL 2017 and SQL 2019 instances, both with Case Sensitive and Insensitive collations and running on both Windows and Linux.
+All these tools have been tested on SQL 2016, 2017 and 2019 instances, both with Case Sensitive and Insensitive collations and running on both Windows and Linux.
+Since Query Store did not capture all the information in 2016 as it did in later versions, some funcionalities may suffer restrictions
 
 
 (Original icon art by https://www.smashicons.com )

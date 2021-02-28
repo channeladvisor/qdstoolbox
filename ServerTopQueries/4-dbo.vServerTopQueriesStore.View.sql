@@ -54,11 +54,13 @@
 --		[Memory]				BIGINT			NOT NULL
 --			Total Memory usage of all executions of the corresponding [PlanID] in 8 KB pages
 --
---		[LogBytes]				BIGINT			NOT NULL
+--		[LogBytes]				BIGINT				NULL
 --			Total Log bytes usage of all executions of the corresponding [PlanID] in Bytes
+--			NULL for SQL 2016 (the metric is not registered in this version)
 --
---		[TempDBSpace]			BIGINT			NOT NULL
+--		[TempDBSpace]			BIGINT				NULL
 --			Total TempDB space usage of all executions of the corresponding [PlanID] in 8 KB pages
+--			NULL for SQL 2016 (the metric is not registered in this version)
 --
 --		[QuerySqlText]			NVARCHAR(MAX)	    NULL
 --			Query Text corresponding to the [PlanID]

@@ -1,5 +1,6 @@
 # QueryWaits
 This tool analyzes the wait status for a given Object / Query / Plan, and returns the data along with the runtime times (CPU, CLR and Duration) to provide an overview on how long the Object / Query / Plan takes to complete, and how much of that time can be attributed to actual execution, waits on resources...
+(Supported in SQL 2017+: for SQL 2016 the execution of the stored procedure will return an error)
 
 ---
 ## Use cases and examples

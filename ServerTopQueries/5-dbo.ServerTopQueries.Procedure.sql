@@ -60,7 +60,12 @@
 --		@ReportID					BIGINT			--	Returns the ReportID (when the report is being logged into a table)
 --
 -- Date: 2020.08.06
--- Auth: Pablo Lozano
+-- Auth: Pablo Lozano (@sqlozano)
+--
+-- Date: 2021.02.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	Execution in SQL 2016 will thrown an error when the @Measurement selected does not exist
+--			Execution in SQL 2016 will return NULL for the measures not included in this version (log_bytes_used & tempdb_space_used)
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
@@ -83,6 +88,21 @@ CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 AS
 BEGIN
 SET NOCOUNT ON
+
+-- Get the Version # to ensure it runs SQL2016 or higher
+DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
+IF (@Version < 13)
+BEGIN
+	RAISERROR(N'[dbo].[ServerTopQueries] requires SQL 2016 or higher',16,1)
+	RETURN -1
+END
+-- Raise an error if the @Measurement selected is not available in SQL 2016
+IF (@Version = 13 AND @Measurement IN ('log_bytes_used', 'tempdb_space_used'))
+BEGIN
+	RAISERROR(N'The selected @Measurement [%s] is not available in the current SQL version (2016)',16,1, @Measurement)
+	RETURN -1
+END
+
 -- Check variables and set defaults - START
 IF (@ServerIdentifier IS NULL)
 	SET @ServerIdentifier = @@SERVERNAME
@@ -184,35 +204,35 @@ CREATE TABLE #ServerTopQueriesStore
 	[physical_io_reads]		BIGINT			NOT NULL,
 	[clr_time]				BIGINT			NOT NULL,
 	[query_used_memory]		BIGINT			NOT NULL,
-	[log_bytes_used]		BIGINT			NOT NULL,
-	[tempdb_space_used]		BIGINT			NOT NULL,
+	[log_bytes_used]		BIGINT				NULL,
+	[tempdb_space_used]		BIGINT				NULL,
 	[QuerySqlText]			VARBINARY(MAX)	    NULL
 )
 -- Definition of temp table to store the reports for each database - END
 
 -- Query to extract the details for any given @DatabaseName - START
 DECLARE @SqlCommand2PopulateTempTableTemplate NVARCHAR(MAX)
-SET @SqlCommand2PopulateTempTableTemplate = 'USE {@DatabaseName}
+SET @SqlCommand2PopulateTempTableTemplate = 'USE [{@DatabaseName}]
 ;WITH dbdata AS
 (
 SELECT
-       [qsrs].[plan_id],
-       [qsp].[query_id],
-       [qsq].[query_text_id],
-	   ISNULL([obs].[object_id], 0) as [object_id],
-       ISNULL(SCHEMA_NAME([obs].[schema_id]), '''') AS [SchemaName],
-       ISNULL(OBJECT_NAME([obs].[object_id]), '''') AS [ProcedureName],
-       [qsrs].[execution_type_desc],
-       SUM([qsrs].[count_executions]) AS [count_executions],
-       CAST(SUM([qsrs].[avg_duration]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [duration],
-       CAST(SUM([qsrs].[avg_cpu_time]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [cpu_time],
-       CAST(SUM([qsrs].[avg_logical_io_reads])  * SUM([qsrs].[count_executions]) AS BIGINT) AS [logical_io_reads],
-       CAST(SUM([qsrs].[avg_logical_io_writes]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [logical_io_writes],
-       CAST(SUM([qsrs].[avg_physical_io_reads]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [physical_io_reads],
-       CAST(SUM([qsrs].[avg_clr_time]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [clr_time],
-       CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [query_used_memory],
-       CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [log_bytes_used],
-       CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT) AS [tempdb_space_used]
+        [qsrs].[plan_id]
+       ,[qsp].[query_id]
+       ,[qsq].[query_text_id]
+	   ,[object_id]			= ISNULL([obs].[object_id], 0)
+       ,[SchemaName]		= ISNULL(SCHEMA_NAME([obs].[schema_id]), '''')
+       ,[ProcedureName]		= ISNULL(OBJECT_NAME([obs].[object_id]), '''')
+       ,[qsrs].[execution_type_desc]
+       ,[count_executions]	=	SUM([qsrs].[count_executions])
+       ,[duration]			=	CAST(SUM([qsrs].[avg_duration]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[cpu_time]			=	CAST(SUM([qsrs].[avg_cpu_time]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[logical_io_reads]	=	CAST(SUM([qsrs].[avg_logical_io_reads])  * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[logical_io_writes]	=	CAST(SUM([qsrs].[avg_logical_io_writes]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[physical_io_reads]	=	CAST(SUM([qsrs].[avg_physical_io_reads]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[clr_time]			=	CAST(SUM([qsrs].[avg_clr_time]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[query_used_memory]	=	CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[log_bytes_used]	=	{@SQL2016columns} CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
+       ,[tempdb_space_used]	=	{@SQL2016columns} CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
 FROM
 [{@DatabaseName}].[sys].[query_store_runtime_stats] [qsrs]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
@@ -244,6 +264,13 @@ FROM [dbdata]
 
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@StartTime}',				CAST(@StartTime AS NVARCHAR(34)))
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+
+	-- If the SQL version is 2016, exclude components not available on that version - START
+	IF (@Version = 13)
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'NULL --')
+	END
+	-- If the SQL version is 2016, exclude components not available on that version - END
 
 	-- Based on @IncludeQueryText, include the query text in the reports or not - START
 	IF (@IncludeQueryText = 0)
@@ -330,16 +357,16 @@ BEGIN
 	,[ObjectName]			
 	,[ExecutionTypeDesc]		
 	,[ExecutionCount]		
-	,[duration]				AS [Duration]
-	,[cpu_time]				AS [CPU]
-	,[logical_io_reads]		AS [LogicalIOReads]
-	,[logical_io_writes]	AS [LogicalIOWrites]
-	,[physical_io_reads]	AS [PhysicalIOReads]
-	,[clr_time]				AS [CLR]
-	,[query_used_memory]	AS [Memory]
-	,[log_bytes_used]		AS [LogBytesUsed]
-	,[tempdb_space_used]	AS [TempDB]
-	,[QuerySqlText]			
+	,[duration]											AS [Duration]
+	,[cpu_time]											AS [CPU]
+	,[logical_io_reads]									AS [LogicalIOReads]
+	,[logical_io_writes]								AS [LogicalIOWrites]
+	,[physical_io_reads]								AS [PhysicalIOReads]
+	,[clr_time]											AS [CLR]
+	,[query_used_memory]								AS [Memory]
+	,[log_bytes_used]									AS [LogBytesUsed]
+	,[tempdb_space_used]								AS [TempDB]
+	,CAST(DECOMPRESS([QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
 	FROM #ServerTopQueriesStore
 	ORDER BY {@Measurement} DESC'
 	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@Measurement}', QUOTENAME(@Measurement))

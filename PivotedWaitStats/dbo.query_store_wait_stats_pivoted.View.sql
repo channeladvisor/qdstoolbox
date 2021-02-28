@@ -13,10 +13,21 @@ GO
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.02.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	This view is not compatible with SQL 2016 (no wait stats captured before SQL 2017), so this script will raise an error
 ----------------------------------------------------------------------------------
 
-
-CREATE OR ALTER VIEW [dbo].[query_store_wait_stats_pivoted]
+-- Get the Version # to ensure it runs SQL2016 or higher
+DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
+IF (@Version < 14)
+BEGIN
+	RAISERROR('[dbo].[query_store_wait_stats_pivoted] requires SQL 2017 or higher',16,1)
+END
+ELSE
+BEGIN
+DECLARE @CreateView NVARCHAR(MAX) = 
+'CREATE OR ALTER VIEW [dbo].[query_store_wait_stats_pivoted]
 AS
 SELECT 
 	 [runtime_stats_interval_id]
@@ -113,4 +124,7 @@ PIVOT (
 		,[Log Rate Governor]
 	)
 	)
-	AS [PivotTable]
+	AS [PivotTable]'
+
+EXECUTE (@CreateView)
+END

@@ -9,6 +9,7 @@ It can be executed in a Test mode to only return the impact executing it would h
 The waits measured are those captured by Query Store
 https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-query-store-wait-stats-transact-sql
 
+(Supported in SQL 2017+: for SQL 2016 the execution of the stored procedure will return an error)
 ---
 ## Use cases and examples
 ### Avg CPU wait improvement

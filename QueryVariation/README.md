@@ -6,6 +6,8 @@ It can be executed in a Test mode to only return the impact executing it would h
 - One table, containing the detailed results.
 - Stored into 2 SQL tables, with one containing the parameters used (both explicitly defined and default values) and another with the detailed results.
 - Not returned at all.
+\
+(SQL 2016 does not support @Measurement = 'Log' / 'TempDB')
 ---
 ## Use cases and examples
 ### Avg CPU regression
