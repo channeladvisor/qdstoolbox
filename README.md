@@ -11,7 +11,7 @@ This is a collection of tools (comprised of a combination of views, procedures, 
 
 All these tools have been tested on SQL 2016, 2017 and 2019 instances, both with Case Sensitive and Insensitive collations and running on both Windows and Linux.
 \
-Since Query Store did not capture all the information in 2016 as it did in later versions, some funcionalities may suffer restrictions
+Since Query Store did not capture all the information in 2016 as it does in later versions, some funcionalities may suffer restrictions
 
 
 (Original icon art by https://www.smashicons.com )
