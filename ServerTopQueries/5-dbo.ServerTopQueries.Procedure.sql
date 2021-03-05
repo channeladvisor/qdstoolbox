@@ -270,6 +270,10 @@ FROM [dbdata]
 	BEGIN
 		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'NULL --')
 	END
+	ELSE
+	BEGIN
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'')
+	END
 	-- If the SQL version is 2016, exclude components not available on that version - END
 
 	-- Based on @IncludeQueryText, include the query text in the reports or not - START

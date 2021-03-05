@@ -467,6 +467,11 @@ FROM [q]
 		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016columns}',		'NULL --')
 		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016tables}',		'--')
 	END
+	ELSE
+		BEGIN
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016columns}',		'')
+		SET @SqlCmd = REPLACE(@SqlCmd, '{@SQL2016tables}',		'')
+	END
 	-- If the SQL version is 2016, exclude components not available on that version - END
 
 	IF (@VerboseMode = 1) PRINT (@SqlCmd)
