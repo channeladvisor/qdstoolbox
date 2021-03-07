@@ -52,7 +52,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CLR' 
 ,'Avg'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_clr_time]*[qsrs].[count_executions]))/NULLIF(SUM([qsrs].[count_executions]), 0),2) [avg_clr_time],'
 ,'[results].[clr_time_regr_perc_recent] [CLR_Avg_Variation_%],
 		[results].[avg_clr_time_recent] [CLR_Avg_Recent_Microseconds],
@@ -69,7 +69,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CLR' 
 ,'Max'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MAX([qsrs].[max_clr_time])),2) [max_clr_time],'
 ,'[results].[clr_time_regr_perc_recent] [CLR_Max_Variation_%],
 		[results].[max_clr_time_recent] [CLR_Max_Recent_Microseconds],
@@ -86,7 +86,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CLR' 
 ,'Min'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MIN([qsrs].[min_clr_time])),2) [min_clr_time],'
 ,'[results].[clr_time_regr_perc_recent] [CLR_Min_Variation_%],
 		[results].[min_clr_time_recent] [CLR_Min_Recent_Microseconds],
@@ -103,7 +103,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
 'CLR', 
 'StdDev',
-'탎',
+'microseconds',
 'ROUND(CONVERT(FLOAT, SQRT( SUM([qsrs].[stdev_clr_time]*[qsrs].[stdev_clr_time]*[qsrs].[count_executions])/NULLIF(SUM([qsrs].[count_executions]), 0))),2) [stdev_clr_time],',
 '[results].[clr_time_regr_perc_recent] [CLR_StdDev_Variation_%],
 		[results].[stdev_clr_time_recent] [CLR_StdDev_Recent_Microseconds],
@@ -120,7 +120,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CLR'
 ,'Total'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_clr_time]*[qsrs].[count_executions])),2) [total_clr_time],'
 ,'[results].[clr_time_regr_perc_recent] [CLR_Total_Variation_%],
 		[results].[total_clr_time_recent] [CLR_Total_Recent_Microseconds],
@@ -139,7 +139,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CPU' 
 ,'Avg'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_cpu_time]*[qsrs].[count_executions]))/NULLIF(SUM([qsrs].[count_executions]), 0),2) [avg_cpu_time],'
 ,'[results].[cpu_time_regr_perc_recent] [CPU_Avg_Variation_%],
 		[results].[avg_cpu_time_recent] [CPU_Avg_Recent_Microseconds],
@@ -157,7 +157,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CPU' 
 ,'Max'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MAX([qsrs].[max_cpu_time])),2) [max_cpu_time],'
 ,'[results].[cpu_time_regr_perc_recent] [CPU_Max_Variation_%],
 		[results].[max_cpu_time_recent] [CPU_Max_Recent_Microseconds],
@@ -175,7 +175,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CPU'
 ,'Min'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MIN([qsrs].[min_cpu_time])),2) [min_cpu_time],'
 ,'[results].[cpu_time_regr_perc_recent] [CPU_Min_Variation_%],
 		[results].[min_cpu_time_recent] [CPU_Min_Recent_Microseconds],
@@ -193,7 +193,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CPU'
 ,'StdDev'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SQRT( SUM([qsrs].[stdev_cpu_time]*[qsrs].[stdev_cpu_time]*[qsrs].[count_executions])/NULLIF(SUM([qsrs].[count_executions]), 0))),2) [stdev_cpu_time],'
 ,'[results].[cpu_time_regr_perc_recent] [CPU_StdDev_Variation_%],
 		[results].[stdev_cpu_time_recent] [CPU_StdDev_Recent_Microseconds],
@@ -211,13 +211,13 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'CPU'
 ,'Total'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_cpu_time]*[qsrs].[count_executions])),2) [total_cpu_time],'
 ,'[results].[cpu_time_regr_perc_recent] [CPU_Total_Variation_%],
 		[results].[total_cpu_time_recent] [CPU_Total_Recent_Microseconds],
 		[results].[total_cpu_time_hist] [CPU_Total_History_Microseconds],'
 --,'ROUND(CONVERT(FLOAT, [recent].[total_cpu_time]/[recent].[count_executions]-[hist].[total_cpu_time]/[hist].[count_executions])*([recent].[count_executions]), 2) [additional_cpu_time_workload]
-,'ROUND(CONVERT(FLOAT, ([recent].[total_cpu_time]-[hist].[total_cpu_time])/IIF([hist].[total_cpu_time]>0, [hist].[total_cpu_time], 1))*100.0, 2) [cpu_time_regr_perc_recent]
+,'ROUND(CONVERT(FLOAT, ([recent].[total_cpu_time]-[hist].[total_cpu_time])/IIF([hist].[total_cpu_time]>0, [hist].[total_cpu_time], 1))*100.0, 2) [cpu_time_regr_perc_recent],
 		ROUND([recent].[total_cpu_time], 2) [total_cpu_time_recent],
 		ROUND([hist].[total_cpu_time], 2) [total_cpu_time_hist],'
 ,'[cpu_time_regr_perc_recent]'
@@ -320,7 +320,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'Duration'
 ,'Avg'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_duration]*[qsrs].[count_executions]))/NULLIF(SUM([qsrs].[count_executions]), 0),2) [avg_duration],'
 ,'[results].[duration_regr_perc_recent] [Duration_Avg_Variation_%],
 		[results].[avg_duration_recent] [Duration_Avg_Recent_Microseconds],
@@ -338,7 +338,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'Duration'
 ,'Max'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MAX([qsrs].[max_duration])),2) [max_duration],'
 ,'[results].[duration_regr_perc_recent] [Duration_Max_Variation_%],
 		[results].[max_duration_recent] [Duration_Max_Recent_Microseconds],
@@ -356,7 +356,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'Duration'
 ,'Min'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, MIN([qsrs].[min_duration])),2) [min_duration],'
 ,'[results].[duration_regr_perc_recent] [Duration_Min_Variation_%],
 		[results].[min_duration_recent] [Duration_Min_Recent_Microseconds],
@@ -374,7 +374,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'Duration'
 ,'StdDev'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SQRT( SUM([qsrs].[stdev_duration]*[qsrs].[stdev_duration]*[qsrs].[count_executions])/NULLIF(SUM([qsrs].[count_executions]), 0))),2) [stdev_duration],'
 ,'[results].[duration_regr_perc_recent] [Duration_StdDev_Variation_%],
 		[results].[stdev_duration_recent] [Duration_StdDev_Recent_Microseconds],
@@ -392,7 +392,7 @@ INSERT INTO [dbo].[QDSMetricArchive] ([Measurement], [Metric], [Unit], [SubQuery
 VALUES (
  'Duration'
 ,'Total'
-,'탎'
+,'microseconds'
 ,'ROUND(CONVERT(FLOAT, SUM([qsrs].[avg_duration]*[qsrs].[count_executions])),2) [total_duration],'
 ,'[results].[duration_regr_perc_recent] [Duration_Total_Variation_%],
 		[results].[total_duration_recent] [Duration_Total_Recent_Microseconds],
