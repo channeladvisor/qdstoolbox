@@ -1,0 +1,1 @@
+SELECT TOP(0) FROM [dbo].[query_store_wait_stats_pivoted]

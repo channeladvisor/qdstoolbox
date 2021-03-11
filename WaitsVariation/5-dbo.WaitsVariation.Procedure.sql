@@ -177,7 +177,7 @@ IF (@ServerIdentifier IS NULL)
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
 	SET @DatabaseName = DB_NAME()
 
-IF (@VariationType NOT IN ('R','I'))
+IF ((@VariationType NOT IN ('R','I')) OR @VariationType IS NULL)
 	SET @VariationType = 'R'
 
 IF (@ResultsRowCount IS NULL) OR (@ResultsRowCount < 1)
