@@ -910,7 +910,7 @@ BEGIN
 
 		-- Delete the query from Query Store - START
 		IF (@VerboseMode = 1) PRINT 'Remove query : ' + CAST(@DeleteableQueryID AS VARCHAR(19))
-		SET @UnforcePlanCmd = REPLACE(@RemoveQueryCmdTemplate,	'{@QueryID}',	CAST(@DeleteableQueryID AS NVARCHAR(20)))
+		SET @RemoveQueryCmd = REPLACE(@RemoveQueryCmdTemplate,	'{@QueryID}',	CAST(@DeleteableQueryID AS NVARCHAR(20)))
 		IF (@VerboseMode = 1) PRINT (@RemoveQueryCmd)
 		IF (@TestMode = 0) EXECUTE (@RemoveQueryCmd) 
 		-- Delete the query from Query Store - END
