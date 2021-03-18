@@ -200,7 +200,7 @@ END
 
 
 
-IF NOT EXISTS(SELECT 1 FROM #CheckExistingPlanIDTable)
+IF EXISTS(SELECT 1 FROM #CheckExistingPlanIDTable)
 BEGIN
 	IF (@VerboseMode = 1)
 		RAISERROR('The selected PlanID has previously been analyzed',0,1)
@@ -259,8 +259,8 @@ BEGIN
 			EXECUTE ( @DeletePreviousAnalysis)
 		END
 	END
-	ELSE
-		RETURN
+	
+	RETURN
 END
 DROP TABLE IF EXISTS #CheckAnalyzedPlanIDTable
 -- Check if the PlanID had been already analyzed (delete previous results if @Overwrite = 1) - START
