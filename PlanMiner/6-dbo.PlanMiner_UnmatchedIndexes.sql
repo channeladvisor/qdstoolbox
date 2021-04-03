@@ -5,14 +5,8 @@
 --			not matching those in the indexes
 --
 -- Columns:
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
---
---		[DatabaseName]			SYSNAME			NOT NULL
---			Name of the database this plan's information has been mined out
---
---		[PlanID]				BIGINT			NOT NULL
---			Identifier of the plan this information has been mined out
+--		[PlanMinerID]			BIGINT			NOT NULL
+--			Unique identifier of the mined plan
 --			
 --		[DatabaseNamePlan]		NVARCHAR(128)	NULL
 --			Name of the database where the unmatched index is found
@@ -34,9 +28,7 @@
 DROP TABLE IF EXISTS [dbo].[PlanMiner_UnmatchedIndexes]
 CREATE TABLE [dbo].[PlanMiner_UnmatchedIndexes]
 (
-	 [ServerIdentifier]		SYSNAME			NOT NULL
-	,[DatabaseName]			SYSNAME			NOT NULL
-	,[PlanID]				BIGINT			NOT NULL
+	 [PlanMinerID]			BIGINT			NOT NULL
 	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
 	,[SchemaName]			NVARCHAR(128)	NULL
 	,[TableName]			NVARCHAR(128)	NULL
@@ -44,7 +36,5 @@ CREATE TABLE [dbo].[PlanMiner_UnmatchedIndexes]
 )
 CREATE CLUSTERED INDEX [CIX_PlanMiner_UnmatchedIndexes] ON [dbo].[PlanMiner_UnmatchedIndexes]
 (
-	 [ServerIdentifier]	ASC
-	,[DatabaseName]		ASC
-	,[PlanID]			ASC
+	 [PlanMinerID]		ASC
 )

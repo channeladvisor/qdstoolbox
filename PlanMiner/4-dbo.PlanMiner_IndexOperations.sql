@@ -5,14 +5,8 @@
 --			an operation (node) in the execution plan mined out
 --
 -- Columns:
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
---
---		[DatabaseName]			SYSNAME			NOT NULL
---			Name of the database this plan's information has been mined out
---
---		[PlanID]				BIGINT			NOT NULL
---			Identifier of the plan this information has been mined out
+--		[PlanMinerID]			BIGINT			NOT NULL
+--			Unique identifier of the mined plan
 --			
 --		[NodeID]				INT				NOT NULL
 --			Identifier of the operation (node) this index operation takes place
@@ -63,9 +57,7 @@
 DROP TABLE IF EXISTS [dbo].[PlanMiner_IndexOperations]
 CREATE TABLE [dbo].[PlanMiner_IndexOperations]
 (
-	 [ServerIdentifier]		SYSNAME			NOT NULL
-	,[DatabaseName]			SYSNAME			NOT NULL
-	,[PlanID]				BIGINT			NOT NULL
+	 [PlanMinerID]			BIGINT			NOT NULL
 	,[NodeID]				INT				NOT NULL
 	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
 	,[SchemaName]			NVARCHAR(128)	NULL
@@ -82,8 +74,6 @@ CREATE TABLE [dbo].[PlanMiner_IndexOperations]
 )
 ALTER TABLE [dbo].[PlanMiner_IndexOperations] ADD CONSTRAINT [PK_PlanMiner_IndexOperations] PRIMARY KEY CLUSTERED 
 (
-	 [ServerIdentifier] ASC
-	,[DatabaseName]		ASC
-	,[PlanID]			ASC
-	,[NodeID]			ASC
+	 [PlanMinerID]	ASC
+	,[NodeID]		ASC
 )

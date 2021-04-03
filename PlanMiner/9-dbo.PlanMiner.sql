@@ -1,12 +1,12 @@
 ----------------------------------------------------------------------------------
--- Procedure Name: [dbo].[PlanMiner_FromQDS]
+-- Procedure Name: [dbo].[PlanMiner]
 --
 -- Desc: Analyzes the execution plans for each subquery of the selected Plan
 --
 --
 -- Parameters:
 --	INPUT
---		@ServerIdentifier					-	SYSNAME
+--		@InstanceIdentifier					-	SYSNAME
 --			Identifier assigned to the server
 --			[Default: @@SERVERNAME]
 --
@@ -53,14 +53,10 @@
 --			See [dbo].[PlanMiner_Nodes]
 --			[Default: NULL]
 --
---
 --		@VerboseMode				-	BIT
 --			Flag to enable/disable Verbose messages
 --			[Default: 0]
---		@TestMode					-	BIT
---			Flag to enable/disable Test mode
---			[Default: 0]
---		
+--
 --	OUTPUT
 --		@ReturnMessage					-	NVARCHAR(MAX)
 --			Message explaining the output of the procedure's execution
@@ -69,11 +65,14 @@
 --			>=0 : Analysis completed successfully
 ----------------------------------------------------------------------------------
 
-CREATE OR ALTER PROCEDURE [dbo].[PlanMiner_FromQDS]
+CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
 (
-	 @ServerIdentifier					SYSNAME			=	NULL
+	 @InstanceIdentifier				SYSNAME			=	NULL
 	,@DatabaseName						SYSNAME			=	NULL
 	,@PlanID							BIGINT 			=	NULL
+	,@PlanHandle						VARBINARY(64)	=	NULL
+	,@PlanFile							NVARCHAR(MAX)	=	NULL
+	,@PlanMinerTable_PlanList			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_Columns			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_Cursors			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_IndexOperations	NVARCHAR(800)	=	NULL
@@ -82,20 +81,17 @@ CREATE OR ALTER PROCEDURE [dbo].[PlanMiner_FromQDS]
 	,@PlanMinerTable_Statistics			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_Nodes				NVARCHAR(800)	=	NULL
 
-	,@Overwrite				BIT = 0
 	,@VerboseMode			BIT = 0
-	,@TestMode				BIT = 0
 
-	,@ReturnMessage			NVARCHAR(MAX)	=	NULL	OUTPUT	
-	,@ReturnCode			INT				=	NULL	OUTPUT
+	,@PlanMinerID			BIGINT			=	NULL	OUTPUT
 )
 AS
 BEGIN
 SET NOCOUNT ON
 
 -- Check variables and set defaults - START
-IF (@ServerIdentifier IS NULL)
-	SET @ServerIdentifier = @@SERVERNAME
+IF (@InstanceIdentifier IS NULL)
+	SET @InstanceIdentifier = @@SERVERNAME
 
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
 	SET @DatabaseName = DB_NAME()
@@ -116,173 +112,185 @@ IF (@PlanMinerTable_Nodes			 = '')
 	SET @PlanMinerTable_Nodes				= NULL
 -- Check variables and set defaults - END
 
--- Verify selected PlanID - START
-DROP TABLE IF EXISTS #CheckExistingPlanIDTable
-CREATE TABLE #CheckExistingPlanIDTable
-(
-	 [PlanID]	BIGINT
-	,[PlanXML]	NVARCHAR(MAX)
-)
 
-DECLARE @CheckExistingPlanIDSQL NVARCHAR(MAX) =
-'INSERT INTO #CheckExistingPlanIDTable 
-SELECT [plan_id], [query_plan]
-FROM [{@DatabaseName}].[sys].[query_store_plan] 
-WHERE [plan_id] = {@PlanID}'
-SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@DatabaseName}', @DatabaseName)
-SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@PlanID}', CAST(@PlanID AS NVARCHAR(16)))
-EXECUTE (@CheckExistingPlanIDSQL)
 
-IF NOT EXISTS(SELECT 1 FROM #CheckExistingPlanIDTable)
+-- Verify one and only one source has been selected for the execution plan - START
+IF (@PlanFile IS NULL) AND (@PlanHandle IS NULL) AND (@PlanID IS NULL)
 BEGIN
-	RAISERROR('The selected PlanID does not exist for the given Database',0,1)
+	RAISERROR('No valid source for the execution plan has been provided', 0, 1)
 	RETURN
 END
--- Verify selected PlanID - END
 
--- Check if the PlanID had been already analyzed (delete previous results if @Overwrite = 1) - START
-DROP TABLE IF EXISTS #CheckAnalyzedPlanIDTable
-CREATE TABLE #CheckAnalyzedPlanIDTable
+IF (
+		( (@PlanFile	IS NOT NULL)	AND (@PlanHandle	IS NOT NULL))
+		AND
+		( (@PlanFile	IS NOT NULL)	AND (@PlanID		IS NOT NULL) )
+		AND
+		( (@PlanID		IS NOT NULL)	AND (@PlanHandle	IS NOT NULL) )
+	)
+BEGIN
+	RAISERROR('More than one source for the execution plan has been provided', 0, 1)
+	RETURN
+END
+
+DECLARE @MiningType	NVARCHAR(16)
+IF (@PlanFile IS NOT NULL)
+	SET @MiningType = 'File'
+IF (@PlanHandle IS NOT NULL)
+	SET @MiningType = 'PlanHandle'
+IF (@PlanID IS NOT NULL)
+	SET @MiningType = 'QueryStore'
+-- Verify one and only one source has been selected for the execution plan - END
+
+
+
+-- Obtain the execution plan from either source - START
+DROP TABLE IF EXISTS #QueryPlan
+CREATE TABLE #QueryPlan
 (
-	 [PlanID]	BIGINT
+	[QueryPlan]	NVARCHAR(MAX)
 )
-DECLARE @CheckAnalyzedPlanIDSQLTemplate NVARCHAR(MAX) = 
-'INSERT INTO #CheckAnalyzedPlanIDTable
-SELECT TOP(1) [PlanID] 
-FROM {@AnalysisResults} 
-WHERE [ServerIdentifier] 	= 	''{@ServerIdentifier}''
-AND [DatabaseName] 			= 	''{@DatabaseName}''
-AND [PlanID]				= 	{@PlanID}'
-SET @CheckAnalyzedPlanIDSQLTemplate = REPLACE(@CheckAnalyzedPlanIDSQLTemplate,	'{@ServerIdentifier}', 	@ServerIdentifier)
-SET @CheckAnalyzedPlanIDSQLTemplate = REPLACE(@CheckAnalyzedPlanIDSQLTemplate,	'{@DatabaseName}', 		@DatabaseName)
-SET @CheckAnalyzedPlanIDSQLTemplate = REPLACE(@CheckAnalyzedPlanIDSQLTemplate,	'{@PlanID}', 			CAST(@PlanID AS NVARCHAR(16)))
+DECLARE @QueryPlan NVARCHAR(MAX)
+
+IF (@PlanHandle IS NOT NULL)
+BEGIN
+	INSERT INTO #QueryPlan ([QueryPlan])
+	SELECT CAST([query_plan] AS NVARCHAR(MAX)) FROM [sys].[dm_exec_query_plan](@PlanHandle)  
+END
+
+IF (@PlanFile IS NOT NULL)
+BEGIN
+	EXECUTE ('INSERT INTO #QueryPlan([QueryPlan]) SELECT [BulkColumn] FROM OPENROWSET (BULK '''+@PlanFile+''', SINGLE_BLOB) AS [Plan]')
+END
+
+IF (@PlanID IS NOT NULL)
+BEGIN
+	DECLARE @CheckExistingPlanIDSQL NVARCHAR(MAX) =
+	'INSERT INTO #QueryPlan 
+	SELECT [query_plan]
+	FROM [{@DatabaseName}].[sys].[query_store_plan] 
+	WHERE [plan_id] = {@PlanID}'
+	
+	SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@DatabaseName}', @DatabaseName)
+	SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@PlanID}', CAST(@PlanID AS NVARCHAR(16)))
+	
+	IF (@VerboseMode = 1)
+		PRINT (@CheckExistingPlanIDSQL)
+	EXECUTE (@CheckExistingPlanIDSQL)
+END
+
+SELECT @QueryPlan = [QueryPlan] FROM #QueryPlan
+
+IF (@QueryPlan IS NULL)
+BEGIN
+	RAISERROR('No execution plan could be obtained with the provided input', 0, 1)
+	RETURN
+END
+-- Obtain the execution plan from either source - END
+
+
+
+-- Create an entry for the mined plan - START
+DROP TABLE IF EXISTS #PlanMinerID
+CREATE TABLE #PlanMinerID
+(
+	[PlanMinerID]	BIGINT
+)
+
+DECLARE @NewPlanMinerID NVARCHAR(MAX) =
+'INSERT INTO {@PlanMinerTable_PlanList}
+(
+	 [MiningType]		
+	,[InstanceIdentifier]
+	,[DatabaseName]		
+	,[PlanID]			
+	,[PlanFile]
+)
+VALUES (
+	 {@MiningType}
+	,{@InstanceIdentifier}
+	,{@DatabaseName}
+	,{@PlanID}
+	,{@PlanFile}
+)
+INSERT INTO #PlanMinerID
+(
+	[PlanMinerID]
+)
+SELECT IDENT_CURRENT(''{@PlanMinerTable_PlanList}'')
+'
+
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanMinerTable_PlanList}',	@PlanMinerTable_PlanList)
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@MiningType}',				'''' + @MiningType + '''')
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@InstanceIdentifier}',		'''' + @InstanceIdentifier + '''')
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@DatabaseName}',				'''' + @DatabaseName + '''')
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanID}',					COALESCE(CAST(@PlanID AS NVARCHAR(16)),			'NULL')	)
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanFile}',					COALESCE('''' + @PlanFile +'''',				'NULL')	)
 
 IF (@VerboseMode = 1)
-	PRINT (@CheckAnalyzedPlanIDSQLTemplate)
+	PRINT (@NewPlanMinerID)
+EXECUTE (@NewPlanMinerID)
 
-DECLARE @CheckAnalyzedPlanIDSQL NVARCHAR(MAX)
+SELECT @PlanMinerID = [PlanMinerID] FROM #PlanMinerID
 
-IF 	(@PlanMinerTable_Columns			IS NOT NULL)
+
+-- Add the Plan Handle to @PlanMinerTable_PlanList (when provided) - START
+IF (@PlanHandle IS NOT NULL)
 BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_Columns)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_Cursors			IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_Cursors)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_IndexOperations	IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_IndexOperations)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_MissingIndexes		IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_MissingIndexes)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_UnmatchedIndexes	IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_UnmatchedIndexes)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_Statistics			IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_Statistics)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
-IF 	(@PlanMinerTable_Nodes				IS NOT NULL)
-BEGIN
-	SET @CheckAnalyzedPlanIDSQL = REPLACE(@CheckAnalyzedPlanIDSQLTemplate, '{@AnalysisResults}', @PlanMinerTable_Nodes)
-	EXECUTE ( @CheckAnalyzedPlanIDSQL)
-END
+	DROP TABLE IF EXISTS #PlanHandle
+	CREATE TABLE #PlanHandle
+	(
+		[PlanHandle]	VARBINARY(64)
+	)
+	INSERT INTO #PlanHandle ([PlanHandle]) VALUES (@PlanHandle)
 
-
-
-IF EXISTS(SELECT 1 FROM #CheckExistingPlanIDTable)
-BEGIN
-	IF (@VerboseMode = 1)
-		RAISERROR('The selected PlanID has previously been analyzed',0,1)
-
-	IF(@Overwrite = 1)
-	BEGIN
-		IF (@VerboseMode = 1)
-			RAISERROR('Previous results will be deleted and a new analysis will be performed',0,1)
-
-		DECLARE @DeletePreviousAnalysisTemplate NVARCHAR(MAX) = 
-		'DELETE FROM {@AnalysisResults}
-		WHERE [ServerIdentifier] 	= 	''{@ServerIdentifier}''
-		AND [DatabaseName] 			= 	''{@DatabaseName}''
-		AND [PlanID]				= 	{@PlanID}'
-		SET @DeletePreviousAnalysisTemplate = REPLACE(@DeletePreviousAnalysisTemplate,	'{@ServerIdentifier}', 	@ServerIdentifier)
-		SET @DeletePreviousAnalysisTemplate = REPLACE(@DeletePreviousAnalysisTemplate,	'{@DatabaseName}', 		@DatabaseName)
-		SET @DeletePreviousAnalysisTemplate = REPLACE(@DeletePreviousAnalysisTemplate,	'{@PlanID}', 			CAST(@PlanID AS NVARCHAR(16)))
-
-		IF (@VerboseMode = 1)
-			PRINT (@DeletePreviousAnalysisTemplate)
-
-		DECLARE @DeletePreviousAnalysis NVARCHAR(MAX)
-		IF 	(@PlanMinerTable_Columns			IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_Columns)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_Cursors			IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_Cursors)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_IndexOperations	IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_IndexOperations)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_MissingIndexes		IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_MissingIndexes)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_UnmatchedIndexes	IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_UnmatchedIndexes)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_Statistics			IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_Statistics)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-		IF 	(@PlanMinerTable_Nodes				IS NOT NULL)
-		BEGIN
-			SET @DeletePreviousAnalysis = REPLACE(@DeletePreviousAnalysisTemplate, '{@AnalysisResults}', @PlanMinerTable_Nodes)
-			EXECUTE ( @DeletePreviousAnalysis)
-		END
-	END
+	DECLARE @AddPlanHandle NVARCHAR(MAX) = 
+	'UPDATE {@PlanMinerTable_PlanList}
+	SET [PlanHandle] = (SELECT TOP(1) [PlanHandle] FROM #PlanHandle)
+	WHERE [PlanMinerID] = {@PlanMinerID}'
 	
-	RETURN
+	SET @AddPlanHandle = REPLACE(@AddPlanHandle,	'{@PlanMinerTable_PlanList}',	@PlanMinerTable_PlanList)
+	SET @AddPlanHandle = REPLACE(@AddPlanHandle,	'{@PlanMinerID}',				@PlanMinerID)
+	
+	IF (@VerboseMode = 1)
+		PRINT (@AddPlanHandle)
+	EXECUTE (@AddPlanHandle)
+
+	DROP TABLE IF EXISTS #PlanHandle
 END
-DROP TABLE IF EXISTS #CheckAnalyzedPlanIDTable
--- Check if the PlanID had been already analyzed (delete previous results if @Overwrite = 1) - START
+-- Add the Plan Handle to @PlanMinerTable_PlanList (when provided) - END
+
+
+-- Add the compressed plan to @PlanMinerTable_PlanList - START
+DECLARE @AddCompressedPlan NVARCHAR(MAX) = 
+'UPDATE {@PlanMinerTable_PlanList}
+SET [CompressedPlan] = (SELECT TOP(1) COMPRESS([QueryPlan]) FROM #QueryPlan)
+WHERE [PlanMinerID] = {@PlanMinerID}'
+
+SET @AddCompressedPlan = REPLACE(@AddCompressedPlan,	'{@PlanMinerTable_PlanList}',	@PlanMinerTable_PlanList)
+SET @AddCompressedPlan = REPLACE(@AddCompressedPlan,	'{@PlanMinerID}',				@PlanMinerID)
+
+IF (@VerboseMode = 1)
+	PRINT (@AddCompressedPlan)
+EXECUTE (@AddCompressedPlan)
+-- Add the compressed plan to @PlanMinerTable_PlanList - END
+
+
+DROP TABLE IF EXISTS #PlanMinerID
+DROP TABLE IF EXISTS #QueryPlan
+-- Create an entry for the mined plan - END
+
 
 
 ---------------------------------------------------------
 -- Analysis of the Execution Plan's contents -  START  --
 ---------------------------------------------------------
 
--- Extract execution plan of @DatabaseName's sys.query_store_plan - START
-DECLARE @PlanXML	NVARCHAR(MAX)
-SELECT @PlanXML = [PlanXML] FROM #CheckExistingPlanIDTable
-DROP TABLE IF EXISTS #CheckExistingPlanIDTable
--- Extract execution plan of @DatabaseName's sys.query_store_plan - END
-
-SELECT @PlanXML -- ********
 -- Table to contain the XML data (one line at a time) - START
 DROP TABLE IF EXISTS #XMLContent
 CREATE TABLE #XMLContent
 (
-	 [PlanID]		BIGINT
-	,[LineNumber]	INT
+	 [LineNumber]	INT
 	,[LineContent]	NVARCHAR(MAX)
 )
 CREATE CLUSTERED INDEX [PK_XMLContent] ON #XMLContent ([LineNumber] ASC)
@@ -390,15 +398,15 @@ DECLARE	@LineText	NVARCHAR(MAX)
 -- Loop through each line (reading XML as plain text) - START
 WHILE(@LineNumber = 0 OR (@LineStart <> @LineEnd))
 BEGIN
-	SET @LineStart	= CHARINDEX('<', @PlanXML, @LineEnd)
-	SET @LineEnd	= CHARINDEX('>', @PlanXML, @LineEnd + 1)
-	SET @LineText	= SUBSTRING(@PlanXML,@LineStart, 1 + @LineEnd - @LineStart)
+	SET @LineStart	= CHARINDEX('<', @QueryPlan, @LineEnd)
+	SET @LineEnd	= CHARINDEX('>', @QueryPlan, @LineEnd + 1)
+	SET @LineText	= SUBSTRING(@QueryPlan,@LineStart, 1 + @LineEnd - @LineStart)
 	-- If the line is not a tag closure, insert it into #XMLContent - START
 	IF (CHARINDEX('</','_'+@LineText) = 0)
 	BEGIN
 		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
-		INSERT INTO #XMLContent ([PlanID], [LineNumber], [LineContent])
-		VALUES (@PlanID, @LineNumber, REPLACE(@LineText, '>','/>') )
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, REPLACE(REPLACE(@LineText, '>','/>'), '//', '/') )
 
 		-- Move on to the next line
 		SET @LineNumber = @LineNumber + 1
@@ -409,8 +417,8 @@ BEGIN
 	IF(@LineText = '</RelOp>')
 	BEGIN
 		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
-		INSERT INTO #XMLContent ([PlanID], [LineNumber], [LineContent])
-		VALUES (@PlanID, @LineNumber, '<ExitRelOp/>' )
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, '<ExitRelOp/>' )
 
 		-- Move on to the next line
 		SET @LineNumber = @LineNumber + 1
@@ -419,7 +427,7 @@ BEGIN
 END
 -- Loop through each line (reading XML as plain text) - END
 
-SELECT * FROM #XMLContent -- *****
+
 
 -- Analyze the XML lines that reference specific columns - START
 DECLARE [XMLContentCursor] CURSOR LOCAL FAST_FORWARD
@@ -470,9 +478,8 @@ DECLARE @LogicalOp		NVARCHAR(128)
 
 OPEN [XMLContentCursor]
 FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
-WHILE @@FETCH_STATUS = 0  
+WHILE (@@FETCH_STATUS = 0)
 BEGIN
-
 		-- XML line containing a cursor type - START
 		IF (@XMLContent.exist('/CursorPlan') = 1)
 		BEGIN
@@ -543,13 +550,13 @@ BEGIN
 			BEGIN
 				INSERT INTO #PlanMinerTable_Statistics
 				SELECT 
-					 [DatabaseNamePlan]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Database)[1]',				'NVARCHAR(128)'),']',''),'[','')
-					,[SchemaName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Schema)[1]',				'NVARCHAR(128)'),']',''),'[','')
-					,[TableName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Table)[1]',				'NVARCHAR(128)'),']',''),'[','')
-					,[StatisticsName]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Statistics)[1]',			'NVARCHAR(128)'),']',''),'[','')
-					,[ModificationCount]			=	@XMLContent.value('(/StatisticsInfo/@ModificationCount)[1]',	'BIGINT')
-					,[SamplingPercent]				=	@XMLContent.value('(/StatisticsInfo/@SamplingPercent)[1]',		'FLOAT')
-					,[LastUpdate]					=	@XMLContent.value('(/StatisticsInfo/@LastUpdate)[1]',			'DATETIME2')
+					 [DatabaseNamePlan]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
+					,[SchemaName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Schema)[1]',		'NVARCHAR(128)'),']',''),'[','')
+					,[TableName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Table)[1]',		'NVARCHAR(128)'),']',''),'[','')
+					,[StatisticsName]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Statistics)[1]',	'NVARCHAR(128)'),']',''),'[','')
+					,[ModificationCount]			=	@XMLContent.value('(/StatisticsInfo/@ModificationCount)[1]',			'BIGINT')
+					,[SamplingPercent]				=	@XMLContent.value('(/StatisticsInfo/@SamplingPercent)[1]',				'FLOAT')
+					,[LastUpdate]					=	@XMLContent.value('(/StatisticsInfo/@LastUpdate)[1]',					'DATETIME2')
 			END
 		END
 		-- XML line containing Statistics used - END
@@ -683,7 +690,7 @@ BEGIN
 		)
 		BEGIN
 			SET @IndexOperation = 'ReadWrite'
-			-- Temporaly store the IndexScan parameters to join them to the actal index details - START
+			-- Temporaly store the IndexScan parameters to join them to the actual index details - START
 			SELECT
 				 @Ordered		=	@XMLContent.value('(/IndexScan/@Ordered)[1]',			'BIT')
 				,@ForcedIndex	=	@XMLContent.value('(/IndexScan/@ForcedIndex)[1]',		'BIT')
@@ -691,7 +698,7 @@ BEGIN
 				,@ForcedScan	=	@XMLContent.value('(/IndexScan/@ForceScan)[1]',			'BIT')
 				,@NoExpandHint	=	@XMLContent.value('(/IndexScan/@NoExpandHint)[1]',		'BIT')
 				,@Storage		=	@XMLContent.value('(/IndexScan/@Storage)[1]',			'NVARCHAR(128)')			
-			-- Temporaly store the IndexScan parameters to join them to the actal index details - END
+			-- Temporaly store the IndexScan parameters to join them to the actual index details - END
 		END
 		-- Entering an XML section regarding Scan/Seek Index operations (Level-1 : Parameters for the index operation) - END
 		
@@ -767,19 +774,16 @@ DEALLOCATE [XMLContentCursor]
 -- Analyze the XML lines that reference specific columns - END
 
 
-
 -- Load the data extracted into the definitive tables provided - START
 DECLARE @LoadDataTemplate	NVARCHAR(MAX) =
 'INSERT INTO {@DestinationTable}
 SELECT
-	 ''{@ServerIdentifier}''
-	,''{@DatabaseName}''
-	,{@PlanID}
+	 {@PlanMinerID}
 	,*
 FROM {@SourceTable}'
-SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@ServerIdentifier}',	@ServerIdentifier)
+SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@InstanceIdentifier}',	@InstanceIdentifier)
 SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@DatabaseName}',		@DatabaseName)
-SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@PlanID}',			CAST(@PlanID AS NVARCHAR(16)))
+SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@PlanMinerID}',		CAST(@PlanMinerID AS NVARCHAR(16)))
 
 DECLARE @LoadData			NVARCHAR(MAX)
 
@@ -854,8 +858,7 @@ DROP TABLE IF EXISTS #PlanMinerTable_Nodes
 
 
 
-SET @ReturnMessage = 'Completed successfully'
-SET @ReturnCode = 0
+
 RETURN
 
 END

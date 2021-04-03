@@ -4,14 +4,8 @@
 -- Desc: This table contains the list of columns accessed with a certain execution plan on each of its operations (nodes)
 --
 -- Columns:
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
---
---		[DatabaseName]			SYSNAME			NOT NULL
---			Name of the database this plan's information has been mined out
---
---		[PlanID]				BIGINT			NOT NULL
---			Identifier of the plan this information has been mined out
+--		[PlanMinerID]			BIGINT			NOT NULL
+--			Unique identifier of the mined plan
 --			
 --		[NodeID]				INT				NOT NULL
 --			Node of the execution plan the columns are accessed in
@@ -39,9 +33,7 @@
 DROP TABLE IF EXISTS [dbo].[PlanMiner_Columns]
 CREATE TABLE [dbo].[PlanMiner_Columns]
 (
-	 [ServerIdentifier]	SYSNAME			NOT NULL
-	,[DatabaseName]		SYSNAME			NOT NULL
-	,[PlanID]			BIGINT			NOT NULL
+	 [PlanMinerID]		BIGINT			NOT NULL
 	,[NodeID]			INT				NOT NULL
 	,[DatabaseNamePlan]	NVARCHAR(128)	NULL
 	,[SchemaName]		NVARCHAR(128)	NULL
@@ -50,8 +42,6 @@ CREATE TABLE [dbo].[PlanMiner_Columns]
 )
 CREATE CLUSTERED INDEX [CIX_PlanMiner_Columns] ON [dbo].[PlanMiner_Columns]
 (
-	 [ServerIdentifier]	ASC
-	,[DatabaseName]		ASC
-	,[PlanID]			ASC
-	,[NodeID]			ASC
+	 [PlanMinerID]	ASC
+	,[NodeID]		ASC
 )

@@ -4,14 +4,8 @@
 -- Desc: This table contains the details of each node (operation) of the execution plan
 --
 -- Columns:
---		[ServerIdentifier]				SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
---
---		[DatabaseName]					SYSNAME			NOT NULL
---			Name of the database this plan's information has been mined out
---
---		[PlanID]						BIGINT			NOT NULL
---			Identifier of the plan this information has been mined out
+--		[PlanMinerID]			BIGINT			NOT NULL
+--			Unique identifier of the mined plan
 --			
 --		[CursorOperationType]			NVARCHAR(16)	NOT NULL
 --			Type of cursor operation being executed (when applicable)
@@ -70,9 +64,7 @@
 DROP TABLE IF EXISTS [dbo].[PlanMiner_Nodes]
 CREATE TABLE [dbo].[PlanMiner_Nodes]
 (
-	 [ServerIdentifier]				SYSNAME			NOT NULL
-	,[DatabaseName]					SYSNAME			NOT NULL
-	,[PlanID]						BIGINT			NOT NULL
+	 [PlanMinerID]					BIGINT			NOT NULL
 	,[CursorOperationType]			NVARCHAR(16)	NOT NULL
 	,[NodeID]						INT				NOT NULL
 	,[Depth]						INT				NOT NULL
@@ -92,8 +84,6 @@ CREATE TABLE [dbo].[PlanMiner_Nodes]
 )
 ALTER TABLE [dbo].[PlanMiner_Nodes] ADD CONSTRAINT [PK_PlanMiner_Nodes] PRIMARY KEY CLUSTERED 
 (
-	 [ServerIdentifier]		ASC
-	,[DatabaseName]			ASC
-	,[PlanID]				ASC
-	,[NodeID]				ASC
+	 [PlanMinerID]	ASC
+	,[NodeID]		ASC
 )
