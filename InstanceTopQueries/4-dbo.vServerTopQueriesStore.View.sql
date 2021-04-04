@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
--- Table Name: [dbo].[ServerTopQueriesStore]
+-- View Name: [dbo].[vInstanceTopQueriesStore]
 --
--- Desc: This table is used by the procedure [dbo].[ServerTopQueries] to store the details returned by the execution of [dbo].[ServerTopQueries]
+-- Desc: This view is built on top of [InstanceTopQueriesStore] to extract the details of the top queries identified by the execution of [dbo].[InstanceTopQueries]
 --
 --		[ReportID]				BIGINT			NOT NULL
 --			Unique Identifier for the execution (operations not logged to table have no ReportID)
@@ -62,48 +62,40 @@
 --			Total TempDB space usage of all executions of the corresponding [PlanID] in 8 KB pages
 --			NULL for SQL 2016 (the metric is not registered in this version)
 --
---		[QuerySqlText]			VARBINARY(MAX)	    NULL
---			Query Text (compressed) corresponding to the [PlanID]
+--		[QuerySqlText]			NVARCHAR(MAX)	    NULL
+--			Query Text corresponding to the [PlanID]
 --
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
--- Auth: Pablo Lozano (@sqlozano)
--- Changes:	[LogBytes] and [TempDBSpace] metrics allow NULLs to allow compatibility with SQL 2016 (which did not include this features)
 ----------------------------------------------------------------------------------
 
-IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('dbo.ServerTopQueriesStore') )
-BEGIN
-	CREATE TABLE [dbo].[ServerTopQueriesStore]
-	(
-		 [ReportID]				BIGINT			NOT NULL
-		,[DatabaseName]			SYSNAME			NOT NULL
-		,[PlanID]				BIGINT			NOT NULL
-		,[QueryID]				BIGINT			NOT NULL
-		,[QueryTextID]			BIGINT			NOT NULL
-		,[ObjectID]				BIGINT			NOT NULL
-		,[SchemaName]			SYSNAME			    NULL
-		,[ObjectName]			SYSNAME			    NULL
-		,[ExecutionTypeDesc]	NVARCHAR(120)	NOT NULL
-		,[ExecutionCount]		BIGINT			NOT NULL
-		,[Duration]				BIGINT			NOT NULL
-		,[CPU]					BIGINT			NOT NULL
-		,[LogicalIOReads]		BIGINT			NOT NULL
-		,[LogicalIOWrites]		BIGINT			NOT NULL
-		,[PhysicalIOReads]		BIGINT			NOT NULL
-		,[CLR]					BIGINT			NOT NULL
-		,[Memory]				BIGINT			NOT NULL
-		,[LogBytes]				BIGINT				NULL
-		,[TempDBSpace]			BIGINT				NULL
-		,[QuerySqlText]			VARBINARY(MAX)	    NULL
-	)
-
-	ALTER TABLE [dbo].[ServerTopQueriesStore]
-	ADD CONSTRAINT [PK_ServerTopQueriesStore] PRIMARY KEY CLUSTERED
-	(
-		  [ReportID]			ASC
-		 ,[DatabaseName]		ASC
-		 ,[PlanID]				ASC
-		 ,[ExecutionTypeDesc]	ASC
-	)
-END
+CREATE OR ALTER VIEW [dbo].[vInstanceTopQueriesStore]
+AS
+SELECT
+	 [stqi].[ReportID]
+	,[stqi].[CaptureDate]
+	,[stqi].[InstanceIdentifier]
+	,[stqi].[Measurement]
+	,[stqs].[DatabaseName]
+	,[stqs].[PlanID]
+	,[stqs].[QueryID]
+	,[stqs].[QueryTextID]
+	,[stqs].[ObjectID]
+	,[stqs].[SchemaName]
+	,[stqs].[ObjectName]
+	,[stqs].[ExecutionTypeDesc]
+	,[stqs].[ExecutionCount]
+	,[stqs].[Duration]
+	,[stqs].[CPU]
+	,[stqs].[LogicalIOReads]
+	,[stqs].[LogicalIOWrites]
+	,[stqs].[PhysicalIOReads]
+	,[stqs].[CLR]
+	,[stqs].[Memory]
+	,[stqs].[LogBytes]
+	,[stqs].[TempDBSpace]
+	,CAST(DECOMPRESS([stqs].[QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
+FROM [dbo].[vInstanceTopQueriesIndex] [stqi]
+INNER JOIN [dbo].[InstanceTopQueriesStore] [stqs]
+ON [stqi].[ReportID] = [stqs].[ReportID]

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
--- View Name: [dbo].[vServerTopQueriesIndex]
+-- View Name: [dbo].[vInstanceTopQueriesIndex]
 --
--- Desc: This view is built on top of [dbo].[ServerTopQueriesIndex] to extract the entry parameters used by the executions of [dbo].[ServerTopQueries]
+-- Desc: This view is built on top of [dbo].[InstanceTopQueriesIndex] to extract the entry parameters used by the executions of [dbo].[InstanceTopQueries]
 --
 -- Columns:
 --		[ReportID]				BIGINT			NOT NULL
@@ -10,8 +10,8 @@
 --		[ReportDate]			DATETIME2		NOT NULL
 --			UTC Date of the execution's start
 --
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--		[InstanceIdentifier]		SYSNAME			NOT NULL
+--			Identifier of the instance, so if this data is centralized reports originated on each instance can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the database this operation was executed against
@@ -41,14 +41,17 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
 ----------------------------------------------------------------------------------
 
-CREATE OR ALTER VIEW [dbo].[vServerTopQueriesIndex]
+CREATE OR ALTER VIEW [dbo].[vInstanceTopQueriesIndex]
 AS
 SELECT
 	 [ReportID]
 	,[CaptureDate]
-	,[ServerIdentifier]
+	,[InstanceIdentifier]
 	,[DatabaseName]
 	,q.n.value('StartTime[1]',			'DATETIME2')		AS [StartTime]
 	,q.n.value('EndTime[1]',			'DATETIME2')		AS [EndTime] 
@@ -57,6 +60,6 @@ SELECT
 	,q.n.value('IncludeQueryText[1]',	'BIT')				AS [IncludeQueryText]
 	,q.n.value('ExcludeAdhoc[1]',		'BIT')				AS [ExcludeAdhoc]
 	,q.n.value('ExcludeInternal[1]',	'BIT')				AS [ExcludeInternal]
-FROM [dbo].[ServerTopQueriesIndex] [stqi]
-CROSS APPLY [stqi].[Parameters].nodes('/Root/ServerTopQueriesParameters') AS q(n)
+FROM [dbo].[InstanceTopQueriesIndex] [stqi]
+CROSS APPLY [stqi].[Parameters].nodes('/Root/InstanceTopQueriesParameters') AS q(n)
 GO

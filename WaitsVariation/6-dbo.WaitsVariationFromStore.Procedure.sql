@@ -61,7 +61,7 @@ FROM [dbo].[vWaitsVariationIndex] WHERE [ReportID] = @ReportID
 -- Build query to return the output to the user - START
 DECLARE @SqlCmdIndex NVARCHAR(MAX) = 
 'SELECT
-	 [wvi].[ServerIdentifier]
+	 [wvi].[InstanceIdentifier]
 	,[wvi].[DatabaseName]
 	,[wvi].[WaitType]
 	,[wvi].[Metric]

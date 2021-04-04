@@ -10,8 +10,8 @@
 --		[ReportDate]			DATETIME2		NOT NULL
 --			UTC Date of the execution's start
 --
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--		[InstanceIdentifier]		SYSNAME			NOT NULL
+--			Identifier of the identifier, so if this data is centralized reports originated on each identifier can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the database this operation was executed against
@@ -49,13 +49,16 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
 ----------------------------------------------------------------------------------
 CREATE OR ALTER VIEW [dbo].[vWaitsVariationIndex]
 AS
 SELECT
 	 [ReportID]
 	,[CaptureDate]
-	,[ServerIdentifier]
+	,[InstanceIdentifier]
 	,[DatabaseName]
 	,q.n.value('WaitType[1]',			'NVARCHAR(16)')		AS [WaitType]
 	,q.n.value('Metric[1]',				'NVARCHAR(16)')		AS [Metric] 

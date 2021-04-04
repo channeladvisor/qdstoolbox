@@ -12,7 +12,7 @@ GO
 --
 -- Parameters:
 --	INPUT
---		@ServerIdentifier			SYSNAME			--	Identifier assigned the server.
+--		@InstanceIdentifier			SYSNAME			--	Identifier assigned to the instance.
 --														[Default: @@SERVERNAME]
 --
 --		@DatabaseName				SYSNAME			--	Name of the database apply the QDS cleanup process on
@@ -123,10 +123,14 @@ GO
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	Fixed an error in the dynamic SQL command not properly joining the QDS tables from the target @DatabaseName
 --		 	Added support for SQL 2016
+--
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 (
-	 @ServerIdentifier			SYSNAME			=	NULL
+	 @InstanceIdentifier		SYSNAME			=	NULL
 	,@DatabaseName				SYSNAME			=	NULL
 	,@CleanAdhocStale			BIT				=	0
 	,@CleanStale				BIT				=	1
@@ -155,10 +159,10 @@ BEGIN
 	RETURN -1
 END
 
--- If no @ServerIdentifier is provided, use @@SERVERNAME - START
-IF (@ServerIdentifier IS NULL) OR (@ServerIdentifier = '')
-	SET @ServerIdentifier = @@SERVERNAME
--- If no @ServerIdentifier is provided, use @@SERVERNAME - END
+-- If no @InstanceIdentifier is provided, use @@SERVERNAME - START
+IF (@InstanceIdentifier IS NULL) OR (@InstanceIdentifier = '')
+	SET @InstanceIdentifier = @@SERVERNAME
+-- If no @InstanceIdentifier is provided, use @@SERVERNAME - END
 
 -- If no @DatabaseName is provided, use current one - START
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
@@ -493,7 +497,7 @@ IF (@ReportAsTable = 1)
 BEGIN
 	SELECT 
 		 @ExecutionTime AS [ExecutionTime]
-		,@ServerIdentifier AS [ServerIdentifier]
+		,@InstanceIdentifier AS [InstanceIdentifier]
 		,@DatabaseName AS [DatabaseName]
 		,[QueryType]		
 		,[QueryCount]	
@@ -652,7 +656,7 @@ BEGIN
 	INSERT INTO {@ReportIndexOutputTable} (
 		 [ReportID]
 		,[ReportDate] 
-		,[ServerIdentifier]	
+		,[InstanceIdentifier]	
 		,[DatabaseName]	
 		,[QueryType]		
 		,[QueryCount]	
@@ -667,7 +671,7 @@ BEGIN
 	SELECT 
 		 {@ReportID}
 		,''{@ReportDate}''
-		,''{@ServerIdentifier}''
+		,''{@InstanceIdentifier}''
 		,''{@DatabaseName}''
 		,[QueryType]		
 		,[QueryCount]	
@@ -693,7 +697,7 @@ BEGIN
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportIndexOutputTable}',				@ReportIndexOutputTable)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportID}',				CAST(@ReportID AS NVARCHAR(20)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportDate}',				CAST(@ExecutionTime AS NVARCHAR(34)))
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ServerIdentifier}',		@ServerIdentifier)
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@InstanceIdentifier}',		@InstanceIdentifier)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@DatabaseName}',			@DatabaseName)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanAdhocStale}',		CAST(@CleanAdhocStale AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanStale}',				CAST(@CleanStale AS NVARCHAR(1)))
@@ -823,7 +827,7 @@ BEGIN
 	BEGIN
 		SELECT 
 			 @ExecutionTime AS [ExecutionTime]
-			,@ServerIdentifier AS [ServerIdentifier]
+			,@InstanceIdentifier AS [InstanceIdentifier]
 			,@DatabaseName AS [DatabaseName]
 			,[qdt].[QueryType]
 			,[qdt].[ObjectName]

@@ -1,4 +1,4 @@
-# ServerTopQueries
+# InstanceTopQueries
 This tool provides uses the runtime stats for each database on the server to get a list of the TOP XX queries on each database, ordered by any of the measurements Query Store keeps track off (totals).
 \
 (SQL 2016 does not support @Measurement = 'log_bytes_used' / 'tempdb_space_used')
@@ -6,7 +6,7 @@ This tool provides uses the runtime stats for each database on the server to get
 ### Queries with a high CPU consumption
 Get a list of queries (top 10 per database) along with their query text
 ```
-EXECUTE [dbo].[ServerTopQueries]
+EXECUTE [dbo].[InstanceTopQueries]
 	@Measurement 		= 	'cpu_time,
 	@Top 			= 	10,
 	@IncludeQueryText 	= 	1
@@ -14,10 +14,10 @@ EXECUTE [dbo].[ServerTopQueries]
 ### Queries with highest TempDB usage for a given database
 Store a list with the top 50 queries with the highest TempDB usage for the database Target, along with their query text
 ```
-EXECUTE [dbo].[ServerTopQueries]
+EXECUTE [dbo].[InstanceTopQueries]
 	@DatabaseName		=	'TargetDB',
-	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
-	@ReportTable		=	'dbo.ServerTopQueriesStore',
+	@ReportIndex		=	'dbo.InstanceTopQueriesIndex',
+	@ReportTable		=	'dbo.InstanceTopQueriesStore',
 	@Measurement 		= 	'tempdb_space_used',
 	@Top 			= 	50
 	@IncludeQueryText 	= 	1
@@ -25,10 +25,10 @@ EXECUTE [dbo].[ServerTopQueries]
 ### Aggregate all queries for a particular database, executed in a given data, and store the information
 It is possible to use this tool to aggregate the runtime statistics per hour/day/week/month... to allow some historical data to be stored without impacting the databases' 
 ```
-EXECUTE [dbo].[ServerTopQueries]
+EXECUTE [dbo].[InstanceTopQueries]
 	@DatabaseName		=	'TargetDB',
-	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
-	@ReportTable		=	'dbo.ServerTopQueriesStore',
+	@ReportIndex		=	'dbo.InstanceTopQueriesIndex',
+	@ReportTable		=	'dbo.InstanceTopQueriesStore',
 	@Top 			= 	0,
 	@IncludeQueryText 	= 	0
 ```

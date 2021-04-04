@@ -34,7 +34,7 @@ BEGIN
 	IF((@Version >= 13) AND @Measurement NOT IN ('log_bytes_used','tempdb_space_used'))
 
 	BEGIN
-		EXECUTE [dbo].[ServerTopQueries]
+		EXECUTE [dbo].[InstanceTopQueries]
 			 @DatabaseName		=	'QDSToolBox'
 			,@ReportIndex		=	NULL
 			,@ReportTable		=	NULL
@@ -46,10 +46,10 @@ BEGIN
 			,@ExcludeAdhoc		=	0
 			,@ExcludeInternal	=	0
 
-		EXECUTE [dbo].[ServerTopQueries]
+		EXECUTE [dbo].[InstanceTopQueries]
 			 @DatabaseName		=	'QDSToolBox'
-			,@ReportIndex		=	'[dbo].[ServerTopQueriesIndex]'
-			,@ReportTable		=	'[dbo].[ServerTopQueriesStore]'
+			,@ReportIndex		=	'[dbo].[InstanceTopQueriesIndex]'
+			,@ReportTable		=	'[dbo].[InstanceTopQueriesStore]'
 			,@StartTime			=	'2021-03-01'
 			,@EndTime			=	'2021-03-08'
 			,@Top				=	1
@@ -67,11 +67,11 @@ CLOSE [Measurement_Cursor]
 DEALLOCATE [Measurement_Cursor]
 
 DELETE [i] 
-FROM [dbo].[ServerTopQueriesIndex] [i]
+FROM [dbo].[InstanceTopQueriesIndex] [i]
 INNER JOIN @ReportList [r]
 ON [i].[ReportID] = [r].[ReportID]
 
 DELETE [s] 
-FROM [dbo].[ServerTopQueriesStore] [s]
+FROM [dbo].[InstanceTopQueriesStore] [s]
 INNER JOIN @ReportList [r]
 ON [s].[ReportID] = [r].[ReportID]

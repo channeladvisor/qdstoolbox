@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
--- Table Name: [dbo].[WaitsVariationIndex]
+-- Table Name: [dbo].[InstanceTopQueriesIndex]
 --
--- Desc: This table is used by the procedure [dbo].[WaitsVariation] to store its entry parameters
+-- Desc: This table is used by the procedure [dbo].[InstanceTopQueries] to store its entry parameters
 --
 -- Columns:
 --		[ReportID]				BIGINT			NOT NULL
@@ -10,14 +10,15 @@
 --		[ReportDate]			DATETIME2		NOT NULL
 --			UTC Date of the execution's start
 --
---		[InstanceIdentifier]		SYSNAME			NOT NULL
+--		[InstanceIdentifier]	SYSNAME			NOT NULL
 --			Identifier of the instance, so if this data is centralized reports originated on each instance can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the database this operation was executed against
 --
---		[Parameters]			XML					NULL
---			List of parameters used to invoke the execution of [dbo].[WaitsVariation]
+--		[Parameters]		XML					NULL
+--			List of parameters used to invoke the execution of [dbo].[QueryVariation]
+--
 --
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
@@ -28,8 +29,8 @@
 --			Script now drops & recreates the table
 ----------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS [dbo].[WaitsVariationIndex]
-CREATE TABLE [dbo].[WaitsVariationIndex]
+DROP TABLE IF EXISTS [dbo].[InstanceTopQueriesIndex]
+CREATE TABLE [dbo].[InstanceTopQueriesIndex]
 (
 	 [ReportID]				BIGINT	IDENTITY(1,1)
 	,[CaptureDate]			DATETIME2		NOT NULL
@@ -37,8 +38,8 @@ CREATE TABLE [dbo].[WaitsVariationIndex]
 	,[DatabaseName]			SYSNAME			NOT NULL
 	,[Parameters]			XML				NOT NULL
 )
-ALTER TABLE [dbo].[WaitsVariationIndex]
-ADD CONSTRAINT [PK_WaitsVariationIndex] PRIMARY KEY CLUSTERED
+ALTER TABLE [dbo].[InstanceTopQueriesIndex]
+ADD CONSTRAINT [PK_InstanceTopQueriesIndex] PRIMARY KEY CLUSTERED
 (
 	 [ReportID]	
 )

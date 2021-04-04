@@ -1,24 +1,24 @@
 ----------------------------------------------------------------------------------
--- Procedure Name: [dbo].[ServerTopQueries]
+-- Procedure Name: [dbo].[InstanceTopQueries]
 --
 -- Desc: This script loops all the accessible user DBs (or just the selected one) and gathers the TOP XX queries based on the selected measurement and generates a report
 --
 --
 -- Parameters:
 --	INPUT
---		@ServerIdentifier			SYSNAME			--	Identifier assigned to the server.
+--		@InstanceIdentifier			SYSNAME			--	Identifier assigned to the instance.
 --														[Default: @@SERVERNAME]
 --
 --		@DatabaseName				SYSNAME			--	Name of the database to generate this report on.
---														[Default: NULL, all databases on the server are processed]
+--														[Default: NULL, all databases on the instance are processed]
 --
 --		@ReportIndex				NVARCHAR(800)	--	Table to store the details of the report, such as parameters used, if no results returned to the user are required
 --														[Default: NULL, results returned to user]
---														Table available in dbo.ServerTopQueriesIndex
+--														Table available in dbo.InstanceTopQueriesIndex
 --
 --		@ReportTable				NVARCHAR(800)	--	Table to store the results of the report, if no results returned to the user are required. 
 --														[Default: NULL, results returned to user]
---														Table available in dbo.ServerTopQueriesStore
+--														Table available in dbo.InstanceTopQueriesStore
 --
 --		@StartTime					DATETIME		--	Start time of the period to analyze, in UTC format.
 --														[Default: DATEADD(HOUR,-1,GETUTCDATE()]
@@ -68,9 +68,9 @@
 --			Execution in SQL 2016 will return NULL for the measures not included in this version (log_bytes_used & tempdb_space_used)
 ----------------------------------------------------------------------------------
 
-CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
+CREATE OR ALTER PROCEDURE [dbo].[InstanceTopQueries]
 (
-	 @ServerIdentifier		SYSNAME			= NULL
+	 @InstanceIdentifier	SYSNAME			= NULL
 	,@DatabaseName			SYSNAME			= NULL
 	,@ReportIndex			NVARCHAR(800)	= NULL
 	,@ReportTable			NVARCHAR(800)	= NULL
@@ -93,7 +93,7 @@ SET NOCOUNT ON
 DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
 IF (@Version < 13)
 BEGIN
-	RAISERROR(N'[dbo].[ServerTopQueries] requires SQL 2016 or higher',16,1)
+	RAISERROR(N'[dbo].[InstanceTopQueries] requires SQL 2016 or higher',16,1)
 	RETURN -1
 END
 -- Raise an error if the @Measurement selected is not available in SQL 2016
@@ -104,8 +104,8 @@ BEGIN
 END
 
 -- Check variables and set defaults - START
-IF (@ServerIdentifier IS NULL)
-	SET @ServerIdentifier = @@SERVERNAME
+IF (@InstanceIdentifier IS NULL)
+	SET @InstanceIdentifier = @@SERVERNAME
 
 IF (@StartTime IS NULL) OR (@EndTime IS NULL)
 BEGIN
@@ -185,8 +185,8 @@ DECLARE @dbs TABLE
 -- Define databases in scope for the report - END
 
 -- Definition of temp table to store the reports for each database - START
-DROP TABLE IF EXISTS #ServerTopQueriesStore
-CREATE TABLE #ServerTopQueriesStore
+DROP TABLE IF EXISTS #InstanceTopQueriesStore
+CREATE TABLE #InstanceTopQueriesStore
 (
 	[DatabaseName]			SYSNAME			NOT NULL,
 	[PlanID]				BIGINT			NOT NULL,
@@ -252,7 +252,7 @@ WHERE
 GROUP BY [qsrs].[plan_id], [qsp].[query_id], [qsq].[query_text_id], [obs].[schema_id], [obs].[object_id], [qsrs].[execution_type_desc]
 )
  
-INSERT INTO #ServerTopQueriesStore
+INSERT INTO #InstanceTopQueriesStore
 SELECT
     {@Top}
     ''{@DatabaseName}''
@@ -329,7 +329,7 @@ FROM [dbdata]
 -- Query to extract the details for any given @DatabaseName - END 
  
  
--- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - START
+-- Loop through all the databases in scope to load their details into #InstanceTopQueriesStore - START
 DECLARE @CurrentDBTable TABLE(
     DatabaseName  SYSNAME
 )
@@ -345,7 +345,7 @@ BEGIN
     IF (@VerboseMode = 1)	PRINT	(@SqlCommand2PopulateTempTable)
 	IF (@TestMode = 0)		EXECUTE	(@SqlCommand2PopulateTempTable)
 END
--- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - END
+-- Loop through all the databases in scope to load their details into #InstanceTopQueriesStore - END
 
 
 -- Output to user - START
@@ -371,7 +371,7 @@ BEGIN
 	,[log_bytes_used]									AS [LogBytesUsed]
 	,[tempdb_space_used]								AS [TempDB]
 	,CAST(DECOMPRESS([QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
-	FROM #ServerTopQueriesStore
+	FROM #InstanceTopQueriesStore
 	ORDER BY {@Measurement} DESC'
 	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@Measurement}', QUOTENAME(@Measurement))
 	IF (@VerboseMode = 1)	PRINT (@SqlCmd2User)
@@ -382,18 +382,18 @@ END
 -- Output to table - START
 IF (@ReportTable IS NOT NULL) AND (@ReportTable <> '') AND (@ReportIndex IS NOT NULL) AND (@ReportIndex <> '')
 BEGIN
-	-- Log report entry in [dbo].[ServerLoadIndex] - START
+	-- Log report entry in [dbo].[InstanceLoadIndex] - START
 	DECLARE @SqlCmdIndex NVARCHAR(MAX) =
 	'INSERT INTO {@ReportIndex}
 	(
 		[CaptureDate],
-		[ServerIdentifier],
+		[InstanceIdentifier],
 		[DatabaseName],
 		[Parameters]
 	)
 	SELECT
 		SYSUTCDATETIME(),
-		''{@ServerIdentifier}'',
+		''{@InstanceIdentifier}'',
 		''{@DatabaseName}'',
 		(
 		SELECT
@@ -404,11 +404,11 @@ BEGIN
 			{@IncludeQueryText}		AS [IncludeQueryText],
 			{@ExcludeAdhoc}			AS [ExcludeAdhoc],
 			{@ExcludeInternal}		AS [ExcludeInternal]
-		FOR XML PATH(''ServerTopQueriesParameters''), ROOT(''Root'')
+		FOR XML PATH(''InstanceTopQueriesParameters''), ROOT(''Root'')
 		)	AS [Parameters]'
 
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',			@ReportIndex)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',		@ServerIdentifier)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@InstanceIdentifier}',		@InstanceIdentifier)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',			ISNULL(@DatabaseName,'*'))
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
@@ -422,7 +422,7 @@ BEGIN
 	IF (@TestMode = 0)		EXEC (@SqlCmdIndex)
 
 	SET @ReportID = IDENT_CURRENT(@ReportIndex)
-	-- Log report entry in [dbo].[ServerLoadIndex] - END
+	-- Log report entry in [dbo].[InstanceLoadIndex] - END
 
 
 	DECLARE @SqlCmd2Table NVARCHAR(MAX) = 'INSERT INTO {@ReportTable}
@@ -447,7 +447,7 @@ BEGIN
 		[log_bytes_used],
 		[tempdb_space_used],
 		[QuerySqlText]	
-	FROM #ServerTopQueriesStore'
+	FROM #InstanceTopQueriesStore'
 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportTable}',		@ReportTable) 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportID}',			@ReportID) 
@@ -457,7 +457,7 @@ BEGIN
 END
 -- Output to table - END
 
-DROP TABLE IF EXISTS #ServerTopQueriesStore
+DROP TABLE IF EXISTS #InstanceTopQueriesStore
 
 RETURN
 END

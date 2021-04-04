@@ -10,8 +10,8 @@
 --		[ReportDate]			DATETIME2		NOT NULL
 --			UTC Date of the execution's start
 --
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--		[InstanceIdentifier]	SYSNAME			NOT NULL
+--			Identifier of the instance, so if this data is centralized reports originated on each instance can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the database this operation was executed against
@@ -37,26 +37,28 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
+--			Script now drops & recreates the table
 ----------------------------------------------------------------------------------
 
-IF NOT EXISTS (SELECT 1 FROM [sys].[objects] WHERE [object_id] = OBJECT_ID('dbo.QueryWaitsIndex') )
-BEGIN
-	CREATE TABLE [dbo].[QueryWaitsIndex]
-	(
-		[ReportID]				BIGINT	IDENTITY(1,1),
-		[CaptureDate]			DATETIME2		NOT NULL,
-		[ServerIdentifier]		SYSNAME			NOT NULL,
-		[DatabaseName]			SYSNAME			NOT NULL,
-		[ObjectID]				BIGINT			NOT NULL,
-		[SchemaName]			NVARCHAR(128)	NOT NULL,
-		[ObjectName]			NVARCHAR(128)	NOT NULL,
-		[QueryTextID]			BIGINT			NOT NULL,
-		[QueryText]				VARBINARY(MAX)	NULL,
-		[Parameters]			XML				NOT NULL,
-	) 
-	ALTER TABLE [dbo].[QueryWaitsIndex]
-	ADD CONSTRAINT [PK_QueryWaitsIndex] PRIMARY KEY CLUSTERED
-	(
-		 [ReportID]	
-	)
-END
+DROP TABLE IF EXISTS [dbo].[QueryWaitsIndex]
+CREATE TABLE [dbo].[QueryWaitsIndex]
+(
+	[ReportID]				BIGINT	IDENTITY(1,1),
+	[CaptureDate]			DATETIME2		NOT NULL,
+	[InstanceIdentifier]	SYSNAME			NOT NULL,
+	[DatabaseName]			SYSNAME			NOT NULL,
+	[ObjectID]				BIGINT			NOT NULL,
+	[SchemaName]			NVARCHAR(128)	NOT NULL,
+	[ObjectName]			NVARCHAR(128)	NOT NULL,
+	[QueryTextID]			BIGINT			NOT NULL,
+	[QueryText]				VARBINARY(MAX)	NULL,
+	[Parameters]			XML				NOT NULL,
+) 
+ALTER TABLE [dbo].[QueryWaitsIndex]
+ADD CONSTRAINT [PK_QueryWaitsIndex] PRIMARY KEY CLUSTERED
+(
+	 [ReportID]	
+)

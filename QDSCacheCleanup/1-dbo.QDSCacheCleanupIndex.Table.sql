@@ -10,8 +10,8 @@
 --		[ReportDate]			DATETIME2		NOT NULL
 --			UTC Date of the execution's start
 --
---		[ServerIdentifier]		SYSNAME			NOT NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--		[InstanceIdentifier]	SYSNAME			NOT NULL
+--			Identifier of the instance, so if this data is centralized reports originated on each instance can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the database this operation was executed against
@@ -46,6 +46,9 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
 ----------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS [dbo].[QDSCacheCleanupIndex]
@@ -53,7 +56,7 @@ CREATE TABLE [dbo].[QDSCacheCleanupIndex]
 (
 	 [ReportID]				BIGINT			NOT NULL
 	,[ReportDate]			DATETIME2		NOT NULL
-	,[ServerIdentifier]		SYSNAME			NOT NULL
+	,[InstanceIdentifier]	SYSNAME			NOT NULL
 	,[DatabaseName]			SYSNAME			NOT NULL
 	,[QueryType]			NVARCHAR(16)	NOT	NULL
 	,[QueryCount]			BIGINT				NULL

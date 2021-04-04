@@ -6,7 +6,7 @@
 --
 -- Parameters:
 --	INPUT
---		@ServerIdentifier			SYSNAME			--	Identifier assigned to the server.
+--		@InstanceIdentifier			SYSNAME			--	Identifier assigned to the instance.
 --														[Default: @@SERVERNAME]
 --
 --		@DatabaseName				SYSNAME			--	Name of the database to generate this report on.
@@ -137,10 +137,14 @@
 -- Date: 2021.02.28
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	Execution in SQL 2016 will thrown an error (this component was enabled first in SQL 2017)
+--
+-- Date: 2021.04.04
+-- Auth: Pablo Lozano (@sqlozano)
+--			Replaced "server" references to the more accurate term "instance"
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]
 (
-	@ServerIdentifier		SYSNAME			=	NULL,	
+	@InstanceIdentifier		SYSNAME			=	NULL,	
 	@DatabaseName			SYSNAME			=	NULL,
 	@ReportIndex			NVARCHAR(800)	=	NULL,
 	@ReportTable			NVARCHAR(800)	=	NULL,
@@ -171,8 +175,8 @@ BEGIN
 END
 
 -- Check variables and set defaults - START
-IF (@ServerIdentifier IS NULL)
-	SET @ServerIdentifier = @@SERVERNAME
+IF (@InstanceIdentifier IS NULL)
+	SET @InstanceIdentifier = @@SERVERNAME
 
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
 	SET @DatabaseName = DB_NAME()
@@ -863,13 +867,13 @@ BEGIN
 	'INSERT INTO {@ReportIndex}
 	(
 		[CaptureDate],
-		[ServerIdentifier],
+		[InstanceIdentifier],
 		[DatabaseName],
 		[Parameters]
 	)
 	SELECT
 		SYSUTCDATETIME(),
-		''{@ServerIdentifier}'',
+		''{@InstanceIdentifier}'',
 		''{@DatabaseName}'',
 		(
 		SELECT
@@ -888,7 +892,7 @@ BEGIN
 		)	AS [Parameters]'
 
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',		@ReportIndex)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',	@ServerIdentifier)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@InstanceIdentifier}',	@InstanceIdentifier)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',		@DatabaseName)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@WaitType}',			@WaitType)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Metric}',			@Metric)

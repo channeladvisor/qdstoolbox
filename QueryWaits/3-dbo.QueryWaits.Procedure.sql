@@ -11,7 +11,7 @@ GO
 --
 -- Parameters:
 --	INPUT
---		@ServerIdentifier			SYSNAME			--	Identifier assigned to the server.
+--		@InstanceIdentifier			SYSNAME			--	Identifier assigned to the instance.
 --														[Default: @@SERVERNAME]
 --
 --		@DatabaseName				SYSNAME			--	Name of the database to generate this report on.
@@ -91,7 +91,7 @@ GO
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 (
-	 @ServerIdentifier		SYSNAME			= NULL	
+	 @InstanceIdentifier		SYSNAME			= NULL	
 	,@DatabaseName			SYSNAME			= NULL
 	,@ReportIndex			NVARCHAR(800)	= NULL
 	,@ReportTable			NVARCHAR(800)	= NULL
@@ -118,8 +118,8 @@ BEGIN
 END
 
 -- Check variables and set defaults - START
-IF (@ServerIdentifier IS NULL)
-	SET @ServerIdentifier = @@SERVERNAME
+IF (@InstanceIdentifier IS NULL)
+	SET @InstanceIdentifier = @@SERVERNAME
 
 -- If no @DatabaseName is provided, set it to DB_NAME() - START
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
@@ -456,7 +456,7 @@ BEGIN
 	'INSERT INTO {@ReportIndex}
 	(
 		[CaptureDate],
-		[ServerIdentifier],
+		[InstanceIdentifier],
 		[DatabaseName],
 		[ObjectID],
 		[SchemaName],
@@ -467,7 +467,7 @@ BEGIN
 	)
 	SELECT TOP(1)
 		SYSUTCDATETIME(),
-		''{@ServerIdentifier}'',
+		''{@InstanceIdentifier}'',
 		''{@DatabaseName}'',
 		COALESCE([wd].[ObjectID],0),
 		COALESCE([wd].[SchemaName],''''),
@@ -489,15 +489,15 @@ BEGIN
 		ON [wd].[ObjectID] = [wd].[ObjectID]
 		{@QueryTextIDClause}'
 
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',		@ReportIndex)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',	@ServerIdentifier)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',		@DatabaseName)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ObjectName}',		ISNULL(@ObjectName, ''))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@PlanID}',			ISNULL(@PlanID, 0))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@QueryID}',			ISNULL(@QueryID, 0))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',		CAST(@StartTime AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',			CAST(@EndTime AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',	CAST(@IncludeQueryText AS NVARCHAR(1)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',			@ReportIndex)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@InstanceIdentifier}',	@InstanceIdentifier)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',			@DatabaseName)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ObjectName}',			ISNULL(@ObjectName, ''))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@PlanID}',				ISNULL(@PlanID, 0))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@QueryID}',				ISNULL(@QueryID, 0))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',		CAST(@IncludeQueryText AS NVARCHAR(1)))
 
 	DECLARE @QueryTextID	BIGINT
 	CREATE TABLE #QueryTextID
