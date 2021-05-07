@@ -11,8 +11,8 @@ this tool analyzes all the statistics involved in the generation of its plans, a
 Analyze the execution plans used by the specificed Query ID, highlighting the statistics with a modification rate higher than 10% and not updated in the last 24 hours:
 ``` 
 EXECUTE [dbo].[StatisticsUsed]
-	 @DatabaseName	=	'TargetDB'
-	,@QueryID	=	32131
+	 @DatabaseName		=	'TargetDB'
+	,@QueryID		=	32131
 	,@ExpirationThreshold	=	1400
 	,@ModificationThreshold	=	10
 ```
@@ -20,8 +20,8 @@ EXECUTE [dbo].[StatisticsUsed]
 Analyze the execution plans used by any of the list of Query IDs provided, highlighting the statistics with a modification rate higher than 25% and not updated in the last 60 minutes:
 ``` 
 EXECUTE [dbo].[StatisticsUsed]
-	 @DatabaseName	=	'TargetDB'
-	,@QueryIDList	=	'32131,3214,32133'
+	 @DatabaseName		=	'TargetDB'
+	,@QueryIDList		=	'32131,3214,32133'
 	,@ExpirationThreshold	=	60
 	,@ModificationThreshold	=	25
 ```
@@ -29,8 +29,8 @@ EXECUTE [dbo].[StatisticsUsed]
 Analyze the execution plans used by the specified pbject, highlighting the statistics with a modification rate higher than 5% and not updated in the last 5 hours and ensuring the new sample rate calculated will be persisted:
 ``` 
 EXECUTE [dbo].[StatisticsUsed]
-	 @DatabaseName	=	'TargetDB'
-	,@ObjectName	=	'dbo.Procedure'
+	 @DatabaseName		=	'TargetDB'
+	,@ObjectName		=	'dbo.Procedure'
 	,@ExpirationThreshold	=	300
 	,@ModificationThreshold	=	5
 	,@PersistSamplePercent	=	1
