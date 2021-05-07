@@ -7,6 +7,9 @@
 --		[PlanMinerID]			BIGINT			NOT NULL
 --			Unique identifier of the mined plan
 --
+--		[StatementID]			INT				NOT NULL
+--			Identifier of the statement that required the analysis of this statistics
+--
 --		[DatabaseNamePlan]		NVARCHAR(128)	NULL
 --			Name of the database the used statistics column belongs to (when applicable)
 --			
@@ -40,6 +43,7 @@ DROP TABLE IF EXISTS [dbo].[PlanMiner_Statistics]
 CREATE TABLE [dbo].[PlanMiner_Statistics]
 (
 	 [PlanMinerID]			BIGINT			NOT NULL
+	,[StatementID]			INT				NOT NULL
 	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
 	,[SchemaName]			NVARCHAR(128)	NULL
 	,[TableName]			NVARCHAR(128)	NULL
@@ -55,6 +59,7 @@ CREATE CLUSTERED INDEX [CIX_PlanMiner_Statistics] ON [dbo].[PlanMiner_Statistics
 CREATE NONCLUSTERED INDEX [NCIX_PlanMiner_Statistics] ON [dbo].[PlanMiner_Statistics]
 (
 	 [PlanMinerID]		ASC
+	,[StatementID]		ASC
 	,[DatabaseNamePlan]	ASC
 	,[SchemaName]		ASC
 	,[TableName]		ASC

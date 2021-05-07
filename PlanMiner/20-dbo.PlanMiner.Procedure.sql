@@ -18,39 +18,57 @@
 --			Identifier of the plan this information has been mined out
 --			[Default: NULL]
 --
---		@PlanMinerTable_Columns				-	NVARCHAR(800)
---			Table to stores the list of columns accessed with a certain execution plan on each of its operations (nodes)
---			See [dbo].[PlanMiner_Columns]
---			[Default: NULL]
+--		@PlanMinerTable_PlanList			-	NVARCHAR(800)
+--			Table to stores the list of plans analyzed, along with a copy of the plan itself
+--			See [dbo].[PlanMiner_PlanList]
+--			[Default: None, mandatory]
 --
---		@PlanMinerTable_Cursors				-	NVARCHAR(800)
---			Table to store the information about the cursor found in the execution plan (when applicable)
---			See [dbo].[PlanMiner_Cursors]
---			[Default: NULL]
---
---		@PlanMinerTable_IndexOperations		-	NVARCHAR(800)
---			Table to store the information about the index operations (scan, seek, update, delete...) performed
---			See [dbo].[PlanMiner_IndexOperations]
+--		@PlanMinerTable_Statements			-	NVARCHAR(800)
+--			Table to stores the statements that are included in the execution plan
+--			If not provided, this information won't be stored
+--			See [dbo].[PlanMiner_Statements]
 --			[Default: NULL]
 --
 --		@PlanMinerTable_MissingIndexes		-	NVARCHAR(800)
 --			Table to store the details of the indexes the SQL engine consideres could improve its performance
+--			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_MissingIndexes]
 --			[Default: NULL]
 --
 --		@PlanMinerTable_UnmatchedIndexes	-	NVARCHAR(800)
 --			Table to store the information about the filtered indexes not used due to the parameters in the WHERE clause not matching those in the indexes
+--			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_UnmatchedIndexes]
---			[Default: NULL]
---
---		@PlanMinerTable_Statistics			-	NVARCHAR(800)
---			Table to store the list of statistics used by the SQL Engine to elaborate this execution plan
---			See [dbo].[PlanMiner_Statistics]
 --			[Default: NULL]
 --
 --		@PlanMinerTable_Nodes				-	NVARCHAR(800)
 --			Table to store the details of each node (operation) of the execution plan
+--			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Nodes]
+--			[Default: NULL]
+--
+--		@PlanMinerTable_Cursors				-	NVARCHAR(800)
+--			Table to store the information about the cursor found in the execution plan (when applicable)
+--			If not provided, this information won't be stored
+--			See [dbo].[PlanMiner_Cursors]
+--			[Default: NULL]
+--
+--		@PlanMinerTable_IndexOperations		-	NVARCHAR(800)
+--			Table to store the information about the index operations (scan, seek, update, delete...) performed
+--			If not provided, this information won't be stored
+--			See [dbo].[PlanMiner_IndexOperations]
+--			[Default: NULL]
+--
+--		@PlanMinerTable_Columns				-	NVARCHAR(800)
+--			Table to stores the list of columns accessed with a certain execution plan on each of its operations (nodes)
+--			If not provided, this information won't be stored
+--			See [dbo].[PlanMiner_Columns]
+--			[Default: NULL]
+--
+--		@PlanMinerTable_Statistics			-	NVARCHAR(800)
+--			Table to store the list of statistics used by the SQL Engine to elaborate this execution plan
+--			If not provided, this information won't be stored
+--			See [dbo].[PlanMiner_Statistics]
 --			[Default: NULL]
 --
 --		@VerboseMode				-	BIT
@@ -72,14 +90,15 @@ CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
 	,@PlanID							BIGINT 			=	NULL
 	,@PlanHandle						VARBINARY(64)	=	NULL
 	,@PlanFile							NVARCHAR(MAX)	=	NULL
-	,@PlanMinerTable_PlanList			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Columns			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Cursors			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_IndexOperations	NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_PlanList			NVARCHAR(800)
+	,@PlanMinerTable_Statements			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_MissingIndexes		NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_UnmatchedIndexes	NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Statistics			NVARCHAR(800)	=	NULL
 	,@PlanMinerTable_Nodes				NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_Cursors			NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_IndexOperations	NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_Columns			NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_Statistics			NVARCHAR(800)	=	NULL
 
 	,@VerboseMode			BIT = 0
 
@@ -96,20 +115,22 @@ IF (@InstanceIdentifier IS NULL)
 IF (@DatabaseName IS NULL) OR (@DatabaseName = '')
 	SET @DatabaseName = DB_NAME()
 
-IF (@PlanMinerTable_Columns			 = '')
-	SET @PlanMinerTable_Columns				= NULL
-IF (@PlanMinerTable_Cursors			 = '')
-	SET @PlanMinerTable_Cursors				= NULL
-IF (@PlanMinerTable_IndexOperations	 = '')
-	SET @PlanMinerTable_IndexOperations		= NULL
+IF (@PlanMinerTable_Statements		 = '')
+	SET @PlanMinerTable_Statements			= NULL
 IF (@PlanMinerTable_MissingIndexes	 = '')
 	SET @PlanMinerTable_MissingIndexes		= NULL
 IF (@PlanMinerTable_UnmatchedIndexes = '')
 	SET @PlanMinerTable_UnmatchedIndexes	= NULL
-IF (@PlanMinerTable_Statistics		 = '')
-	SET @PlanMinerTable_Statistics			= NULL
 IF (@PlanMinerTable_Nodes			 = '')
 	SET @PlanMinerTable_Nodes				= NULL
+IF (@PlanMinerTable_Cursors			 = '')
+	SET @PlanMinerTable_Cursors				= NULL
+IF (@PlanMinerTable_IndexOperations	 = '')
+	SET @PlanMinerTable_IndexOperations		= NULL
+IF (@PlanMinerTable_Columns			 = '')
+	SET @PlanMinerTable_Columns				= NULL
+IF (@PlanMinerTable_Statistics		 = '')
+	SET @PlanMinerTable_Statistics			= NULL
 -- Check variables and set defaults - END
 
 
@@ -123,9 +144,9 @@ END
 
 IF (
 		( (@PlanFile	IS NOT NULL)	AND (@PlanHandle	IS NOT NULL))
-		AND
+		OR
 		( (@PlanFile	IS NOT NULL)	AND (@PlanID		IS NOT NULL) )
-		AND
+		OR
 		( (@PlanID		IS NOT NULL)	AND (@PlanHandle	IS NOT NULL) )
 	)
 BEGIN
@@ -133,7 +154,7 @@ BEGIN
 	RETURN
 END
 
-DECLARE @MiningType	NVARCHAR(16)
+DECLARE @MiningType	NVARCHAR(128)
 IF (@PlanFile IS NOT NULL)
 	SET @MiningType = 'File'
 IF (@PlanHandle IS NOT NULL)
@@ -160,7 +181,7 @@ END
 
 IF (@PlanFile IS NOT NULL)
 BEGIN
-	EXECUTE ('INSERT INTO #QueryPlan([QueryPlan]) SELECT [BulkColumn] FROM OPENROWSET (BULK '''+@PlanFile+''', SINGLE_BLOB) AS [Plan]')
+	EXECUTE ('INSERT INTO #QueryPlan([QueryPlan]) SELECT CAST(TRY_CONVERT(XML, [BulkColumn]) AS NVARCHAR(MAX)) FROM OPENROWSET (BULK '''+@PlanFile+''', SINGLE_BLOB) AS [Plan]')
 END
 
 IF (@PlanID IS NOT NULL)
@@ -172,7 +193,7 @@ BEGIN
 	WHERE [plan_id] = {@PlanID}'
 	
 	SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@DatabaseName}', @DatabaseName)
-	SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@PlanID}', CAST(@PlanID AS NVARCHAR(16)))
+	SET @CheckExistingPlanIDSQL = REPLACE(@CheckExistingPlanIDSQL, '{@PlanID}', CAST(@PlanID AS NVARCHAR(128)))
 	
 	IF (@VerboseMode = 1)
 		PRINT (@CheckExistingPlanIDSQL)
@@ -224,7 +245,7 @@ SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanMinerTable_PlanList}',	@Pl
 SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@MiningType}',				'''' + @MiningType + '''')
 SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@InstanceIdentifier}',		'''' + @InstanceIdentifier + '''')
 SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@DatabaseName}',				'''' + @DatabaseName + '''')
-SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanID}',					COALESCE(CAST(@PlanID AS NVARCHAR(16)),			'NULL')	)
+SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanID}',					COALESCE(CAST(@PlanID AS NVARCHAR(128)),			'NULL')	)
 SET @NewPlanMinerID	=	REPLACE(@NewPlanMinerID,	'{@PlanFile}',					COALESCE('''' + @PlanFile +'''',				'NULL')	)
 
 IF (@VerboseMode = 1)
@@ -298,48 +319,25 @@ CREATE CLUSTERED INDEX [PK_XMLContent] ON #XMLContent ([LineNumber] ASC)
 
 
 -- Temp tables to store the data before the transfer to final table - START
-DROP TABLE IF EXISTS #PlanMinerTable_Columns
-DROP TABLE IF EXISTS #PlanMinerTable_Cursors
-DROP TABLE IF EXISTS #PlanMinerTable_IndexOperations
+DROP TABLE IF EXISTS #PlanMinerTable_Statements
 DROP TABLE IF EXISTS #PlanMinerTable_MissingIndexes
 DROP TABLE IF EXISTS #PlanMinerTable_UnmatchedIndexes
-DROP TABLE IF EXISTS #PlanMinerTable_Statistics
 DROP TABLE IF EXISTS #PlanMinerTable_Nodes
-CREATE TABLE #PlanMinerTable_Columns
+DROP TABLE IF EXISTS #PlanMinerTable_Cursors
+DROP TABLE IF EXISTS #PlanMinerTable_IndexOperations
+DROP TABLE IF EXISTS #PlanMinerTable_Columns
+DROP TABLE IF EXISTS #PlanMinerTable_Statistics
+CREATE TABLE #PlanMinerTable_Statements
 (
-	 [NodeID]				INT				NOT NULL
-	,[DatabaseNameColumn]	NVARCHAR(128)	NULL
-	,[SchemaName]			NVARCHAR(128)	NULL
-	,[TableName]			NVARCHAR(128)	NULL
-	,[ColumnName]			NVARCHAR(128)	NOT NULL
-)
-CREATE TABLE #PlanMinerTable_Cursors
-(
-	 [CursorName]			NVARCHAR(128)	NULL
-	,[CursorActualType]		NVARCHAR(128)	NULL
-	,[CursorRequestedType]	NVARCHAR(128)	NULL
-	,[CursorConcurrency]	NVARCHAR(128)	NULL
-	,[ForwardOnly]			BIT				NULL
-)
-CREATE TABLE #PlanMinerTable_IndexOperations
-(
-	 [NodeID]			INT				NOT NULL
-	,[DatabaseNamePlan]	NVARCHAR(128)	NULL
-	,[SchemaName]		NVARCHAR(128)	NULL
-	,[TableName]		NVARCHAR(128)	NULL
-	,[IndexName]		NVARCHAR(128)	NULL
-	,[IndexKind]		NVARCHAR(128)	NULL
-	,[LogicalOp]		NVARCHAR(128)	NULL
-	,[Ordered]			BIT				NULL
-	,[ForcedIndex]		BIT				NULL
-	,[ForceSeek]		BIT				NULL
-	,[ForceScan]		BIT				NULL
-	,[NoExpandHint]		BIT				NULL
-	,[Storage]			NVARCHAR(128)	NULL
+	 [StatementID]			INT				NOT NULL
+	,[StatementCategory]	NVARCHAR(128)	NOT NULL
+	,[StatementType]		NVARCHAR(128)	NOT NULL
+	,[CompressedText]		VARBINARY(MAX)	NULL
 )
 CREATE TABLE #PlanMinerTable_MissingIndexes
 (
-	 [MissingIndexID]	INT				NOT NULL
+	 [StatementID]		INT				NOT NULL
+	,[MissingIndexID]	INT				NOT NULL
 	,[Impact]			FLOAT			NULL
 	,[DatabaseNamePlan]	NVARCHAR(128)	NULL
 	,[SchemaName]		NVARCHAR(128)	NULL
@@ -349,26 +347,18 @@ CREATE TABLE #PlanMinerTable_MissingIndexes
 )
 CREATE TABLE #PlanMinerTable_UnmatchedIndexes
 (
-	 [DatabaseNamePlan]		NVARCHAR(128)	NULL
+	 [StatementID]			INT				NOT NULL
+	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
 	,[SchemaName]			NVARCHAR(128)	NULL
 	,[TableName]			NVARCHAR(128)	NULL
 	,[UnmatchedIndexName]	NVARCHAR(128)	NULL
 )
-CREATE TABLE #PlanMinerTable_Statistics
-(
-	 [DatabaseNamePlan]		NVARCHAR(128)	NULL
-	,[SchemaName]			NVARCHAR(128)	NULL
-	,[TableName]			NVARCHAR(128)	NULL
-	,[StatisticName]		NVARCHAR(128)	NULL
-	,[ModificationCount]	BIGINT			NULL
-	,[SamplingPercent]		FLOAT			NULL
-	,[LastUpdate]			DATETIME2(7)	NULL
-)
 CREATE TABLE #PlanMinerTable_Nodes
 (
-	 [CursorOperationType]			NVARCHAR(16)	NOT NULL
+	 [StatementID]					INT				NOT NULL
 	,[NodeID]						INT				NOT NULL
 	,[Depth]						INT				NOT NULL
+	,[CursorOperationType]			NVARCHAR(128)	NOT NULL
 	,[PhysicalOp]					NVARCHAR(128)	NOT NULL
 	,[LogicalOp]					NVARCHAR(128)	NOT NULL
 	,[EstimateRows]					FLOAT			NOT NULL
@@ -383,6 +373,53 @@ CREATE TABLE #PlanMinerTable_Nodes
 	,[EstimateRewinds]				FLOAT			NOT NULL
 	,[EstimatedExecutionMode]		NVARCHAR(128)	NOT NULL
 )
+CREATE TABLE #PlanMinerTable_Cursors
+(
+	 [StatementID]			INT				NOT NULL
+	,[CursorName]			NVARCHAR(128)	NULL
+	,[CursorActualType]		NVARCHAR(128)	NULL
+	,[CursorRequestedType]	NVARCHAR(128)	NULL
+	,[CursorConcurrency]	NVARCHAR(128)	NULL
+	,[ForwardOnly]			BIT				NULL
+)
+CREATE TABLE #PlanMinerTable_IndexOperations
+(
+	 [StatementID]			INT				NOT NULL
+	,[NodeID]				INT				NOT NULL
+	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
+	,[SchemaName]			NVARCHAR(128)	NULL
+	,[TableName]			NVARCHAR(128)	NULL
+	,[IndexName]			NVARCHAR(128)	NULL
+	,[IndexKind]			NVARCHAR(128)	NULL
+	,[LogicalOp]			NVARCHAR(128)	NULL
+	,[Ordered]				BIT				NULL
+	,[ForcedIndex]			BIT				NULL
+	,[ForceSeek]			BIT				NULL
+	,[ForceScan]			BIT				NULL
+	,[NoExpandHint]			BIT				NULL
+	,[Storage]				NVARCHAR(128)	NULL
+)
+CREATE TABLE #PlanMinerTable_Columns
+(
+	 [StatementID]			INT				NOT NULL
+	,[NodeID]				INT				NOT NULL
+	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
+	,[SchemaName]			NVARCHAR(128)	NULL
+	,[TableName]			NVARCHAR(128)	NULL
+	,[ColumnName]			NVARCHAR(128)	NOT NULL
+)
+CREATE TABLE #PlanMinerTable_Statistics
+(
+	 [StatementID]			INT				NOT NULL
+	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
+	,[SchemaName]			NVARCHAR(128)	NULL
+	,[TableName]			NVARCHAR(128)	NULL
+	,[StatisticName]		NVARCHAR(128)	NULL
+	,[ModificationCount]	BIGINT			NULL
+	,[SamplingPercent]		FLOAT			NULL
+	,[LastUpdate]			DATETIME2(7)	NULL
+)
+
 -- Temp tables to store the data before the transfer to final table - END
 
 
@@ -401,8 +438,9 @@ BEGIN
 	SET @LineStart	= CHARINDEX('<', @QueryPlan, @LineEnd)
 	SET @LineEnd	= CHARINDEX('>', @QueryPlan, @LineEnd + 1)
 	SET @LineText	= SUBSTRING(@QueryPlan,@LineStart, 1 + @LineEnd - @LineStart)
-	-- If the line is not a tag closure, insert it into #XMLContent - START
-	IF (CHARINDEX('</','_'+@LineText) = 0)
+
+	-- Insert Simple Statement - START
+	IF(@LineText LIKE '<StmtSimple%')
 	BEGIN
 		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
 		INSERT INTO #XMLContent ([LineNumber], [LineContent])
@@ -410,24 +448,83 @@ BEGIN
 
 		-- Move on to the next line
 		SET @LineNumber = @LineNumber + 1
+		CONTINUE
 	END
-	-- If the line is not a tag closure, insert it into #XMLContent - END
+	-- Insert Simple Statement - END
+
+	-- Insert Conditional Statement - START
+	IF(@LineText LIKE '<StmtCond%')
+	BEGIN
+		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, REPLACE(REPLACE(@LineText, '>','/>'), '//', '/') )
+
+		-- Move on to the next line
+		SET @LineNumber = @LineNumber + 1
+		CONTINUE
+	END
+	-- Insert Conditional Statement - END
+
+	-- Exiting Conditional Statement - START
+	IF(@LineText = '</StmtCond>')
+	BEGIN
+		-- Customized exit code
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, '<ExitStmtCond/>' )
+
+		-- Move on to the next line
+		SET @LineNumber = @LineNumber + 1
+		CONTINUE
+	END
+	-- Exiting Conditional Statement - END
 
 	-- Exiting a Node - START
 	IF(@LineText = '</RelOp>')
 	BEGIN
-		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
+		-- Customized exit code
 		INSERT INTO #XMLContent ([LineNumber], [LineContent])
 		VALUES (@LineNumber, '<ExitRelOp/>' )
 
 		-- Move on to the next line
 		SET @LineNumber = @LineNumber + 1
+		CONTINUE
 	END
 	-- Exiting a Node - END
+
+	-- Exiting an Operation - START
+	IF(@LineText = '</Operation>')
+	BEGIN
+		-- Customized exit code
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, '<ExitOperation/>' )
+
+		-- Move on to the next line
+		SET @LineNumber = @LineNumber + 1
+		CONTINUE
+	END
+	-- Exiting an Operation - END
+
+
+
+	-- If the line is not a tag closure and not a cursor closure, insert it into #XMLContent - START
+	IF (
+		(CHARINDEX('</','_'+@LineText) = 0)
+		AND
+		@LineText NOT LIKE '<CursorPlan %/>'
+		)
+	BEGIN
+		-- To reformat the line into a valid XML file, substitute closing '>' with '/>'
+		INSERT INTO #XMLContent ([LineNumber], [LineContent])
+		VALUES (@LineNumber, REPLACE(REPLACE(@LineText, '>','/>'), '//', '/') )
+
+		-- Move on to the next line
+		SET @LineNumber = @LineNumber + 1
+		CONTINUE
+	END
+	-- If the line is not a tag closure, insert it into #XMLContent - END
+
 END
 -- Loop through each line (reading XML as plain text) - END
-
-
 
 -- Analyze the XML lines that reference specific columns - START
 DECLARE [XMLContentCursor] CURSOR LOCAL FAST_FORWARD
@@ -439,17 +536,26 @@ ORDER BY [LineNumber] ASC
 DECLARE @XMLContent	XML
 
 
--- Variable to specify the depth of the node - START
-DECLARE @Depth INT = 0
--- Variable to specify the depth of the node - END
+-- Variable to store the StatementID - START
+DECLARE @StatementID	INT = 0
+-- Variable to store the StatementID - END
+
+-- Variable to store the CursorID - START
+DECLARE @CursorID		INT = 0
+-- Variable to store the CursorID - END
+
+
+-- Variable to store the plan depth - START
+DECLARE @Depth			INT = 0
+-- Variable to store the plan depth - END
 
 -- Variable to identify what kind of Index is being processed - START
 -- Values:  ReadWrite | Missing | Unmatched
-DECLARE @IndexOperation NVARCHAR(16)
+DECLARE @IndexOperation NVARCHAR(128)
 -- Variable to identify what kind of Index is being processed - END
 
 -- Variable to differentiate between regular plans and cursor plans - START
-DECLARE @CursorOperationType NVARCHAR(16) = 'None'
+DECLARE @CursorOperationType NVARCHAR(128) = 'None'
 -- Variable to differentiate between regular plans and cursor plans - END
 
 
@@ -480,6 +586,70 @@ OPEN [XMLContentCursor]
 FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
 WHILE (@@FETCH_STATUS = 0)
 BEGIN
+		-- Simple statement
+		IF	(@XMLContent.exist('/StmtSimple') = 1 )
+		BEGIN
+			SET @StatementID = @XMLContent.value('(/StmtSimple/@StatementId)[1]', 'INT')
+			INSERT INTO #PlanMinerTable_Statements
+			SELECT
+				 @XMLContent.value('(/StmtSimple/@StatementId)[1]',					'INT')
+				,'Simple'
+				,@XMLContent.value('(/StmtSimple/@StatementType)[1]',				'NVARCHAR(128)')
+				,COMPRESS(@XMLContent.value('(/StmtSimple/@StatementText)[1]',		'NVARCHAR(MAX)'))
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
+		END
+
+		-- Conditional statement
+		IF	(@XMLContent.exist('/StmtCond') = 1 )
+		BEGIN
+			SET @StatementID		= @XMLContent.value('(/StmtCond/@StatementId)[1]', 'INT')
+			INSERT INTO #PlanMinerTable_Statements
+			SELECT
+				 @XMLContent.value('(/StmtCond/@StatementId)[1]',				'INT')
+				,'Conditional'
+				,@XMLContent.value('(/StmtCond/@StatementType)[1]',				'NVARCHAR(128)')
+				,COMPRESS(@XMLContent.value('(/StmtCond/@StatementText)[1]',	'NVARCHAR(MAX)'))
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
+		END
+
+		-- Cursor statement
+		IF	(
+				@XMLContent.exist('/StmtCursor') = 1
+				AND
+				@XMLContent.value('(/StmtCursor/@StatementType)[1]',	'NVARCHAR(128)') = 'DECLARE CURSOR'
+			)
+		BEGIN
+			SET @StatementID		= @XMLContent.value('(/StmtCursor/@StatementId)[1]', 'INT')
+			INSERT INTO #PlanMinerTable_Statements
+			SELECT
+				 @XMLContent.value('(/StmtCursor/@StatementId)[1]',					'INT')
+				,'Cursor'
+				,@XMLContent.value('(/StmtCursor/@StatementType)[1]',				'NVARCHAR(128)')
+				,COMPRESS(@XMLContent.value('(/StmtCursor/@StatementText)[1]',		'NVARCHAR(MAX)'))
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
+		END
+
+		-- Special FETCH statement
+		IF	(
+				@XMLContent.exist('/Operation') = 1
+				AND
+				@XMLContent.value('(/Operation/@OperationType)[1]',	'NVARCHAR(128)') = 'FetchQuery'
+			)
+		BEGIN
+			SET @CursorOperationType = 'FetchQuery'
+			INSERT INTO #PlanMinerTable_Statements
+			SELECT
+				 @StatementID
+				,'Cursor'
+				,'FetchQuery'
+				,NULL
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
+		END
+
 		-- XML line containing a cursor type - START
 		IF (@XMLContent.exist('/CursorPlan') = 1)
 		BEGIN
@@ -487,7 +657,8 @@ BEGIN
 			IF (@PlanMinerTable_Cursors IS NOT NULL)
 				INSERT INTO #PlanMinerTable_Cursors
 				SELECT 
-					 [CursorName]					=	@XMLContent.value('(/CursorPlan/@CursorName)[1]',					'NVARCHAR(128)')
+					 @StatementID
+					,[CursorName]					=	@XMLContent.value('(/CursorPlan/@CursorName)[1]',					'NVARCHAR(128)')
 					,[CursorActualType]				=	@XMLContent.value('(/CursorPlan/@CursorActualType)[1]',				'NVARCHAR(128)')
 					,[CursorRequestedType]			=	@XMLContent.value('(/CursorPlan/@CursorRequestedType)[1]',			'NVARCHAR(128)')
 					,[CursorConcurrency]			=	@XMLContent.value('(/CursorPlan/@CursorConcurrency)[1]',			'NVARCHAR(128)')
@@ -495,28 +666,38 @@ BEGIN
 															WHEN 'true' THEN 1
 															ELSE 0
 														END
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- XML line containing a cursor type - END
 
-
-		-- Sub-execution plan part of an cursor - START
+		-- Operation - START
 		IF (@XMLContent.exist('/Operation') = 1)
 		BEGIN
-			SET @CursorOperationType = @XMLContent.value('(/Operation/@OperationType)[1]',	'NVARCHAR(16)')
+			SET @CursorOperationType = @XMLContent.value('(/Operation/@OperationType)[1]',	'NVARCHAR(128)')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
-		-- Sub-execution plan part of an cursor - END
+		IF (@XMLContent.exist('/ExitOperation') = 1)
+		BEGIN
+			SET @CursorOperationType = 'None'
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
+		END
+		-- Operation - END
 
-
-		-- XML line containing an operation - START
+	
+		-- XML line containing an node - START
 		IF (@XMLContent.exist('/RelOp') = 1)
 		BEGIN
 			SET @Depth = @Depth + 1
 			IF (@PlanMinerTable_Nodes	 IS NOT NULL)
 				INSERT INTO #PlanMinerTable_Nodes
 				SELECT 
-					 @CursorOperationType
-					,[NodeId]						=	@XMLContent.value('(/RelOp/@NodeId)[1]',					'INT')
+					 [StatementID]					=	@StatementID
+					,[NodeID]						=	@XMLContent.value('(/RelOp/@NodeId)[1]',					'INT')
 					,@Depth
+					,@CursorOperationType
 					,[PhysicalOp]					=	@XMLContent.value('(/RelOp/@PhysicalOp)[1]',				'NVARCHAR(128)')
 					,[LogicalOp]					=	@XMLContent.value('(/RelOp/@LogicalOp)[1]',					'NVARCHAR(128)')
 					,[EstimateRows]					=	@XMLContent.value('(/RelOp/@EstimateRows)[1]',				'FLOAT')
@@ -530,18 +711,21 @@ BEGIN
 					,[EstimateRebinds]				=	@XMLContent.value('(/RelOp/@EstimateRebinds)[1]',			'FLOAT')
 					,[EstimateRewinds]				=	@XMLContent.value('(/RelOp/@EstimateRewinds)[1]',			'FLOAT')
 					,[EstimatedExecutionMode]		=	@XMLContent.value('(/RelOp/@EstimatedExecutionMode)[1]',	'NVARCHAR(128)')
-			SET @LogicalOp = @XMLContent.value('(/RelOp/@LogicalOp)[1]',					'NVARCHAR(128)')
-			SET @NodeID = @XMLContent.value('(/RelOp/@NodeId)[1]',	'INT')
+			SET @LogicalOp	= @XMLContent.value('(/RelOp/@LogicalOp)[1]',	'NVARCHAR(128)')
+			SET @NodeID		= @XMLContent.value('(/RelOp/@NodeId)[1]',		'INT')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
-		-- XML line containing an operation - END
+		-- XML line containing an node - END
 
-		-- XML line exiting an operation (reducing node depth) - START
+		-- XML line exiting an node (reducing node depth) - START
 		IF (@XMLContent.exist('/ExitRelOp') = 1)
 		BEGIN
 			SET @Depth = @Depth - 1
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
-		-- XML line exiting an operation (reducing node depth) - END
-
+		-- XML line exiting an node (reducing node depth) - END
 
 		-- XML line containing Statistics used - START
 		IF (@PlanMinerTable_Statistics IS NOT NULL)
@@ -550,13 +734,16 @@ BEGIN
 			BEGIN
 				INSERT INTO #PlanMinerTable_Statistics
 				SELECT 
-					 [DatabaseNamePlan]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
+					 @StatementID
+					,[DatabaseNamePlan]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
 					,[SchemaName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Schema)[1]',		'NVARCHAR(128)'),']',''),'[','')
 					,[TableName]					=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Table)[1]',		'NVARCHAR(128)'),']',''),'[','')
 					,[StatisticsName]				=	REPLACE(REPLACE(@XMLContent.value('(/StatisticsInfo/@Statistics)[1]',	'NVARCHAR(128)'),']',''),'[','')
 					,[ModificationCount]			=	@XMLContent.value('(/StatisticsInfo/@ModificationCount)[1]',			'BIGINT')
 					,[SamplingPercent]				=	@XMLContent.value('(/StatisticsInfo/@SamplingPercent)[1]',				'FLOAT')
 					,[LastUpdate]					=	@XMLContent.value('(/StatisticsInfo/@LastUpdate)[1]',					'DATETIME2')
+				FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+				CONTINUE
 			END
 		END
 		-- XML line containing Statistics used - END
@@ -575,6 +762,8 @@ BEGIN
 		)
 		BEGIN
 			SET @IndexOperation = 'Unmatched'
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Unmatched Indexes (Level 1: Change @IndexOperation Flag) - END
 
@@ -590,10 +779,13 @@ BEGIN
 		BEGIN
 			INSERT INTO #PlanMinerTable_UnmatchedIndexes
 			SELECT 
-				 [DatabaseNamePlan]	=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
+				 @StatementID
+				,[DatabaseNamePlan]	=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[SchemaName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Schema)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[TableName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Table)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[IndexName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Index)[1]',		'NVARCHAR(128)'),']',''),'[','')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Unmatched Indexes (Level 2: Unmatched Index details) - END
 		----------------------------------
@@ -615,6 +807,8 @@ BEGIN
 			SET @IndexOperation = 'Missing'
 			SELECT
 					 @Impact						=	@XMLContent.value('(/MissingIndexGroup/@Impact)[1]',		'FLOAT')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Missing Indexes (Level-1 : Estimated Impact) - END
 
@@ -631,6 +825,8 @@ BEGIN
 				,@SchemaName					=	REPLACE(REPLACE(@XMLContent.value('(/MissingIndex/@Schema)[1]',				'NVARCHAR(128)'),']',''),'[','')
 				,@TableName						=	REPLACE(REPLACE(@XMLContent.value('(/MissingIndex/@Table)[1]',				'NVARCHAR(128)'),']',''),'[','')
 			SET @MissingIndexID = @MissingIndexID + 1
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Missing Indexes (Level-2 : Target Table) - END
 		
@@ -646,6 +842,8 @@ BEGIN
 		BEGIN
 			SELECT 
 				@Usage							=	@XMLContent.value('(/ColumnGroup/@Usage)[1]',				'NVARCHAR(128)')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Missing Indexes (Level-3 : Column Usage = [In]Equality) - END
 
@@ -661,13 +859,16 @@ BEGIN
 		BEGIN
 			INSERT INTO #PlanMinerTable_MissingIndexes
 			SELECT 
-				 @MissingIndexID
+				 @StatementID
+				,@MissingIndexID
 				,@Impact
 				,@DatabaseNamePlan
 				,@SchemaName
 				,@TableName
 				,@Usage
 				,@XMLContent.value('(/Column/@Name)[1]',							'NVARCHAR(128)')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Missing Indexes (Level-4 : Suggested Columns for the new index) - END
 		----------------------------------
@@ -699,6 +900,8 @@ BEGIN
 				,@NoExpandHint	=	@XMLContent.value('(/IndexScan/@NoExpandHint)[1]',		'BIT')
 				,@Storage		=	@XMLContent.value('(/IndexScan/@Storage)[1]',			'NVARCHAR(128)')			
 			-- Temporaly store the IndexScan parameters to join them to the actual index details - END
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Scan/Seek Index operations (Level-1 : Parameters for the index operation) - END
 		
@@ -714,7 +917,8 @@ BEGIN
 		BEGIN
 			INSERT INTO #PlanMinerTable_IndexOperations
 			SELECT 
-				 @NodeID
+				 @StatementID
+				,@NodeID
 				,[DatabaseNamePlan]	=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[SchemaName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Schema)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[TableName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Table)[1]',		'NVARCHAR(128)'),']',''),'[','')
@@ -737,6 +941,8 @@ BEGIN
 			SET @Storage		= NULL
 			SET @LogicalOp		= NULL
 			-- Reset the values so they won't be carried over to ther operations that don't include those parameters - END
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- Entering an XML section regarding Scan/Seek Index operations (Level-2 : Index used in the operation) - END
 		----------------------------------
@@ -756,11 +962,14 @@ BEGIN
 		BEGIN
 			INSERT INTO #PlanMinerTable_Columns
 			SELECT 
-				 @NodeID
+				 @StatementID
+				,@NodeID
 				,[DatabaseNamePlan]		=	REPLACE(REPLACE(@XMLContent.value('(/ColumnReference/@Database)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[SchemaName]			=	REPLACE(REPLACE(@XMLContent.value('(/ColumnReference/@Schema)[1]',			'NVARCHAR(128)'),']',''),'[','')
 				,[TableName]			=	REPLACE(REPLACE(@XMLContent.value('(/ColumnReference/@Table)[1]',			'NVARCHAR(128)'),']',''),'[','')
 				,[ColumnName]			=	REPLACE(REPLACE(@XMLContent.value('(/ColumnReference/@Column)[1]',			'NVARCHAR(128)'),']',''),'[','')
+			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
+			CONTINUE
 		END
 		-- XML line containing a column - END
 
@@ -783,30 +992,14 @@ SELECT
 FROM {@SourceTable}'
 SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@InstanceIdentifier}',	@InstanceIdentifier)
 SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@DatabaseName}',		@DatabaseName)
-SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@PlanMinerID}',		CAST(@PlanMinerID AS NVARCHAR(16)))
+SET @LoadDataTemplate = REPLACE(@LoadDataTemplate,	'{@PlanMinerID}',		CAST(@PlanMinerID AS NVARCHAR(128)))
 
 DECLARE @LoadData			NVARCHAR(MAX)
 
-IF (@PlanMinerTable_Columns IS NOT NULL)
+IF (@PlanMinerTable_Statements IS NOT NULL)
 BEGIN
-	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Columns)
-	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Columns')
-	IF (@VerboseMode = 1)
-		PRINT (@LoadData)
-	EXECUTE (@LoadData)
-END
-IF (@PlanMinerTable_Cursors IS NOT NULL)
-BEGIN
-	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Cursors)
-	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Cursors')
-	IF (@VerboseMode = 1)
-		PRINT (@LoadData)
-	EXECUTE (@LoadData)
-END
-IF (@PlanMinerTable_IndexOperations IS NOT NULL)
-BEGIN
-	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_IndexOperations)
-	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_IndexOperations')
+	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Statements)
+	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Statements')
 	IF (@VerboseMode = 1)
 		PRINT (@LoadData)
 	EXECUTE (@LoadData)
@@ -827,14 +1020,6 @@ BEGIN
 		PRINT (@LoadData)
 	EXECUTE (@LoadData)
 END
-IF (@PlanMinerTable_Statistics IS NOT NULL)
-BEGIN
-	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Statistics)
-	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Statistics')
-	IF (@VerboseMode = 1)
-		PRINT (@LoadData)
-	EXECUTE (@LoadData)
-END
 IF (@PlanMinerTable_Nodes IS NOT NULL)
 BEGIN
 	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Nodes)
@@ -843,20 +1028,53 @@ BEGIN
 		PRINT (@LoadData)
 	EXECUTE (@LoadData)
 END
+IF (@PlanMinerTable_Cursors IS NOT NULL)
+BEGIN
+	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Cursors)
+	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Cursors')
+	IF (@VerboseMode = 1)
+		PRINT (@LoadData)
+	EXECUTE (@LoadData)
+END
+IF (@PlanMinerTable_IndexOperations IS NOT NULL)
+BEGIN
+	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_IndexOperations)
+	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_IndexOperations')
+	IF (@VerboseMode = 1)
+		PRINT (@LoadData)
+	EXECUTE (@LoadData)
+END
+IF (@PlanMinerTable_Columns IS NOT NULL)
+BEGIN
+	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Columns)
+	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Columns')
+	IF (@VerboseMode = 1)
+		PRINT (@LoadData)
+	EXECUTE (@LoadData)
+END
+IF (@PlanMinerTable_Statistics IS NOT NULL)
+BEGIN
+	SET @LoadData = REPLACE(@LoadDataTemplate,	'{@DestinationTable}',	@PlanMinerTable_Statistics)
+	SET @LoadData = REPLACE(@LoadData,			'{@SourceTable}',		'#PlanMinerTable_Statistics')
+	IF (@VerboseMode = 1)
+		PRINT (@LoadData)
+	EXECUTE (@LoadData)
+END
 -- Load the data extracted into the definitive tables provided - END
 
 
 -- Drop temp tables used to store the plan info during the mining process - START
-DROP TABLE IF EXISTS #PlanMinerTable_Columns
-DROP TABLE IF EXISTS #PlanMinerTable_Cursors
-DROP TABLE IF EXISTS #PlanMinerTable_IndexOperations
+DROP TABLE IF EXISTS #PlanMinerTable_Statements
 DROP TABLE IF EXISTS #PlanMinerTable_MissingIndexes
 DROP TABLE IF EXISTS #PlanMinerTable_UnmatchedIndexes
-DROP TABLE IF EXISTS #PlanMinerTable_Statistics
 DROP TABLE IF EXISTS #PlanMinerTable_Nodes
+DROP TABLE IF EXISTS #PlanMinerTable_Cursors
+DROP TABLE IF EXISTS #PlanMinerTable_IndexOperations
+DROP TABLE IF EXISTS #PlanMinerTable_Columns
+DROP TABLE IF EXISTS #PlanMinerTable_Statistics
 -- Drop temp tables used to store the plan info during the mining process - END
 
-
+DROP TABLE IF EXISTS #XMLContent
 
 
 RETURN

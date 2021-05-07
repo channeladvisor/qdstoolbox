@@ -8,6 +8,9 @@
 --		[PlanMinerID]			BIGINT			NOT NULL
 --			Unique identifier of the mined plan
 --			
+--		[StatementID]			INT				NOT NULL
+--			Identifier of the statement the index operation is performed on
+--
 --		[NodeID]				INT				NOT NULL
 --			Identifier of the operation (node) this index operation takes place
 --
@@ -58,13 +61,14 @@ DROP TABLE IF EXISTS [dbo].[PlanMiner_IndexOperations]
 CREATE TABLE [dbo].[PlanMiner_IndexOperations]
 (
 	 [PlanMinerID]			BIGINT			NOT NULL
+	,[StatementID]			INT				NOT NULL
 	,[NodeID]				INT				NOT NULL
 	,[DatabaseNamePlan]		NVARCHAR(128)	NULL
 	,[SchemaName]			NVARCHAR(128)	NULL
 	,[TableName]			NVARCHAR(128)	NULL
 	,[IndexName]			NVARCHAR(128)	NULL
 	,[IndexKind]			NVARCHAR(128)	NULL
-	,[LogicalOp]			NVARCHAR(128)	NULL
+	,[LogicalOp]			NVARCHAR(128)	NOT NULL
 	,[Ordered]				BIT				NULL
 	,[ForcedIndex]			BIT				NULL
 	,[ForceSeek]			BIT				NULL
@@ -75,5 +79,7 @@ CREATE TABLE [dbo].[PlanMiner_IndexOperations]
 ALTER TABLE [dbo].[PlanMiner_IndexOperations] ADD CONSTRAINT [PK_PlanMiner_IndexOperations] PRIMARY KEY CLUSTERED 
 (
 	 [PlanMinerID]	ASC
+	,[StatementID]	ASC
 	,[NodeID]		ASC
+	,[LogicalOp]	ASC
 )

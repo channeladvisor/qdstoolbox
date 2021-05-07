@@ -13,8 +13,8 @@
 --				Cache
 --				File
 --
---		[ServerIdentifier]		SYSNAME			NULL
---			Identifier of the server, so if this data is centralized reports originated on each server can be properly identified
+--		[InstanceIdentifier]	SYSNAME			NULL
+--			Identifier of the instance, so if this data is centralized reports originated on each server can be properly identified
 --
 --		[DatabaseName]			SYSNAME			NULL
 --			Name of the database this plan's information has been mined out

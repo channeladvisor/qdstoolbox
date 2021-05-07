@@ -7,6 +7,9 @@
 --		[PlanMinerID]			BIGINT			NOT NULL
 --			Unique identifier of the mined plan
 --			
+--		[StatementID]			INT				NOT NULL
+--			Identifier of the statement that accessed the columns
+--
 --		[NodeID]				INT				NOT NULL
 --			Node of the execution plan the columns are accessed in
 --
@@ -34,6 +37,7 @@ DROP TABLE IF EXISTS [dbo].[PlanMiner_Columns]
 CREATE TABLE [dbo].[PlanMiner_Columns]
 (
 	 [PlanMinerID]		BIGINT			NOT NULL
+	,[StatementID]		INT				NOT NULL
 	,[NodeID]			INT				NOT NULL
 	,[DatabaseNamePlan]	NVARCHAR(128)	NULL
 	,[SchemaName]		NVARCHAR(128)	NULL
@@ -43,5 +47,6 @@ CREATE TABLE [dbo].[PlanMiner_Columns]
 CREATE CLUSTERED INDEX [CIX_PlanMiner_Columns] ON [dbo].[PlanMiner_Columns]
 (
 	 [PlanMinerID]	ASC
+	,[StatementID]	ASC
 	,[NodeID]		ASC
 )

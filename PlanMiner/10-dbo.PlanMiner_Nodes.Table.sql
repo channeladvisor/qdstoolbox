@@ -4,17 +4,20 @@
 -- Desc: This table contains the details of each node (operation) of the execution plan
 --
 -- Columns:
---		[PlanMinerID]			BIGINT			NOT NULL
+--		[PlanMinerID]					BIGINT			NOT NULL
 --			Unique identifier of the mined plan
 --			
---		[CursorOperationType]			NVARCHAR(16)	NOT NULL
---			Type of cursor operation being executed (when applicable)
+--		[StatementID]					INT				NOT NULL
+--			Unique identifier of the statement the nodes are members of
 --
 --		[NodeID]						INT				NOT NULL
 --			Identifier of the node of the execution plan whose details are described
 --
 --		[Depth]							INT				NOT NULL
 --			Depth of the node in the complete plan
+--
+--		[CursorOperationType]			NVARCHAR(16)	NOT NULL
+--			Type of cursor operation being executed (when applicable)
 --
 --		[PhysicalOp]					NVARCHAR(128)	NOT NULL
 --			Physical operation performed in the node
@@ -65,9 +68,10 @@ DROP TABLE IF EXISTS [dbo].[PlanMiner_Nodes]
 CREATE TABLE [dbo].[PlanMiner_Nodes]
 (
 	 [PlanMinerID]					BIGINT			NOT NULL
-	,[CursorOperationType]			NVARCHAR(16)	NOT NULL
+	,[StatementID]					INT				NOT NULL
 	,[NodeID]						INT				NOT NULL
 	,[Depth]						INT				NOT NULL
+	,[CursorOperationType]			NVARCHAR(128)	NOT NULL
 	,[PhysicalOp]					NVARCHAR(128)	NOT NULL
 	,[LogicalOp]					NVARCHAR(128)	NOT NULL
 	,[EstimateRows]					FLOAT			NOT NULL
@@ -84,6 +88,8 @@ CREATE TABLE [dbo].[PlanMiner_Nodes]
 )
 ALTER TABLE [dbo].[PlanMiner_Nodes] ADD CONSTRAINT [PK_PlanMiner_Nodes] PRIMARY KEY CLUSTERED 
 (
-	 [PlanMinerID]	ASC
-	,[NodeID]		ASC
+	 [PlanMinerID]			ASC
+	,[StatementID]			ASC
+	,[NodeID]				ASC
+	,[CursorOperationType]	ASC
 )
