@@ -57,7 +57,7 @@ EXECUTE [dbo].[QDSCacheCleanup]
 Perform a default-valued cleanup and record the results
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	 @DatabaseName		=	'TargetDB'
+	 @DatabaseName			=	'TargetDB'
 	,@ReportIndexOutputTable 	= 	'dbo.QDSCacheCleanupIndex'
 	,@ReportDetailsOutputTable 	= 	'dbo.QDSCacheCleanupDetails'
 

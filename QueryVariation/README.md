@@ -17,13 +17,13 @@ Queries whose average CPU has regressed and used at least 2 different execution 
 EXECUTE [dbo].[QueryVariation]
 	 @DatabaseName		=	'Target'
 	,@Measurement		=	'cpu'
-	,@Metric			=	'avg'
+	,@Metric		=	'avg'
 	,@VariationType		=	'R'
 	,@MinPlanCount		=	2
 	,@RecentStartTime	=	'2020-02-01 00:00'
 	,@RecentEndTime		=	'2020-02-01 01:00'
 	,@HistoryStartTime	=	'2020-01-01 00:00'
-	,@HistoryEndTime		=	'2020-02-01 00:00'
+	,@HistoryEndTime	=	'2020-02-01 00:00'
 ```
 
 ### Max duration improvement
@@ -32,12 +32,12 @@ Queries whose maximum duration has improved, when comparing the period between (
 EXECUTE [dbo].[QueryVariation]
 	 @DatabaseName		=	'Target'
 	,@Measurement		=	'duration'
-	,@Metric			=	'max'
+	,@Metric		=	'max'
 	,@VariationType		=	'I'
 	,@RecentStartTime	=	'2020-02-01 00:00'
 	,@RecentEndTime		=	'2020-02-01 01:00'
 	,@HistoryStartTime	=	'2020-01-01 00:00'
-	,@HistoryEndTime		=	'2020-02-01 00:00'
+	,@HistoryEndTime	=	'2020-02-01 00:00'
 ```
 ---
 
