@@ -86,4 +86,5 @@ END
 CLOSE [StatsCursor]
 DEALLOCATE [StatsCursor]
 
-DROP TABLE IF EXISTS #Stats```
+DROP TABLE IF EXISTS #Stats
+```
