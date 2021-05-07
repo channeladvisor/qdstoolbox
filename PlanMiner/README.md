@@ -37,8 +37,8 @@ EXECUTE [dbo].[PlanMiner]
 ### Execution plan from Query Store
 ```
 EXECUTE [dbo].[PlanMiner]
- @InstanceIdentifier 				= 'LocalServer01
-,@DatabaseName					= 'Database01'
+ @InstanceIdentifier 			= 'LocalServer01
+,@DatabaseName				= 'Database01'
 ,@PlanID				= 368
 ,@PlanMinerTable_PlanList		= '[dbo].[PlanMiner_PlanList]'
 ,@PlanMinerTable_Statements		= '[dbo].[PlanMiner_Statements]'
