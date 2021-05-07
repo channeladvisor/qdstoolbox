@@ -23,7 +23,7 @@
 --		[UnmatchedIndexName]	NVARCHAR(128)	NULL
 --			Name of the index not used due to it not matching the specific parameters used in the WHERE clause
 --
--- Date: 2021.mm.dd
+-- Date: 2021.05.07
 -- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------

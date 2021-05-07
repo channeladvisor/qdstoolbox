@@ -22,7 +22,7 @@
 --		[ForwardOnly]			BIT				NULL
 --			Flag to indicate whether the cursor was FORWARD_ONLY
 --
--- Date: 2021.mm.dd
+-- Date: 2021.05.07
 -- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------
