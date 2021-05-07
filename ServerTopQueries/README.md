@@ -26,11 +26,11 @@ EXECUTE [dbo].[ServerTopQueries]
 It is possible to use this tool to aggregate the runtime statistics per hour/day/week/month... to allow some historical data to be stored without impacting the databases' 
 ```
 EXECUTE [dbo].[ServerTopQueries]
-	@DatabaseName		=	'TargetDB',
-	@ReportIndex		=	'dbo.ServerTopQueriesIndex',
-	@ReportTable		=	'dbo.ServerTopQueriesStore',
-	@Top 			= 	0,
-	@IncludeQueryText 	= 	0
+	@DatabaseName		=	'TargetDB'
+	,@ReportIndex		=	'dbo.ServerTopQueriesIndex'
+	,@ReportTable		=	'dbo.ServerTopQueriesStore'
+	,@Top 			= 	0
+	,@IncludeQueryText 	= 	0
 ```
 ## Suggested uses
 ### High CPU analysis

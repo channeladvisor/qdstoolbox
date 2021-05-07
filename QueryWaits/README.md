@@ -9,8 +9,8 @@ This tool analyzes the wait status for a given Object / Query / Plan, and return
 Get the waits impacting a particular object's execution during a given period
 ```
 EXECUTE dbo.QueryWaits
-	 @DatabaseName	=	'TargetDB'
-	,@ObjectName 	=	'Schema.Object'
+	 @DatabaseName		=	'TargetDB'
+	,@ObjectName 		=	'Schema.Object'
 	,@StartTime		=	'2020-01-01'
 	,@EndTime		=	'2020-02-01'
 ```
@@ -18,7 +18,7 @@ EXECUTE dbo.QueryWaits
 Get the waits impacting a particular query's execution during a given period
 ```
 EXECUTE dbo.QueryWaits
-	 @DatabaseName	=	'TargetDB'
+	 @DatabaseName		=	'TargetDB'
 	,@QueryID 		=	15648
 	,@StartTime		=	'2020-01-07 09:00'
 	,@EndTime		=	'2020-01-07 11:00'
@@ -29,9 +29,9 @@ Get the waits impacting a particular plan's execution during a given period, sto
 ```
 EXECUTE dbo.QueryWaits
 	 @DatabaseName		=	'TargetDB'
-	,@PlanID 			=	14865
-	,@StartTime			=	'2020-01-07 09:00'
-	,@EndTime			=	'2020-01-07 11:00'
+	,@PlanID 		=	14865
+	,@StartTime		=	'2020-01-07 09:00'
+	,@EndTime		=	'2020-01-07 11:00'
 	,@ReportIndex		=	'dbo.QueryWaitsIndex'
 	,@ReportTable		= 	'dbo.QueryWaitsStore'
 	,@IncludeQueryText	=	1

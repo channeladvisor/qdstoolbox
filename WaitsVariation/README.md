@@ -16,14 +16,14 @@ https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/s
 Queries whose waits on CPU have decreased when comparing the periods (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
 ``` 
 EXECUTE [dbo].[WaitsVariation]
-	@DatabaseName		=	'Target',
-	@WaitType			=	'CPU',
-	@Metric			=	'avg',
-	@VariationType		=	'I',
-	@RecentStartTime	=	'2020-02-01 00:00',
-	@RecentEndTime		=	'2020-02-01 01:00',
-	@HistoryStartTime	=	'2020-01-01 00:00',
-	@HistoryEndTime		=	'2020-02-01 00:00'
+	@DatabaseName		=	'Target'
+	,@WaitType			=	'CPU'
+	,@Metric			=	'avg'
+	,@VariationType		=	'I'
+	,@RecentStartTime	=	'2020-02-01 00:00'
+	,@RecentEndTime		=	'2020-02-01 01:00'
+	,@HistoryStartTime	=	'2020-01-01 00:00'
+	,@HistoryEndTime		=	'2020-02-01 00:00
 ```
 ---
 ## Suggested uses

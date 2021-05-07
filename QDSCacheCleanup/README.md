@@ -31,35 +31,35 @@ The impact of this cleanup alternative has a much smaller impact on the SQL inst
 Analyze the impact executing the report would have, results returned in two tables (with different degrees of details) back to the user:
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName 			=	'TargetDB',
-	@ReportAsTable 			=	1,
-	@ReportDetailsAsTable 		=	1,
-	@TestMode			=	1
+	 @DatabaseName 			=	'TargetDB'
+	,@ReportAsTable 		=	1
+	,@ReportDetailsAsTable 		=	1
+	,@TestMode			=	1
 ```
 
 Deletes the stats for all existing queries but not the actual plans, queries, or texts
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName 			=	'TargetDB',
-	@Retention 			=	0,
-	@CleanStatsOnly			=	1
+	@DatabaseName 			=	'TargetDB'
+	,@Retention 			=	0
+	,@CleanStatsOnly			=	1
 ```
 
 Delete internal and adhoc queries along with their execution stats
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName			=	'TargetDB',
-	@CleanAdhocStale 		=	1,
-	@Retention			=	1,
-	@CleanInternal			=	1
+	@DatabaseName			=	'TargetDB'
+	,@CleanAdhocStale 		=	1
+	,@Retention			=	1
+	,@CleanInternal			=	1
 ```
 
 Perform a default-valued cleanup and record the results
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName				=	'TargetDB',
-	@ReportIndexOutputTable 	= 	'dbo.QDSCacheCleanupIndex',
-	@ReportDetailsOutputTable 	= 	'dbo.QDSCacheCleanupDetails'
+	@DatabaseName		=	'TargetDB'
+	,@ReportIndexOutputTable 	= 	'dbo.QDSCacheCleanupIndex'
+	,@ReportDetailsOutputTable 	= 	'dbo.QDSCacheCleanupDetails'
 
 ```
 
