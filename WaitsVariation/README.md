@@ -7,6 +7,7 @@ It can be executed in a Test mode to only return the impact executing it would h
 - Not returned at all.
 
 The waits measured are those captured by Query Store
+\
 https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-query-store-wait-stats-transact-sql
 \
 (Supported in SQL 2017+: for SQL 2016 the execution of the stored procedure will return an error)
@@ -16,14 +17,14 @@ https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/s
 Queries whose waits on CPU have decreased when comparing the periods (2020-01-01 00:00 -> 2020-02-01 00:00) and (2020-02-01 00:00 -> 2020-02-01 01:00)\
 ``` 
 EXECUTE [dbo].[WaitsVariation]
-	@DatabaseName		=	'Target'
-	,@WaitType			=	'CPU'
-	,@Metric			=	'avg'
+	 @DatabaseName		=	'Target'
+	,@WaitType		=	'CPU'
+	,@Metric		=	'avg'
 	,@VariationType		=	'I'
 	,@RecentStartTime	=	'2020-02-01 00:00'
 	,@RecentEndTime		=	'2020-02-01 01:00'
 	,@HistoryStartTime	=	'2020-01-01 00:00'
-	,@HistoryEndTime		=	'2020-02-01 00:00
+	,@HistoryEndTime	=	'2020-02-01 00:00
 ```
 ---
 ## Suggested uses

@@ -40,7 +40,7 @@ EXECUTE [dbo].[QDSCacheCleanup]
 Deletes the stats for all existing queries but not the actual plans, queries, or texts
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName 			=	'TargetDB'
+	 @DatabaseName 			=	'TargetDB'
 	,@Retention 			=	0
 	,@CleanStatsOnly			=	1
 ```
@@ -48,7 +48,7 @@ EXECUTE [dbo].[QDSCacheCleanup]
 Delete internal and adhoc queries along with their execution stats
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName			=	'TargetDB'
+	 @DatabaseName			=	'TargetDB'
 	,@CleanAdhocStale 		=	1
 	,@Retention			=	1
 	,@CleanInternal			=	1
@@ -57,7 +57,7 @@ EXECUTE [dbo].[QDSCacheCleanup]
 Perform a default-valued cleanup and record the results
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	@DatabaseName		=	'TargetDB'
+	 @DatabaseName		=	'TargetDB'
 	,@ReportIndexOutputTable 	= 	'dbo.QDSCacheCleanupIndex'
 	,@ReportDetailsOutputTable 	= 	'dbo.QDSCacheCleanupDetails'
 
