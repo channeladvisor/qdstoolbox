@@ -51,7 +51,7 @@ CREATE TABLE #Stats
 	 [DatabaseName]			NVARCHAR(128)
 	,[SchemaName]			NVARCHAR(128)
 	,[TableName]			NVARCHAR(128)
-	,[StatisticsName]			NVARCHAR(128)
+	,[StatisticsName]		NVARCHAR(128)
 	,[RowsTotal]			BIGINT
 	,[RowsSampled]			BIGINT
 	,[RowsSampled%]			DECIMAL(16,2)
@@ -63,8 +63,8 @@ CREATE TABLE #Stats
 )
 INSERT INTO #Stats
 EXECUTE [dbo].[StatisticsUsed]
-	 @DatabaseName	=	'TargetDB'
-	,@ObjectName	=	'dbo.ProblematicProcedure01'
+	 @DatabaseName		=	'TargetDB'
+	,@ObjectName		=	'dbo.ProblematicProcedure01'
 	,@ExpirationThreshold	=	1400
 	,@ModificationThreshold	=	10
 
@@ -78,8 +78,8 @@ OPEN [StatsCursor]
 FETCH NEXT FROM [StatsCursor] INTO @UpdateStatsCommand
 WHILE (@@fetch_status >= 0)
 BEGIN
-	PRINT  (@UpdateStatsCommand)
-	--EXECUTE (@UpdateStatsCommand)
+	PRINT   (@UpdateStatsCommand)
+	EXECUTE (@UpdateStatsCommand)
 	FETCH NEXT FROM [StatsCursor] INTO  @UpdateStatsCommand
 END
 
