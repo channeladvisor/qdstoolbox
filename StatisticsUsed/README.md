@@ -1,8 +1,8 @@
 # StatisticsUsed
 Based on the execution plans information stored in Query Store, given
--a single Query ID
--a list of Query IDs
--an Object Name
+- a single Query ID
+- a list of Query IDs
+- an Object Name
 this tool analyzes all the statistics involved in the generation of its plans, and generates the necessary UPDATE STATISTICS commands with customizable sample rates.
 
 ---
