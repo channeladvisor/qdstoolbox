@@ -41,3 +41,49 @@ EXECUTE [dbo].[StatisticsUsed]
 SQL server can't force certain plans (like those using unnamed indexes in temp tables or table variables): even though the command won't return an error, SQL Server won't honor it. Updating the statistics can help SQL Engine opt for a better plan.
 ### Autofix regressed queries
 When combined with [dbo].[QueryVariation], it can be used to help SQL Engine choose a better plan for those queries whose performance has deteriorated due to a plan change.
+### Programatically update stats
+By loading the commands into a table and looping through them with a cursor, it is possible to execute regular stats update for selected queries or objects
+```
+SET NOCOUNT ON
+DROP TABLE IF EXISTS #Stats
+CREATE TABLE #Stats
+(
+	 [DatabaseName]			NVARCHAR(128)
+	,[SchemaName]			NVARCHAR(128)
+	,[TableName]			NVARCHAR(128)
+	,[StatisticsName]			NVARCHAR(128)
+	,[RowsTotal]			BIGINT
+	,[RowsSampled]			BIGINT
+	,[RowsSampled%]			DECIMAL(16,2)
+	,[RowsModified]			BIGINT
+	,[RowsModified%]		DECIMAL(16,2)
+	,[StatisticsLastUpdated]	DATETIME2
+	,[Excluded]			NVARCHAR(128)
+	,[UpdateStatsCommand]		NVARCHAR(MAX)
+)
+INSERT INTO #Stats
+EXECUTE [dbo].[StatisticsUsed]
+	 @DatabaseName	=	'TargetDB'
+	,@ObjectName	=	'dbo.ProblematicProcedure01'
+	,@ExpirationThreshold	=	1400
+	,@ModificationThreshold	=	10
+
+
+DECLARE @UpdateStatsCommand	NVARCHAR(MAX)
+DECLARE [StatsCursor] CURSOR LOCAL FAST_FORWARD READ_ONLY
+FOR
+SELECT [UpdateStatsCommand] FROM #Stats
+
+OPEN [StatsCursor]
+FETCH NEXT FROM [StatsCursor] INTO @UpdateStatsCommand
+WHILE (@@fetch_status >= 0)
+BEGIN
+	PRINT  (@UpdateStatsCommand)
+	--EXECUTE (@UpdateStatsCommand)
+	FETCH NEXT FROM [StatsCursor] INTO  @UpdateStatsCommand
+END
+
+CLOSE [StatsCursor]
+DEALLOCATE [StatsCursor]
+
+DROP TABLE IF EXISTS #Stats```
