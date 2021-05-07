@@ -42,7 +42,7 @@ Deletes the stats for all existing queries but not the actual plans, queries, or
 EXECUTE [dbo].[QDSCacheCleanup]
 	 @DatabaseName 			=	'TargetDB'
 	,@Retention 			=	0
-	,@CleanStatsOnly			=	1
+	,@CleanStatsOnly		=	1
 ```
 
 Delete internal and adhoc queries along with their execution stats
