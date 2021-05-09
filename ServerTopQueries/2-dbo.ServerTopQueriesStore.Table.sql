@@ -68,42 +68,44 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.02.28
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	[LogBytes] and [TempDBSpace] metrics allow NULLs to allow compatibility with SQL 2016 (which did not include this features)
+--
+-- Date: 2021.05.08
+-- Auth: Pablo Lozano (@sqlozano)
+-- 		Changed script logic to drop & recreate table
 ----------------------------------------------------------------------------------
 
-IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('dbo.ServerTopQueriesStore') )
-BEGIN
-	CREATE TABLE [dbo].[ServerTopQueriesStore]
-	(
-		 [ReportID]				BIGINT			NOT NULL
-		,[DatabaseName]			SYSNAME			NOT NULL
-		,[PlanID]				BIGINT			NOT NULL
-		,[QueryID]				BIGINT			NOT NULL
-		,[QueryTextID]			BIGINT			NOT NULL
-		,[ObjectID]				BIGINT			NOT NULL
-		,[SchemaName]			SYSNAME			    NULL
-		,[ObjectName]			SYSNAME			    NULL
-		,[ExecutionTypeDesc]	NVARCHAR(120)	NOT NULL
-		,[ExecutionCount]		BIGINT			NOT NULL
-		,[Duration]				BIGINT			NOT NULL
-		,[CPU]					BIGINT			NOT NULL
-		,[LogicalIOReads]		BIGINT			NOT NULL
-		,[LogicalIOWrites]		BIGINT			NOT NULL
-		,[PhysicalIOReads]		BIGINT			NOT NULL
-		,[CLR]					BIGINT			NOT NULL
-		,[Memory]				BIGINT			NOT NULL
-		,[LogBytes]				BIGINT				NULL
-		,[TempDBSpace]			BIGINT				NULL
-		,[QuerySqlText]			VARBINARY(MAX)	    NULL
-	)
-
-	ALTER TABLE [dbo].[ServerTopQueriesStore]
-	ADD CONSTRAINT [PK_ServerTopQueriesStore] PRIMARY KEY CLUSTERED
-	(
-		  [ReportID]			ASC
-		 ,[DatabaseName]		ASC
-		 ,[PlanID]				ASC
-		 ,[ExecutionTypeDesc]	ASC
-	)
-END
+DROP TABLE IF EXISTS [dbo].[ServerTopQueriesStore]
+CREATE TABLE [dbo].[ServerTopQueriesStore]
+(
+	 [ReportID]				BIGINT			NOT NULL
+	,[DatabaseName]			SYSNAME			NOT NULL
+	,[PlanID]				BIGINT			NOT NULL
+	,[QueryID]				BIGINT			NOT NULL
+	,[QueryTextID]			BIGINT			NOT NULL
+	,[ObjectID]				BIGINT			NOT NULL
+	,[SchemaName]			SYSNAME			    NULL
+	,[ObjectName]			SYSNAME			    NULL
+	,[ExecutionTypeDesc]	NVARCHAR(120)	NOT NULL
+	,[ExecutionCount]		BIGINT			NOT NULL
+	,[Duration]				BIGINT			NOT NULL
+	,[CPU]					BIGINT			NOT NULL
+	,[LogicalIOReads]		BIGINT			NOT NULL
+	,[LogicalIOWrites]		BIGINT			NOT NULL
+	,[PhysicalIOReads]		BIGINT			NOT NULL
+	,[CLR]					BIGINT			NOT NULL
+	,[Memory]				BIGINT			NOT NULL
+	,[LogBytes]				BIGINT				NULL
+	,[TempDBSpace]			BIGINT				NULL
+	,[QuerySqlText]			VARBINARY(MAX)	    NULL
+)
+ALTER TABLE [dbo].[ServerTopQueriesStore]
+ADD CONSTRAINT [PK_ServerTopQueriesStore] PRIMARY KEY CLUSTERED
+(
+	  [ReportID]			ASC
+	 ,[DatabaseName]		ASC
+	 ,[PlanID]				ASC
+	 ,[ExecutionTypeDesc]	ASC
+)

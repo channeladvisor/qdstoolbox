@@ -28,7 +28,7 @@
 -- Notes:
 --		When using table variables, [SchemaName] and [TableName] will contain NULL values
 --
--- Date: 2021.05.07
+-- Date: 2021.05.08
 -- Auth: Pablo Lozano (@sqlozano)
 --
 ----------------------------------------------------------------------------------

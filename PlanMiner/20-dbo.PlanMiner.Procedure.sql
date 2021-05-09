@@ -21,55 +21,55 @@
 --		@PlanMinerTable_PlanList			-	NVARCHAR(800)
 --			Table to stores the list of plans analyzed, along with a copy of the plan itself
 --			See [dbo].[PlanMiner_PlanList]
---			[Default: None, mandatory]
+--			[Default: '[dbo].[PlanMiner_PlanList]' ]
 --
 --		@PlanMinerTable_Statements			-	NVARCHAR(800)
 --			Table to stores the statements that are included in the execution plan
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Statements]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_Statements]' ]
 --
 --		@PlanMinerTable_MissingIndexes		-	NVARCHAR(800)
 --			Table to store the details of the indexes the SQL engine consideres could improve its performance
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_MissingIndexes]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_MissingIndexes]' ]
 --
 --		@PlanMinerTable_UnmatchedIndexes	-	NVARCHAR(800)
 --			Table to store the information about the filtered indexes not used due to the parameters in the WHERE clause not matching those in the indexes
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_UnmatchedIndexes]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_UnmatchedIndexes]' ]
 --
 --		@PlanMinerTable_Nodes				-	NVARCHAR(800)
 --			Table to store the details of each node (operation) of the execution plan
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Nodes]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_Nodes]' ]
 --
 --		@PlanMinerTable_Cursors				-	NVARCHAR(800)
 --			Table to store the information about the cursor found in the execution plan (when applicable)
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Cursors]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_Cursors]' ]
 --
 --		@PlanMinerTable_IndexOperations		-	NVARCHAR(800)
 --			Table to store the information about the index operations (scan, seek, update, delete...) performed
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_IndexOperations]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_IndexOperations]' ]
 --
 --		@PlanMinerTable_Columns				-	NVARCHAR(800)
 --			Table to stores the list of columns accessed with a certain execution plan on each of its operations (nodes)
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Columns]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_Columns]' ]
 --
 --		@PlanMinerTable_Statistics			-	NVARCHAR(800)
 --			Table to store the list of statistics used by the SQL Engine to elaborate this execution plan
 --			If not provided, this information won't be stored
 --			See [dbo].[PlanMiner_Statistics]
---			[Default: NULL]
+--			[Default: '[dbo].[PlanMiner_Statistics]' ]
 --
 --		@VerboseMode				-	BIT
 --			Flag to enable/disable Verbose messages
@@ -81,6 +81,54 @@
 --		@ReturnCode						-	INT
 --			<0 : Error performing the analysis
 --			>=0 : Analysis completed successfully
+--
+-- Sample execution: all of them will store the details extracted from each plan in the default tables
+--
+--		*** Mine details of execution plan found in the SQL Server cache
+--
+--	DECLARE @PlanMinerID	BIGINT
+--	EXECUTE [dbo].[PlanMiner]
+--	 @InstanceIdentifier 	= 	'LocalServer01'
+--	,@PlanHandle 			= 	0x0500060079E8D66530DEE7A80102000001000000000000000000000000000000000000000000000000000000
+--	,@PlanMinerID 			= @PlanMinerID OUTPUT
+--
+--
+--
+-- 		*** Mine details of execution plan stored in Query Store
+--
+--	DECLARE @PlanMinerID	BIGINT
+--	EXECUTE [dbo].[PlanMiner]
+--	 @InstanceIdentifier 	= 	'LocalServer01
+--	,@DatabaseName			= 	'TargetDB'
+--	,@PlanID				= 	368
+--	,@PlanMinerID 			= 	@PlanMinerID OUTPUT
+--
+--
+--
+--		*** Execution plan from file
+--
+--	DECLARE @PlanMinerID	BIGINT
+--	EXECUTE [dbo].[PlanMiner]
+--	 @PlanFile				= 	'C:\Temp\Plan01.xml'
+--	,@PlanMinerID 			= 	@PlanMinerID OUTPUT
+--
+--
+--
+--		*** Access extracted data
+--
+--	SELECT * FROM [dbo].[vPlanMiner_PlanList]			WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[vPlanMiner_Statements]			WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_MissingIndexes]		WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_UnmatchedIndexes]	WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_Nodes]				WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_Cursors]				WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_IndexOperations]		WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_Columns]				WHERE [PlanMinerID] = @PlanMinerID
+--	SELECT * FROM [dbo].[PlanMiner_Statistics]			WHERE [PlanMinerID] = @PlanMinerID
+--
+--
+-- Date: 2021.05.08
+-- Auth: Pablo Lozano (@sqlozano)
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
@@ -90,15 +138,15 @@ CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
 	,@PlanID							BIGINT 			=	NULL
 	,@PlanHandle						VARBINARY(64)	=	NULL
 	,@PlanFile							NVARCHAR(MAX)	=	NULL
-	,@PlanMinerTable_PlanList			NVARCHAR(800)
-	,@PlanMinerTable_Statements			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_MissingIndexes		NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_UnmatchedIndexes	NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Nodes				NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Cursors			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_IndexOperations	NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Columns			NVARCHAR(800)	=	NULL
-	,@PlanMinerTable_Statistics			NVARCHAR(800)	=	NULL
+	,@PlanMinerTable_PlanList			NVARCHAR(800)	=	'[dbo].[PlanMiner_PlanList]'
+	,@PlanMinerTable_Statements			NVARCHAR(800)	=	'[dbo].[PlanMiner_Statements]'
+	,@PlanMinerTable_MissingIndexes		NVARCHAR(800)	=	'[dbo].[PlanMiner_MissingIndexes]'
+	,@PlanMinerTable_UnmatchedIndexes	NVARCHAR(800)	=	'[dbo].[PlanMiner_UnmatchedIndexes]'
+	,@PlanMinerTable_Nodes				NVARCHAR(800)	=	'[dbo].[PlanMiner_Nodes]'
+	,@PlanMinerTable_Cursors			NVARCHAR(800)	=	'[dbo].[PlanMiner_Cursors]'
+	,@PlanMinerTable_IndexOperations	NVARCHAR(800)	=	'[dbo].[PlanMiner_IndexOperations]'
+	,@PlanMinerTable_Columns			NVARCHAR(800)	=	'[dbo].[PlanMiner_Columns]'
+	,@PlanMinerTable_Statistics			NVARCHAR(800)	=	'[dbo].[PlanMiner_Statistics]'
 
 	,@VerboseMode			BIT = 0
 

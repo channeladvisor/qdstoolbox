@@ -55,31 +55,31 @@ GO
 --
 --	Sample 1: Return the wait details for a given object over the last hour
 --		EXECUTE [dbo].[QueryWaits]
---			@DatabaseName	= 'TargetDB',
---			@ObjectName		= 'Schema.Object'
+--			 @DatabaseName	= 'TargetDB'
+--			,@ObjectName	= 'Schema.Object'
 --
 --
 --	Sample 2: Get the wait details of a given plan ID during the last month
 --		DECLARE @EndTime		DATETIME2 = SYSUTCDATETIME()
 --		DECLARE @StartTime		DATETIME2 = DATEADD(MONTH, -7, @EndTime)
 --		EXECUTE [dbo].[QueryWaits]
---			@DatabaseName		= 'TargetDB',
---			@PlandID			= 321321,
---			@StartTime			= @StartTime,
---			@EndTime			= @EndTime
+--			 @DatabaseName		= 'TargetDB'
+--			,@PlandID			= 321321
+--			,@StartTime			= @StartTime
+--			,@EndTime			= @EndTime
 --
 --	Sample 3: Save a query's waits for the last week into a table in a linked server [LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryVariationStore],
 --			including the queries' text
 --		DECLARE @EndTime		DATETIME2 = SYSUTCDATETIME()
 --		DECLARE @StartTime		DATETIME2 = DATEADD(DAY, -7, @EndTime)
 --		EXECUTE [dbo].[QueryWaits]
---			@DatabaseName		= 'TargetDB',
---			@StartTime			= @StartTime,
---			@EndTime			= @EndTime,
---			@QueryID			= 96783,
---			@ReportIndex		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsIndex]',
---			@ReportTable		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsStore]',
---			@IncludeQueryText	= 1
+--			 @DatabaseName		= 'TargetDB'
+--			,@StartTime			= @StartTime
+--			,@EndTime			= @EndTime
+--			,@QueryID			= 96783
+--			,@ReportIndex		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsIndex]'
+--			,@ReportTable		= '[LinkedSrv].[LinkedDB].[dbo].[CentralizedQueryWaitsStore]'
+--			,@IncludeQueryText	= 1
 --			
 --
 -- Date: 2020.10.22

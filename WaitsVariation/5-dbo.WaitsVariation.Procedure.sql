@@ -103,30 +103,30 @@
 --
 --	Sample 1: Return a list of the 25 queries whose average CPU waits have increased the most comparing 2020-08-01->2020-08-02 with 2020-08-02->2020-08-03
 --			EXECUTE [dbo].[WaitsVariation]
---				@DatabaseName = 'Database00001',
---				@HistoryStartTime = '2020-08-01',
---				@HistoryEndTime = '2020-08-02',
---				@RecentStartTime = '2020-08-02',
---				@RecentEndTime = '2020-08-03',
---				@WaitType = 'CPU',
---				@Metric = 'Avg'
+--				 @DatabaseName 		= 'Database00001'
+--				,@HistoryStartTime 	= '2020-08-01'
+--				,@HistoryEndTime 	= '2020-08-02'
+--				,@RecentStartTime 	= '2020-08-02'
+--				,@RecentEndTime 	= '2020-08-03'
+--				,@WaitType 			= 'CPU'
+--				,@Metric 			= 'Avg'
 --
 --
 --	Sample 2: Save a list of the top 5 queries whose average BufferLatch waits were reduced the most when comparing the intervals
 --		2020-08-01->2020-08-02 and 2020-08-02->2020-08-03 into the table [dbo].[QueryVariationStore], including the queries' text
 --			EXECUTE [dbo].[WaitsVariation]
---				@ReportIndex = 'dbo.WaitsVariationIndex',
---				@ReportTable = 'dbo.WaitsVariationStore',
---				@DatabaseName = 'Database00001',
---				@ResultsRowCount = 5,
---				@VariationType = 'I',
---				@HistoryStartTime = '2020-08-01',
---				@HistoryEndTime = '2020-08-02',
---				@RecentStartTime = '2020-08-02',
---				@RecentEndTime = '2020-08-03',
---				@WaitType = 'BufferLatch',
---				@Metric = 'Avg',
---				@IncludeQueryText = 1
+--				 @ReportIndex 		= 'dbo.WaitsVariationIndex'
+--				,@ReportTable 		= 'dbo.WaitsVariationStore'
+--				,@DatabaseName 		= 'Database00001'
+--				,@ResultsRowCount 	= 5
+--				,@VariationType 	= 'I'
+--				,@HistoryStartTime 	= '2020-08-01'
+--				,@HistoryEndTime 	= '2020-08-02'
+--				,@RecentStartTime 	= '2020-08-02'
+--				,@RecentEndTime 	= '2020-08-03'
+--				,@WaitType 			= 'BufferLatch'
+--				,@Metric 			= 'Avg'
+--				,@IncludeQueryText 	= 1
 --
 --			
 --
@@ -145,24 +145,24 @@
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]
 (
-	@ServerIdentifier		SYSNAME			=	NULL,	
-	@DatabaseName			SYSNAME			=	NULL,
-	@ReportIndex			NVARCHAR(800)	=	NULL,
-	@ReportTable			NVARCHAR(800)	=	NULL,
-	@WaitType				NVARCHAR(16)	=	'Total',
-	@Metric					NVARCHAR(16)	=	'Avg',
-	@VariationType			NVARCHAR(1)		=	'R',
-	@ResultsRowCount		INT				=	25,
-	@RecentStartTime		DATETIME2		=	NULL,
-	@RecentEndTime			DATETIME2		=	NULL,
-	@HistoryStartTime		DATETIME2		=	NULL,
-	@HistoryEndTime			DATETIME2		=	NULL,
-	@IncludeQueryText		BIT				=	0,
-	@ExcludeAdhoc			BIT				=	0,
-	@ExcludeInternal		BIT				=	1,
-	@VerboseMode			BIT				=	0,
-	@TestMode				BIT				=	0,
-	@ReportID				BIGINT			=	NULL	OUTPUT
+	@ServerIdentifier		SYSNAME			=	NULL	
+	,@DatabaseName			SYSNAME			=	NULL
+	,@ReportIndex			NVARCHAR(800)	=	NULL
+	,@ReportTable			NVARCHAR(800)	=	NULL
+	,@WaitType				NVARCHAR(16)	=	'Total'
+	,@Metric				NVARCHAR(16)	=	'Avg'
+	,@VariationType			NVARCHAR(1)		=	'R'
+	,@ResultsRowCount		INT				=	25
+	,@RecentStartTime		DATETIME2		=	NULL
+	,@RecentEndTime			DATETIME2		=	NULL
+	,@HistoryStartTime		DATETIME2		=	NULL
+	,@HistoryEndTime		DATETIME2		=	NULL
+	,@IncludeQueryText		BIT				=	0
+	,@ExcludeAdhoc			BIT				=	0
+	,@ExcludeInternal		BIT				=	1
+	,@VerboseMode			BIT				=	0
+	,@TestMode				BIT				=	0
+	,@ReportID				BIGINT			=	NULL	OUTPUT
 )
 AS
 SET NOCOUNT ON

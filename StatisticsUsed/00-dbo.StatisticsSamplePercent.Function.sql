@@ -18,7 +18,7 @@
 --		Feel free to ignore this function and modify the logic in [dbo].[StatisticsUsed] accordingly
 --		
 --
--- Date: 2021.05.07
+-- Date: 2021.05.08
 -- Auth: Pablo Lozano (@sqlozano)
 ----------------------------------------------------------------------------------
 

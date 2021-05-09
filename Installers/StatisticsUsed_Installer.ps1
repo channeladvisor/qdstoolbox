@@ -7,8 +7,8 @@ Param(
 )
 Import-Module SqlServer
 
-# Deploy all SQL script found in \QDSCacheCleanup
-$SQLScripts = (Get-ChildItem -Path '..\QDSCacheCleanup' -Filter "*.sql") | Sort
+# Deploy all SQL script found in \StatisticsUsed
+$SQLScripts = (Get-ChildItem -Path '..\StatisticsUsed' -Filter "*.sql") | Sort
 foreach($Script in $SQLScripts){
     # Replace default schema name [dbo] with [$TargetSchema]
     $ScriptContents = Get-Content -Path $Script.FullName -Raw

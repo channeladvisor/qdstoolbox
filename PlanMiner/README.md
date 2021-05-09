@@ -19,52 +19,28 @@ These details include:
 ## Use cases and examples
 ### Execution plan from cache
 ```
+DECLARE @PlanMinerID	BIGINT
 EXECUTE [dbo].[PlanMiner]
  @InstanceIdentifier 			= 	'LocalServer01'
 ,@PlanHandle 				= 	0x0500060079E8D66530DEE7A80102000001000000000000000000000000000000000000000000000000000000
-,@PlanMinerTable_PlanList		= 	'[dbo].[PlanMiner_PlanList]'
-,@PlanMinerTable_Statements		= 	'[dbo].[PlanMiner_Statements]'
-,@PlanMinerTable_MissingIndexes		= 	'[dbo].[PlanMiner_MissingIndexes]'
-,@PlanMinerTable_UnmatchedIndexes	= 	'[dbo].[PlanMiner_UnmatchedIndexes]'
-,@PlanMinerTable_Nodes			= 	'[dbo].[PlanMiner_Nodes]'
-,@PlanMinerTable_Cursors		= 	'[dbo].[PlanMiner_Cursors]'
-,@PlanMinerTable_IndexOperations	= 	'[dbo].[PlanMiner_IndexOperations]'
-,@PlanMinerTable_Columns		= 	'[dbo].[PlanMiner_Columns]'
-,@PlanMinerTable_Statistics		= 	'[dbo].[PlanMiner_Statistics]'
 ,@PlanMinerID = @PlanMinerID OUTPUT
 ```
 
 ### Execution plan from Query Store
 ```
+DECLARE @PlanMinerID	BIGINT
 EXECUTE [dbo].[PlanMiner]
  @InstanceIdentifier 			= 	'LocalServer01
 ,@DatabaseName				= 	'TargetDB'
 ,@PlanID				= 	368
-,@PlanMinerTable_PlanList		= 	'[dbo].[PlanMiner_PlanList]'
-,@PlanMinerTable_Statements		= 	'[dbo].[PlanMiner_Statements]'
-,@PlanMinerTable_MissingIndexes		= 	'[dbo].[PlanMiner_MissingIndexes]'
-,@PlanMinerTable_UnmatchedIndexes	= 	'[dbo].[PlanMiner_UnmatchedIndexes]'
-,@PlanMinerTable_Nodes			= 	'[dbo].[PlanMiner_Nodes]'
-,@PlanMinerTable_Cursors		= 	'[dbo].[PlanMiner_Cursors]'
-,@PlanMinerTable_IndexOperations	= 	'[dbo].[PlanMiner_IndexOperations]'
-,@PlanMinerTable_Columns		= 	'[dbo].[PlanMiner_Columns]'
-,@PlanMinerTable_Statistics		= 	'[dbo].[PlanMiner_Statistics]'
 ,@PlanMinerID = @PlanMinerID OUTPUT
 ```
 
 ### Execution plan from file
 ```
+DECLARE @PlanMinerID	BIGINT
 EXECUTE [dbo].[PlanMiner]
  @PlanFile				= 	'C:\Temp\Plan01.xml'
-,@PlanMinerTable_PlanList		= 	'[dbo].[PlanMiner_PlanList]'
-,@PlanMinerTable_Statements		= 	'[dbo].[PlanMiner_Statements]'
-,@PlanMinerTable_MissingIndexes		= 	'[dbo].[PlanMiner_MissingIndexes]'
-,@PlanMinerTable_UnmatchedIndexes	= 	'[dbo].[PlanMiner_UnmatchedIndexes]'
-,@PlanMinerTable_Nodes			= 	'[dbo].[PlanMiner_Nodes]'
-,@PlanMinerTable_Cursors		= 	'[dbo].[PlanMiner_Cursors]'
-,@PlanMinerTable_IndexOperations	= 	'[dbo].[PlanMiner_IndexOperations]'
-,@PlanMinerTable_Columns		= 	'[dbo].[PlanMiner_Columns]'
-,@PlanMinerTable_Statistics		= 	'[dbo].[PlanMiner_Statistics]'
 ,@PlanMinerID = @PlanMinerID OUTPUT
 ```
 
