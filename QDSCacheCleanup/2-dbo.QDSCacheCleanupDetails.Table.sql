@@ -28,6 +28,9 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.05.08
+-- Auth: Pablo Lozano (@sqlozano)
+-- 		Changed script logic to drop & recreate table
 ----------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS [dbo].[QDSCacheCleanupDetails]

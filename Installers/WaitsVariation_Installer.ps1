@@ -19,18 +19,20 @@ if($SQLVersion.VersionNumber -lt 14){
     return
 }
 
-# Deploy all SQL script found in \PivotedWaitStats
-$PivotedWaitStatsScripts = (Get-ChildItem -Path '..\WaitsVariation' -Filter "*.sql") | Sort
-foreach($Script in $PivotedWaitStatsScripts){
+# Deploy all SQL script found in \WaitsVariation
+$SQLScripts = (Get-ChildItem -Path '..\WaitsVariation' -Filter "*.sql") | Sort
+foreach($Script in $SQLScripts){
     # Replace default schema name [dbo] with [$TargetSchema]
     $ScriptContents = Get-Content -Path $Script.FullName -Raw
     $ScriptContents = ($ScriptContents.Replace("[dbo]","[$($TargetSchema)]"))
 
     # Deploy updated script
     if($Login){
-        $SQLVersion = Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Username $Login -Password $Password -Query $ScriptContents
+        # Login / Password authentication
+        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Username $Login -Password $Password -Query $ScriptContents
     }
     else {
-        $SQLVersion = Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Query $ScriptContents
+        # Active Directory authentication
+        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Query $ScriptContents
         }  
 }

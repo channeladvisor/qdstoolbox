@@ -103,30 +103,30 @@
 --
 --	Sample 1: Return a list of the 25 queries whose average CPU waits have increased the most comparing 2020-08-01->2020-08-02 with 2020-08-02->2020-08-03
 --			EXECUTE [dbo].[WaitsVariation]
---				@DatabaseName = 'Database00001',
---				@HistoryStartTime = '2020-08-01',
---				@HistoryEndTime = '2020-08-02',
---				@RecentStartTime = '2020-08-02',
---				@RecentEndTime = '2020-08-03',
---				@WaitType = 'CPU',
---				@Metric = 'Avg'
+--				 @DatabaseName 		= 'Database00001'
+--				,@HistoryStartTime 	= '2020-08-01'
+--				,@HistoryEndTime 	= '2020-08-02'
+--				,@RecentStartTime 	= '2020-08-02'
+--				,@RecentEndTime 	= '2020-08-03'
+--				,@WaitType 			= 'CPU'
+--				,@Metric 			= 'Avg'
 --
 --
 --	Sample 2: Save a list of the top 5 queries whose average BufferLatch waits were reduced the most when comparing the intervals
 --		2020-08-01->2020-08-02 and 2020-08-02->2020-08-03 into the table [dbo].[QueryVariationStore], including the queries' text
 --			EXECUTE [dbo].[WaitsVariation]
---				@ReportIndex = 'dbo.WaitsVariationIndex',
---				@ReportTable = 'dbo.WaitsVariationStore',
---				@DatabaseName = 'Database00001',
---				@ResultsRowCount = 5,
---				@VariationType = 'I',
---				@HistoryStartTime = '2020-08-01',
---				@HistoryEndTime = '2020-08-02',
---				@RecentStartTime = '2020-08-02',
---				@RecentEndTime = '2020-08-03',
---				@WaitType = 'BufferLatch',
---				@Metric = 'Avg',
---				@IncludeQueryText = 1
+--				 @ReportIndex 		= 'dbo.WaitsVariationIndex'
+--				,@ReportTable 		= 'dbo.WaitsVariationStore'
+--				,@DatabaseName 		= 'Database00001'
+--				,@ResultsRowCount 	= 5
+--				,@VariationType 	= 'I'
+--				,@HistoryStartTime 	= '2020-08-01'
+--				,@HistoryEndTime 	= '2020-08-02'
+--				,@RecentStartTime 	= '2020-08-02'
+--				,@RecentEndTime 	= '2020-08-03'
+--				,@WaitType 			= 'BufferLatch'
+--				,@Metric 			= 'Avg'
+--				,@IncludeQueryText 	= 1
 --
 --			
 --
@@ -137,27 +137,32 @@
 -- Date: 2021.02.28
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	Execution in SQL 2016 will thrown an error (this component was enabled first in SQL 2017)
+--
+-- Date: 2021.05.05
+-- Auth: Pablo Lozano (@sqlozano)
+--			Swapped the Recent/History columns so the metrics will be read from left to right "History / Recent / Variation"
+--			Fix a bug resulting in an incorrect calculation of the Variaton due to the incorrect order of said columns
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[WaitsVariation]
 (
-	@ServerIdentifier		SYSNAME			=	NULL,	
-	@DatabaseName			SYSNAME			=	NULL,
-	@ReportIndex			NVARCHAR(800)	=	NULL,
-	@ReportTable			NVARCHAR(800)	=	NULL,
-	@WaitType				NVARCHAR(16)	=	'Total',
-	@Metric					NVARCHAR(16)	=	'Avg',
-	@VariationType			NVARCHAR(1)		=	'R',
-	@ResultsRowCount		INT				=	25,
-	@RecentStartTime		DATETIME2		=	NULL,
-	@RecentEndTime			DATETIME2		=	NULL,
-	@HistoryStartTime		DATETIME2		=	NULL,
-	@HistoryEndTime			DATETIME2		=	NULL,
-	@IncludeQueryText		BIT				=	0,
-	@ExcludeAdhoc			BIT				=	0,
-	@ExcludeInternal		BIT				=	1,
-	@VerboseMode			BIT				=	0,
-	@TestMode				BIT				=	0,
-	@ReportID				BIGINT			=	NULL	OUTPUT
+	@ServerIdentifier		SYSNAME			=	NULL	
+	,@DatabaseName			SYSNAME			=	NULL
+	,@ReportIndex			NVARCHAR(800)	=	NULL
+	,@ReportTable			NVARCHAR(800)	=	NULL
+	,@WaitType				NVARCHAR(16)	=	'Total'
+	,@Metric				NVARCHAR(16)	=	'Avg'
+	,@VariationType			NVARCHAR(1)		=	'R'
+	,@ResultsRowCount		INT				=	25
+	,@RecentStartTime		DATETIME2		=	NULL
+	,@RecentEndTime			DATETIME2		=	NULL
+	,@HistoryStartTime		DATETIME2		=	NULL
+	,@HistoryEndTime		DATETIME2		=	NULL
+	,@IncludeQueryText		BIT				=	0
+	,@ExcludeAdhoc			BIT				=	0
+	,@ExcludeInternal		BIT				=	1
+	,@VerboseMode			BIT				=	0
+	,@TestMode				BIT				=	0
+	,@ReportID				BIGINT			=	NULL	OUTPUT
 )
 AS
 SET NOCOUNT ON
@@ -299,83 +304,83 @@ CREATE TABLE #WaitsTable
 	,[ObjectID]						DECIMAL(20,2) NOT NULL
 	,[SchemaName]					NVARCHAR(128) NOT NULL
 	,[ObjectName]					NVARCHAR(128) NOT NULL
-	,[ExecutionCount_Recent]		DECIMAL(20,2) NULL
 	,[ExecutionCount_History]		DECIMAL(20,2) NULL
+	,[ExecutionCount_Recent]		DECIMAL(20,2) NULL
 	,[ExecutionCount_Variation%]	DECIMAL(20,2) NULL
-	,[Total_Recent]					DECIMAL(20,2) NULL
 	,[Total_History]				DECIMAL(20,2) NULL
+	,[Total_Recent]					DECIMAL(20,2) NULL
 	,[Total_Variation%]				DECIMAL(20,2) NULL
-	,[Unknown_Recent]				DECIMAL(20,2) NULL
 	,[Unknown_History]				DECIMAL(20,2) NULL
+	,[Unknown_Recent]				DECIMAL(20,2) NULL
 	,[Unknown_Variation%]			DECIMAL(20,2) NULL
-	,[CPU_Recent]					DECIMAL(20,2) NULL
 	,[CPU_History]					DECIMAL(20,2) NULL
+	,[CPU_Recent]					DECIMAL(20,2) NULL
 	,[CPU_Variation%]				DECIMAL(20,2) NULL
-	,[WorkerThread_Recent]			DECIMAL(20,2) NULL
 	,[WorkerThread_History]			DECIMAL(20,2) NULL
+	,[WorkerThread_Recent]			DECIMAL(20,2) NULL
 	,[WorkerThread_Variation%]		DECIMAL(20,2) NULL
-	,[Lock_Recent]					DECIMAL(20,2) NULL
 	,[Lock_History]					DECIMAL(20,2) NULL
+	,[Lock_Recent]					DECIMAL(20,2) NULL
 	,[Lock_Variation%]				DECIMAL(20,2) NULL
-	,[Latch_Recent]					DECIMAL(20,2) NULL
 	,[Latch_History]				DECIMAL(20,2) NULL
+	,[Latch_Recent]					DECIMAL(20,2) NULL
 	,[Latch_Variation%]				DECIMAL(20,2) NULL
-	,[BufferLatch_Recent]			DECIMAL(20,2) NULL
 	,[BufferLatch_History]			DECIMAL(20,2) NULL
+	,[BufferLatch_Recent]			DECIMAL(20,2) NULL
 	,[BufferLatch_Variation%]		DECIMAL(20,2) NULL
-	,[BufferIO_Recent]				DECIMAL(20,2) NULL
 	,[BufferIO_History]				DECIMAL(20,2) NULL
+	,[BufferIO_Recent]				DECIMAL(20,2) NULL
 	,[BufferIO_Variation%]			DECIMAL(20,2) NULL
-	,[Compilation_Recent]			DECIMAL(20,2) NULL
 	,[Compilation_History]			DECIMAL(20,2) NULL
+	,[Compilation_Recent]			DECIMAL(20,2) NULL
 	,[Compilation_Variation%]		DECIMAL(20,2) NULL
-	,[SQLCLR_Recent]				DECIMAL(20,2) NULL
 	,[SQLCLR_History]				DECIMAL(20,2) NULL
+	,[SQLCLR_Recent]				DECIMAL(20,2) NULL
 	,[SQLCLR_Variation%]			DECIMAL(20,2) NULL
-	,[Mirroring_Recent]				DECIMAL(20,2) NULL
 	,[Mirroring_History]			DECIMAL(20,2) NULL
+	,[Mirroring_Recent]				DECIMAL(20,2) NULL
 	,[Mirroring_Variation%]			DECIMAL(20,2) NULL
-	,[Transaction_Recent]			DECIMAL(20,2) NULL
 	,[Transaction_History]			DECIMAL(20,2) NULL
+	,[Transaction_Recent]			DECIMAL(20,2) NULL
 	,[Transaction_Variation%]		DECIMAL(20,2) NULL
-	,[Idle_Recent]					DECIMAL(20,2) NULL
 	,[Idle_History]					DECIMAL(20,2) NULL
+	,[Idle_Recent]					DECIMAL(20,2) NULL
 	,[Idle_Variation%]				DECIMAL(20,2) NULL
-	,[Preemptive_Recent]			DECIMAL(20,2) NULL
 	,[Preemptive_History]			DECIMAL(20,2) NULL
+	,[Preemptive_Recent]			DECIMAL(20,2) NULL
 	,[Preemptive_Variation%]		DECIMAL(20,2) NULL
-	,[ServiceBroker_Recent]			DECIMAL(20,2) NULL
 	,[ServiceBroker_History]		DECIMAL(20,2) NULL
+	,[ServiceBroker_Recent]			DECIMAL(20,2) NULL
 	,[ServiceBroker_Variation%]		DECIMAL(20,2) NULL
-	,[TranLogIO_Recent]				DECIMAL(20,2) NULL
 	,[TranLogIO_History]			DECIMAL(20,2) NULL
+	,[TranLogIO_Recent]				DECIMAL(20,2) NULL
 	,[TranLogIO_Variation%]			DECIMAL(20,2) NULL
-	,[NetworkIO_Recent]				DECIMAL(20,2) NULL
 	,[NetworkIO_History]			DECIMAL(20,2) NULL
+	,[NetworkIO_Recent]				DECIMAL(20,2) NULL
 	,[NetworkIO_Variation%]			DECIMAL(20,2) NULL
-	,[Parallelism_Recent]			DECIMAL(20,2) NULL
 	,[Parallelism_History]			DECIMAL(20,2) NULL
+	,[Parallelism_Recent]			DECIMAL(20,2) NULL
 	,[Parallelism_Variation%]		DECIMAL(20,2) NULL
-	,[Memory_Recent]				DECIMAL(20,2) NULL
 	,[Memory_History]				DECIMAL(20,2) NULL
+	,[Memory_Recent]				DECIMAL(20,2) NULL
 	,[Memory_Variation%]			DECIMAL(20,2) NULL
-	,[UserWait_Recent]				DECIMAL(20,2) NULL
 	,[UserWait_History]				DECIMAL(20,2) NULL
+	,[UserWait_Recent]				DECIMAL(20,2) NULL
 	,[UserWait_Variation%]			DECIMAL(20,2) NULL
-	,[Tracing_Recent]				DECIMAL(20,2) NULL
 	,[Tracing_History]				DECIMAL(20,2) NULL
+	,[Tracing_Recent]				DECIMAL(20,2) NULL
 	,[Tracing_Variation%]			DECIMAL(20,2) NULL
-	,[FullTextSearch_Recent]		DECIMAL(20,2) NULL
 	,[FullTextSearch_History]		DECIMAL(20,2) NULL
+	,[FullTextSearch_Recent]		DECIMAL(20,2) NULL
 	,[FullTextSearch_Variation%]	DECIMAL(20,2) NULL
-	,[OtherDiskIO_Recent]			DECIMAL(20,2) NULL
 	,[OtherDiskIO_History]			DECIMAL(20,2) NULL
+	,[OtherDiskIO_Recent]			DECIMAL(20,2) NULL
 	,[OtherDiskIO_Variation%]		DECIMAL(20,2) NULL
-	,[Replication_Recent]			DECIMAL(20,2) NULL
 	,[Replication_History]			DECIMAL(20,2) NULL
+	,[Replication_Recent]			DECIMAL(20,2) NULL
 	,[Replication_Variation%]		DECIMAL(20,2) NULL
-	,[LogRateGovernor_Recent]		DECIMAL(20,2) NULL
 	,[LogRateGovernor_History]		DECIMAL(20,2) NULL
+	,[LogRateGovernor_Recent]		DECIMAL(20,2) NULL
 	,[LogRateGovernor_Variation%]	DECIMAL(20,2) NULL
 	,[QueryText]					VARBINARY(MAX) NULL
 )
@@ -584,8 +589,8 @@ AS
 SELECT
 	 [QueryID]						=	[recent].[QueryID]
 	,[ObjectID]						=	[recent].[ObjectID]
-	,[ExecutionCount_Recent]		=	[recent].[ExecutionCount]
 	,[ExecutionCount_History]		=	[hist].[ExecutionCount]
+	,[ExecutionCount_Recent]		=	[recent].[ExecutionCount]
 	,[ExecutionCount_Variation%]	=	CASE WHEN [recent].[ExecutionCount] = 0 THEN 0 WHEN [hist].[ExecutionCount] = 0 THEN [recent].[ExecutionCount]  ELSE ROUND(CONVERT(DECIMAL(20,2), [recent].[ExecutionCount]-[hist].[ExecutionCount])/NULLIF([hist].[ExecutionCount],0)*100.0, 2) END
 	,[Total_History]				=	[hist].[Total]
 	,[Total_Recent]					=	[recent].[Total]

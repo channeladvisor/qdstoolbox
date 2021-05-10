@@ -22,21 +22,22 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.05.08
+-- Auth: Pablo Lozano (@sqlozano)
+-- 		Changed script logic to drop & recreate table
 ----------------------------------------------------------------------------------
 
-IF NOT EXISTS (SELECT 1 FROM [sys].[objects] WHERE [object_id] = OBJECT_ID('dbo.QueryVariationIndex') )
-BEGIN
-	CREATE TABLE [dbo].[QueryVariationIndex]
-	(
-		 [ReportID]				BIGINT	IDENTITY(1,1)
-		,[CaptureDate]			DATETIME2		NOT NULL
-		,[ServerIdentifier]		SYSNAME			NOT NULL
-		,[DatabaseName]			SYSNAME			NOT NULL
-		,[Parameters]			XML				NOT NULL
-	)
-	ALTER TABLE [dbo].[QueryVariationIndex]
-	ADD CONSTRAINT [PK_QueryVariationIndex] PRIMARY KEY CLUSTERED
-	(
-		 [ReportID]	
-	) WITH (DATA_COMPRESSION = PAGE)
-END
+DROP TABLE IF EXISTS [dbo].[QueryVariationIndex]
+CREATE TABLE [dbo].[QueryVariationIndex]
+(
+	 [ReportID]				BIGINT	IDENTITY(1,1)
+	,[CaptureDate]			DATETIME2		NOT NULL
+	,[ServerIdentifier]		SYSNAME			NOT NULL
+	,[DatabaseName]			SYSNAME			NOT NULL
+	,[Parameters]			XML				NOT NULL
+)
+ALTER TABLE [dbo].[QueryVariationIndex]
+ADD CONSTRAINT [PK_QueryVariationIndex] PRIMARY KEY CLUSTERED
+(
+	 [ReportID]	
+) WITH (DATA_COMPRESSION = PAGE)

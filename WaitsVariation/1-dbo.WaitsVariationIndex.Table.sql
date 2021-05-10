@@ -22,21 +22,22 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.05.08
+-- Auth: Pablo Lozano (@sqlozano)
+-- 		Changed script logic to drop & recreate table
 ----------------------------------------------------------------------------------
 
-IF NOT EXISTS (SELECT 1 FROM [sys].[objects] WHERE [object_id] = OBJECT_ID('dbo.WaitsVariationIndex') )
-BEGIN
-	CREATE TABLE [dbo].[WaitsVariationIndex]
-	(
-		 [ReportID]				BIGINT	IDENTITY(1,1)
-		,[CaptureDate]			DATETIME2		NOT NULL
-		,[ServerIdentifier]		SYSNAME			NOT NULL
-		,[DatabaseName]			SYSNAME			NOT NULL
-		,[Parameters]			XML				NOT NULL
-	)
-	ALTER TABLE [dbo].[WaitsVariationIndex]
-	ADD CONSTRAINT [PK_WaitsVariationIndex] PRIMARY KEY CLUSTERED
-	(
-		 [ReportID]	
-	)
-END
+DROP TABLE IF EXISTS [dbo].[WaitsVariationIndex]
+CREATE TABLE [dbo].[WaitsVariationIndex]
+(
+	 [ReportID]				BIGINT	IDENTITY(1,1)
+	,[CaptureDate]			DATETIME2		NOT NULL
+	,[ServerIdentifier]		SYSNAME			NOT NULL
+	,[DatabaseName]			SYSNAME			NOT NULL
+	,[Parameters]			XML				NOT NULL
+)
+ALTER TABLE [dbo].[WaitsVariationIndex]
+ADD CONSTRAINT [PK_WaitsVariationIndex] PRIMARY KEY CLUSTERED
+(
+	 [ReportID]	
+)
