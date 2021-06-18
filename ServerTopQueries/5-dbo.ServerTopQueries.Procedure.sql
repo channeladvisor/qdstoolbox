@@ -233,8 +233,9 @@ SELECT
        ,[query_used_memory]	=	CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS BIGINT)
        ,[log_bytes_used]	=	{@SQL2016columns} CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
        ,[tempdb_space_used]	=	{@SQL2016columns} CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
-FROM
-[{@DatabaseName}].[sys].[query_store_runtime_stats] [qsrs]
+FROM [{@DatabaseName}].[sys].[query_store_runtime_stats] AS [qsrs]
+INNER JOIN [{@DatabaseName}].[sys].[query_store_runtime_stats_interval] AS [qsrsi] 
+ON [qsrsi].[runtime_stats_interval_id]  = [qsrs].[runtime_stats_interval_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
 ON [qsrs].[plan_id] = [qsp].[plan_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query] [qsq]
@@ -243,7 +244,11 @@ LEFT JOIN [{@DatabaseName}].[sys].[objects] [obs]
 ON [qsq].[object_id] = [obs].[object_id]
 WHERE
 	(
-			(qsrs.first_execution_time >= ''{@StartTime}'' AND qsrs.last_execution_time < ''{@EndTime}'')
+		[qsrsi].[start_time]  >= ''{@StartTime}'' AND [qsrsi].[start_time] < ''{@EndTime}''
+	)
+	AND
+	(
+		   (qsrs.first_execution_time  >= ''{@StartTime}'' AND qsrs.last_execution_time < ''{@EndTime}'')
         OR (qsrs.first_execution_time  <= ''{@StartTime}'' AND qsrs.last_execution_time > ''{@StartTime}'')
         OR (qsrs.first_execution_time  <= ''{@EndTime}''   AND qsrs.last_execution_time > ''{@EndTime}'')
 	)
