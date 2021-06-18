@@ -88,12 +88,6 @@ GO
 -- Date: 2021.02.28
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	Execution in SQL 2016 will thrown an error (this component was enabled first in SQL 2017)
---
--- Date: 2021.06.18
--- Auth: Pablo Lozano (@sqlozano)
--- Changes:	Modified filtering of [sys].[query_store_runtime_stats]
---				A filter will be applied to [sys].[query_store_runtime_stats_interval]
---				in order to avoid scaning the whole [sys].[query_store_runtime_stats] table
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QueryWaits]
 (
@@ -387,10 +381,6 @@ ON [o].[schema_id] = [s].[schema_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query_text] [qsqt]
 ON [qsq].[query_text_id] = [qsqt].[query_text_id]
 WHERE 
-	(
-		[qsrsi].[start_time]  >= ''{@StartTime}'' AND [qsrsi].[start_time] < ''{@EndTime}''
-	)
-	AND
 	(
 		([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
 	OR	([qsrs].[first_execution_time] <= ''{@StartTime}'' AND [qsrs].[last_execution_time] > ''{@StartTime}'')
