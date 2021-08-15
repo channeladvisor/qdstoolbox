@@ -228,15 +228,9 @@ SELECT
 	 [ObjectID]		=	[qsq].[object_id]
 	,[SchemaName]	=	ISNULL([s].[name],'''')
 	,[ObjectName]	=	ISNULL([o].[name],'''')
-	,[PlanID] = 
-	{@LookingForObjectName}{@LookingForQueryID}	[qsrs].[plan_id]
-	{@LookingForPlanID} 0
-	,[QueryID] =
-	{@LookingForObjectName} [qsp].[query_id]
-	{@LookingForQueryID}{@LookingForPlanID} 0
-	,[QueryTextID] =
-	{@LookingForObjectName} [qsq].[query_text_id]
-	{@LookingForQueryID}{@LookingForPlanID} 0
+	,[PlanID] = 	[qsrs].[plan_id]
+	,[QueryID] =[qsp].[query_id]
+	,[QueryTextID] =[qsq].[query_text_id]
 	,[qsrsi].[start_time]	AS [StartTime]
 	,[qsrsi].[end_time]		AS [EndTime]
 	,[DifferentPlansUsed]		= COUNT(DISTINCT [qsp].[plan_id])
@@ -392,12 +386,12 @@ WHERE
 GROUP BY
 	 [qsrsi].[start_time]
 	,[qsrsi].[end_time]
-	{@LookingForObjectName}{@LookingForQueryID}	,[qsrs].[plan_id]
-	{@LookingForObjectName}						,[qsp].[query_id]
+	,[qsrs].[plan_id]
+	,[qsp].[query_id]
 	,[s].[name]
 	,[o].[name]
 	,[qsq].[object_id]
-	{@LookingForObjectName}						,[qsq].[query_text_id]'
+	,[qsq].[query_text_id]'
 
 SET @SqlCmd = REPLACE(@SqlCmd,	'{@DatabaseName}',	@DatabaseName)
 SET @SqlCmd = REPLACE(@SqlCmd,	'{@StartTime}',		CAST(@StartTime AS NVARCHAR(34)))
