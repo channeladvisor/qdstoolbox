@@ -374,12 +374,12 @@ INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
 ON [qsrs].[plan_id] = [qsp].[plan_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query] [qsq]
 ON [qsp].[query_id] = [qsq].[query_id]
-INNER JOIN [{@DatabaseName}].[sys].[objects] [o]
-ON [qsq].[object_id] = [o].[object_id]
-INNER JOIN [{@DatabaseName}].[sys].[schemas] [s]
-ON [o].[schema_id] = [s].[schema_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query_text] [qsqt]
 ON [qsq].[query_text_id] = [qsqt].[query_text_id]
+LEFT JOIN [{@DatabaseName}].[sys].[objects] [o]
+ON [qsq].[object_id] = [o].[object_id]
+LEFT JOIN [{@DatabaseName}].[sys].[schemas] [s]
+ON [o].[schema_id] = [s].[schema_id]
 WHERE 
 	(
 		([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
