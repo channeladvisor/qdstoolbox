@@ -17,11 +17,11 @@ Get the runtime statistics of every query part of the [Db01].[Sche].[Obj01] betw
 EXECUTE [dbo].[QueryReport]
 	 @DatabaseName		=	'Db01'
 	,@ObjectName		=	'[Sch01].[Obj01]'
-	,@StartTime			=	'2021-01-01 00:00'
-	,@EndTime			=	'2021-01-07 00:00'
+	,@StartTime		=	'2021-01-01 00:00'
+	,@EndTime		=	'2021-01-07 00:00'
 	,@IntervalReports	=	1
 	,@QueryAggregation	=	1
-	,@Averages			=	1
+	,@Averages		=	1
 	,@RuntimeStats		=	1
 ```
 
@@ -29,14 +29,14 @@ Get the wait statistics of the plan ID 1234 on database [Db02] aggregated for th
 ```
 EXECUTE [dbo].[QueryReport]
 	 @DatabaseName		=	'Db02'
-	,@PlanID			=	1234
-	,@StartTime			=	'2021-06-01 00:00'
-	,@EndTime			=	'2021-06-01 06:00'
+	,@PlanID		=	1234
+	,@StartTime		=	'2021-06-01 00:00'
+	,@EndTime		=	'2021-06-01 06:00'
 	,@AggregatedReports	=	1
 	,@PlanAggregation	=	1
-	,@Averages			=	1
-	,@Totals			=	1
-	,@WaitStats			=	1
+	,@Averages		=	1
+	,@Totals		=	1
+	,@WaitStats		=	1
 ```
 
 Get both the runtime wait statistics of two query IDs (1534 and 3342) on database [Db03] aggregated for the whole interval between '2021-06-01 00:00' and '2021-06-03 00:00' obtaining average runtime & wait stats in a single combined report
@@ -44,13 +44,13 @@ Get both the runtime wait statistics of two query IDs (1534 and 3342) on databas
 EXECUTE [dbo].[QueryReport]
 	 @DatabaseName		=	'Db03'
 	,@QueryIDList		=	'1534,3342'
-	,@StartTime			=	'2021-06-01 00:00'
-	,@EndTime			=	'2021-06-03 00:00'
+	,@StartTime		=	'2021-06-01 00:00'
+	,@EndTime		=	'2021-06-03 00:00'
 	,@AggregatedReports	=	1
 	,@QueryAggregation	=	1
-	,@Averages			=	1
+	,@Averages		=	1
 	,@RuntimeStats		=	1
-	,@WaitStats			=	1
+	,@WaitStats		=	1
 ```
 
 ---
@@ -59,20 +59,20 @@ EXECUTE [dbo].[QueryReport]
 Given an SP recently modified, obtain a list of QueryID that take part of the procedure [Sch02].[Obj02] on database [DB04]
 ```
 EXECUTE [dbo].[QDSCacheCleanup]
-	 @DatabaseName			=	'DB04'
-	,@ObjectName			=	'[Sch01].[Obj02]
-	,@QueryDetails			=	1
+	 @DatabaseName		=	'DB04'
+	,@ObjectName		=	'[Sch01].[Obj02]
+	,@QueryDetails		=	1
 ```
 Once identified the specific QueryIDs (8001 and 9001) updated whose changes are to be monitored
 ```
 EXECUTE [dbo].[QueryReport]
 	 @DatabaseName		=	'Db04'
 	,@QueryIDList		=	'8001,9001'
-	,@StartTime			=	'2021-07-01 00:00'
-	,@EndTime			=	'2021-09-01 00:00'
+	,@StartTime		=	'2021-07-01 00:00'
+	,@EndTime		=	'2021-09-01 00:00'
 	,@AggregatedReports	=	1
 	,@QueryAggregation	=	1
-	,@Averages			=	1
+	,@Averages		=	1
 	,@RuntimeStats		=	1
 	,@PlanDetails		=	1
 ```
