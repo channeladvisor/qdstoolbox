@@ -14,3 +14,4 @@ Param(
 .\ServerTopQueries_Installer.ps1    -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\StatisticsUsed_Installer.ps1      -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\WaitsVariation_Installer.ps1      -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
+.\QueryReport_Installer.ps1         -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
