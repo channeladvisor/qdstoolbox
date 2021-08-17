@@ -138,13 +138,13 @@ GO
 --
 --
 --
--- Date: 2021.08.16
+-- Date: 2021.08.17
 -- Auth: Pablo Lozano (@sqlozano)
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[QueryReport]  
 (  
-	 @InstanceIdentifier	SYSNAME			=	NULL
+	 @ServerIdentifier		SYSNAME			=	NULL
 	,@DatabaseName			SYSNAME			=	NULL
 	,@ObjectName			NVARCHAR(MAX)	=	NULL
 	,@QueryIDList			NVARCHAR(MAX)	=	NULL
@@ -177,7 +177,7 @@ BEGIN
 	RETURN -1
 END
 
-IF ( (@Version < 15) AND (@WaitStats = 1) )
+IF ( (@Version < 14) AND (@WaitStats = 1) )
 BEGIN
 	RAISERROR('[dbo].[QueryReport] requires SQL 2017 or higher to use @WaitStats = 1',16,1)
 	RETURN -1
@@ -462,26 +462,29 @@ BEGIN -- RuntimeStats Show
 		BEGIN -- RuntimeStats Show | Plan | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]				=	[qsrsi].[start_time]
-	,[EndTime]					=	[qsrsi].[end_time]
-	,[r].[QueryID]
-	,[r].[PlanID]			
-	,[r].[Executions]			
-	,[TotalRuntime_CPUTime]				=	[r].[TR_CPUTime]			
-	,[TotalRuntime_Duration]			=	[r].[TR_Duration]			
-	,[TotalRuntime_LogicalIOReads]		=	[r].[TR_LogicalIOReads]	
-	,[TotalRuntime_LogicalIOWrites]		=	[r].[TR_LogicalIOWrites]	
-	,[TotalRuntime_PhysicalIOReads]		=	[r].[TR_PhysicalIOReads]	
-	,[TotalRuntime_NumPhysicalIOReads]	=	[r].[TR_NumPhysicalIOReads]
-	,[TotalRuntime_CLRTime]				=	[r].[TR_CLRTime]			
-	,[TotalRuntime_QueryMaxUsedMemory]	=	[r].[TR_QueryMaxUsedMemory]
-	,[TotalRuntime_Rowcount]			=	[r].[TR_Rowcount]			
-	,[TotalRuntime_LogBytesUsed]		=	[r].[TR_LogBytesUsed]
-	,[TotalRuntime_TempDBSpaceUsed]		=	[r].[TR_TempDBSpaceUsed]
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
+,[EndTime]							=	[qsrsi].[end_time]
+,[r].[QueryID]
+,[r].[PlanID]			
+,[r].[Executions]			
+,[TotalRuntime_CPUTime]				=	[r].[TR_CPUTime]			
+,[TotalRuntime_Duration]			=	[r].[TR_Duration]			
+,[TotalRuntime_LogicalIOReads]		=	[r].[TR_LogicalIOReads]	
+,[TotalRuntime_LogicalIOWrites]		=	[r].[TR_LogicalIOWrites]	
+,[TotalRuntime_PhysicalIOReads]		=	[r].[TR_PhysicalIOReads]	
+,[TotalRuntime_NumPhysicalIOReads]	=	[r].[TR_NumPhysicalIOReads]
+,[TotalRuntime_CLRTime]				=	[r].[TR_CLRTime]			
+,[TotalRuntime_QueryMaxUsedMemory]	=	[r].[TR_QueryMaxUsedMemory]
+,[TotalRuntime_Rowcount]			=	[r].[TR_Rowcount]			
+,[TotalRuntime_LogBytesUsed]		=	[r].[TR_LogBytesUsed]
+,[TotalRuntime_TempDBSpaceUsed]		=	[r].[TR_TempDBSpaceUsed]
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Plan | Totals | IntervalReports
@@ -490,22 +493,24 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Plan | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	MIN([qsrsi].[start_time])
-	,[EndTime]							=	MAX([qsrsi].[end_time])
-	,[r].[QueryID]
-	,[r].[PlanID]			
-	,[Executions]						=	SUM([r].[Executions])
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime])
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration])
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads])
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites])
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads])
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads])
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime])
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory])
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount])
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed])
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed])
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
+,[EndTime]							=	MAX([qsrsi].[end_time])
+,[r].[QueryID]
+,[r].[PlanID]			
+,[Executions]						=	SUM([r].[Executions])
+,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -513,6 +518,7 @@ GROUP BY
 	 [r].[QueryID]
 	,[r].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Plan | Totals | SimplifiedReports
@@ -521,22 +527,24 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	[qsrsi].[start_time]
-	,[EndTime]								=	[qsrsi].[end_time]
-	,[r].[QueryID]
-	,[r].[PlanID]			
-	,[r].[Executions]
-	,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	[r].[Executions]
-	,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	[r].[Executions]
+ [ServerIdentifier]						=	''{@ServerIdentifier}''
+,[DatabaseName]							=	DB_NAME()
+,[StartTime]							=	[qsrsi].[start_time]
+,[EndTime]								=	[qsrsi].[end_time]
+,[r].[QueryID]
+,[r].[PlanID]			
+,[r].[Executions]
+,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	[r].[Executions]
+,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	[r].[Executions]
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -547,6 +555,7 @@ GROUP BY
 	,[r].[PlanID]			
 	,[r].[Executions]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Plan | Averages | IntervalReports
@@ -555,22 +564,24 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Plan | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	MIN([qsrsi].[start_time])
-	,[EndTime]								=	MAX([qsrsi].[end_time])
-	,[r].[QueryID]
-	,[r].[PlanID]	
-	,[Executions]							=	SUM([r].[Executions])
-	,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	SUM([r].[Executions])
+ [ServerIdentifier]						=	''{@ServerIdentifier}''
+,[DatabaseName]							=	DB_NAME()
+,[StartTime]							=	MIN([qsrsi].[start_time])
+,[EndTime]								=	MAX([qsrsi].[end_time])
+,[r].[QueryID]
+,[r].[PlanID]	
+,[Executions] =	SUM([r].[Executions])
+,[AverageRuntime_CPUTime] =	CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] =	CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] =	CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -578,6 +589,7 @@ GROUP BY
 	 [r].[QueryID]
 	,[r].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Plan | Averages | SimplifiedReports
@@ -589,21 +601,23 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	[qsrsi].[start_time]
-	,[EndTime]							=	[qsrsi].[end_time]
-	,[r].[QueryID]
-	,[Executions]						=	SUM([r].[Executions])		
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
+,[EndTime]							=	[qsrsi].[end_time]
+,[r].[QueryID]
+,[Executions] = SUM([r].[Executions])		
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime]	= SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -612,6 +626,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[r].[QueryID]
 	ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Query | Totals | IntervalReports
@@ -620,27 +635,30 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	MIN([qsrsi].[start_time])
-	,[EndTime]							=	MAX([qsrsi].[end_time])
-	,[r].[QueryID]
-	,[Executions]						=	SUM([r].[Executions])		
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
+,[EndTime]							=	MAX([qsrsi].[end_time])
+,[r].[QueryID]
+,[Executions] = SUM([r].[Executions])		
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
 	 [r].[QueryID]
 	ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Query | Totals | SimplifiedReports
@@ -649,21 +667,23 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	[qsrsi].[start_time]
-	,[EndTime]								=	[qsrsi].[end_time]
-	,[r].[QueryID]
-	,[Executions]							=	SUM([r].[Executions])
-	,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	SUM([r].[Executions])
-	,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	SUM([r].[Executions])
+ [ServerIdentifier]						=	''{@ServerIdentifier}''
+,[DatabaseName]							=	DB_NAME()
+,[StartTime]							=	[qsrsi].[start_time]
+,[EndTime]								=	[qsrsi].[end_time]
+,[r].[QueryID]
+,[Executions] = SUM([r].[Executions])
+,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -672,6 +692,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[r].[QueryID]
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Query | Averages | IntervalReports
@@ -680,27 +701,30 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	MIN([qsrsi].[start_time])
-	,[EndTime]								=	MAX([qsrsi].[end_time])
-	,[r].[QueryID]
-	,[Executions]							=	SUM([r].[Executions])
-	,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT) / SUM([r].[Executions])
-	,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT) / SUM([r].[Executions])
+ [ServerIdentifier]						=	''{@ServerIdentifier}''
+,[DatabaseName]							=	DB_NAME()
+,[StartTime]							=	MIN([qsrsi].[start_time])
+,[EndTime]								=	MAX([qsrsi].[end_time])
+,[r].[QueryID]
+,[Executions] = SUM([r].[Executions])
+,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
 	 [r].[QueryID]
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Query | Averages | SimplifiedReports
@@ -714,19 +738,21 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	[qsrsi].[start_time]
-	,[EndTime]							=	[qsrsi].[end_time]
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]				)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]				)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]			)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]		)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]		)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]		)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]				)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]		)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]				)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]			)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]		)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
+,[EndTime]							=	[qsrsi].[end_time]
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -734,6 +760,7 @@ GROUP BY
 	 [qsrsi].[start_time]
 	,[qsrsi].[end_time]
 	ORDER BY 1,2'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Object | Totals | IntervalReports
@@ -742,23 +769,26 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	MIN([qsrsi].[start_time])
-	,[EndTime]							=	MAX([qsrsi].[end_time])
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]				)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]				)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]			)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]		)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]		)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]		)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]				)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]		)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]				)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]			)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]		)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
+,[EndTime]							=	MAX([qsrsi].[end_time])
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 ORDER BY 1'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats Show | Object | Totals | SimplifiedReports
@@ -928,39 +958,42 @@ BEGIN -- WaitStats Show
 		BEGIN -- WaitStats Show | Plan | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]	=	[qsrsi].[start_time]
-	,[EndTime]		=	[qsrsi].[end_time]
-	,[w].[QueryID]				
-	,[w].[PlanID]				
-	,[w].[Executions]			
-	,[TotalWaits_Unknown]			= [w].[TW_Unknown]	
-	,[TotalWaits_CPU]				= [w].[TW_CPU]		
-	,[TotalWaits_WorkerThread]		= [w].[TW_WorkerThread]
-	,[TotalWaits_Lock]				= [w].[TW_Lock]		
-	,[TotalWaits_Latch]				= [w].[TW_Latch]		
-	,[TotalWaits_BufferLatch]		= [w].[TW_BufferLatch]
-	,[TotalWaits_BufferIO]			= [w].[TW_BufferIO]	
-	,[TotalWaits_Compilation]		= [w].[TW_Compilation]
-	,[TotalWaits_SQLCLR]			= [w].[TW_SQLCLR]		
-	,[TotalWaits_Mirroring]			= [w].[TW_Mirroring]	
-	,[TotalWaits_Transaction]		= [w].[TW_Transaction]
-	,[TotalWaits_Idle]				= [w].[TW_Idle]		
-	,[TotalWaits_Preemptive]		= [w].[TW_Preemptive]	
-	,[TotalWaits_ServiceBroker]		= [w].[TW_ServiceBroker]
-	,[TotalWaits_TranLogIO]			= [w].[TW_TranLogIO]	
-	,[TotalWaits_NetworkIO]			= [w].[TW_NetworkIO]	
-	,[TotalWaits_Parallelism]		= [w].[TW_Parallelism]
-	,[TotalWaits_Memory]			= [w].[TW_Memory]		
-	,[TotalWaits_UserWait]			= [w].[TW_UserWait]	
-	,[TotalWaits_Tracing]			= [w].[TW_Tracing]	
-	,[TotalWaits_FullTextSearch]	= [w].[TW_FullTextSearch]
-	,[TotalWaits_OtherDiskIO]		= [w].[TW_OtherDiskIO]
-	,[TotalWaits_Replication]		= [w].[TW_Replication]
-	,[TotalWaits_LogRateGovernor]	= [w].[TW_LogRateGovernor]
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	[qsrsi].[start_time]
+,[EndTime]						=	[qsrsi].[end_time]
+,[w].[QueryID]				
+,[w].[PlanID]				
+,[w].[Executions]			
+,[TotalWaits_Unknown] = [w].[TW_Unknown]	
+,[TotalWaits_CPU] = [w].[TW_CPU]		
+,[TotalWaits_WorkerThread] = [w].[TW_WorkerThread]
+,[TotalWaits_Lock] = [w].[TW_Lock]		
+,[TotalWaits_Latch] = [w].[TW_Latch]		
+,[TotalWaits_BufferLatch] = [w].[TW_BufferLatch]
+,[TotalWaits_BufferIO] = [w].[TW_BufferIO]	
+,[TotalWaits_Compilation] = [w].[TW_Compilation]
+,[TotalWaits_SQLCLR] = [w].[TW_SQLCLR]		
+,[TotalWaits_Mirroring] = [w].[TW_Mirroring]	
+,[TotalWaits_Transaction] = [w].[TW_Transaction]
+,[TotalWaits_Idle] = [w].[TW_Idle]		
+,[TotalWaits_Preemptive] = [w].[TW_Preemptive]	
+,[TotalWaits_ServiceBroker] = [w].[TW_ServiceBroker]
+,[TotalWaits_TranLogIO] = [w].[TW_TranLogIO]	
+,[TotalWaits_NetworkIO] = [w].[TW_NetworkIO]	
+,[TotalWaits_Parallelism] = [w].[TW_Parallelism]
+,[TotalWaits_Memory] = [w].[TW_Memory]		
+,[TotalWaits_UserWait] = [w].[TW_UserWait]	
+,[TotalWaits_Tracing] = [w].[TW_Tracing]	
+,[TotalWaits_FullTextSearch] = [w].[TW_FullTextSearch]
+,[TotalWaits_OtherDiskIO] = [w].[TW_OtherDiskIO]
+,[TotalWaits_Replication] = [w].[TW_Replication]
+,[TotalWaits_LogRateGovernor] = [w].[TW_LogRateGovernor]
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Plan | Totals | IntervalReports
@@ -969,35 +1002,37 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]					=	MIN([qsrsi].[start_time])
-	,[EndTime]						=	MAX([qsrsi].[end_time])
-	,[w].[QueryID]				
-	,[w].[PlanID]				
-	,[Executions]					=	SUM([w].[Executions]		)
-	,[TotalWait_Unknown]			=	SUM([w].[TW_Unknown]		)
-	,[TotalWait_CPU]				=	SUM([w].[TW_CPU]			)
-	,[TotalWait_WorkerThread]		=	SUM([w].[TW_WorkerThread]	)
-	,[TotalWait_Lock]				=	SUM([w].[TW_Lock]			)
-	,[TotalWait_Latch]				=	SUM([w].[TW_Latch]			)
-	,[TotalWait_BufferLatch]		=	SUM([w].[TW_BufferLatch]	)
-	,[TotalWait_BufferIO]			=	SUM([w].[TW_BufferIO]		)
-	,[TotalWait_Compilation]		=	SUM([w].[TW_Compilation]	)
-	,[TotalWait_SQLCLR]				=	SUM([w].[TW_SQLCLR]			)
-	,[TotalWait_Mirroring]			=	SUM([w].[TW_Mirroring]		)
-	,[TotalWait_Transaction]		=	SUM([w].[TW_Transaction]	)
-	,[TotalWait_Idle]				=	SUM([w].[TW_Idle]			)
-	,[TotalWait_Preemptive]			=	SUM([w].[TW_Preemptive]		)
-	,[TotalWait_ServiceBroker]		=	SUM([w].[TW_ServiceBroker]	)
-	,[TotalWait_TranLogIO]			=	SUM([w].[TW_TranLogIO]		)
-	,[TotalWait_NetworkIO]			=	SUM([w].[TW_NetworkIO]		)
-	,[TotalWait_Parallelism]		=	SUM([w].[TW_Parallelism]	)
-	,[TotalWait_Memory]				=	SUM([w].[TW_Memory]			)
-	,[TotalWait_UserWait]			=	SUM([w].[TW_UserWait]		)
-	,[TotalWait_Tracing]			=	SUM([w].[TW_Tracing]		)
-	,[TotalWait_FullTextSearch]		=	SUM([w].[TW_FullTextSearch]	)
-	,[TotalWait_OtherDiskIO]		=	SUM([w].[TW_OtherDiskIO]	)
-	,[TotalWait_Replication]		=	SUM([w].[TW_Replication]	)
-	,[TotalWait_LogRateGovernor]	=	SUM([w].[TW_LogRateGovernor])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	MIN([qsrsi].[start_time])
+,[EndTime]						=	MAX([qsrsi].[end_time])
+,[w].[QueryID]				
+,[w].[PlanID]				
+,[Executions] = SUM([w].[Executions])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1005,6 +1040,7 @@ GROUP BY
 	 [w].[QueryID]				
 	,[w].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Plan | Totals | SimplifiedReports
@@ -1014,39 +1050,42 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	[qsrsi].[start_time]
-	,[EndTime]							=	[qsrsi].[end_time]
-	,[w].[QueryID]
-	,[w].[PlanID]			
-	,[w].[Executions]		
-	,[AverageWait_Unknown]				=	CAST([w].[TW_Unknown]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_CPU]					=	CAST([w].[TW_CPU]				AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_WorkerThread]			=	CAST([w].[TW_WorkerThread]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Lock]					=	CAST([w].[TW_Lock]				AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Latch]				=	CAST([w].[TW_Latch]				AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_BufferLatch]			=	CAST([w].[TW_BufferLatch]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_BufferIO]				=	CAST([w].[TW_BufferIO]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Compilation]			=	CAST([w].[TW_Compilation]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_SQLCLR]				=	CAST([w].[TW_SQLCLR]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Mirroring]			=	CAST([w].[TW_Mirroring]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Transaction]			=	CAST([w].[TW_Transaction]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Idle]					=	CAST([w].[TW_Idle]				AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Preemptive]			=	CAST([w].[TW_Preemptive]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_ServiceBroker]		=	CAST([w].[TW_ServiceBroker]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_TranLogIO]			=	CAST([w].[TW_TranLogIO]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_NetworkIO]			=	CAST([w].[TW_NetworkIO]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Parallelism]			=	CAST([w].[TW_Parallelism]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Memory]				=	CAST([w].[TW_Memory]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_UserWait]				=	CAST([w].[TW_UserWait]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Tracing]				=	CAST([w].[TW_Tracing]			AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_FullTextSearch]		=	CAST([w].[TW_FullTextSearch]	AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_OtherDiskIO]			=	CAST([w].[TW_OtherDiskIO]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_Replication]			=	CAST([w].[TW_Replication]		AS FLOAT)	/	[w].[Executions]
-	,[AverageWait_LogRateGovernor]		=	CAST([w].[TW_LogRateGovernor]	AS FLOAT)	/	[w].[Executions]
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
+,[EndTime]							=	[qsrsi].[end_time]
+,[w].[QueryID]
+,[w].[PlanID]			
+,[w].[Executions]		
+,[AverageWait_Unknown] = CAST([w].[TW_Unknown] AS FLOAT)/[w].[Executions]
+,[AverageWait_CPU] = CAST([w].[TW_CPU] AS FLOAT)/[w].[Executions]
+,[AverageWait_WorkerThread] = CAST([w].[TW_WorkerThread] AS FLOAT)/[w].[Executions]
+,[AverageWait_Lock] = CAST([w].[TW_Lock] AS FLOAT)/[w].[Executions]
+,[AverageWait_Latch] = CAST([w].[TW_Latch] AS FLOAT)/[w].[Executions]
+,[AverageWait_BufferLatch] = CAST([w].[TW_BufferLatch] AS FLOAT)/[w].[Executions]
+,[AverageWait_BufferIO] = CAST([w].[TW_BufferIO] AS FLOAT)/[w].[Executions]
+,[AverageWait_Compilation] = CAST([w].[TW_Compilation] AS FLOAT)/[w].[Executions]
+,[AverageWait_SQLCLR] = CAST([w].[TW_SQLCLR] AS FLOAT)/[w].[Executions]
+,[AverageWait_Mirroring] = CAST([w].[TW_Mirroring] AS FLOAT)/[w].[Executions]
+,[AverageWait_Transaction] = CAST([w].[TW_Transaction] AS FLOAT)/[w].[Executions]
+,[AverageWait_Idle] = CAST([w].[TW_Idle] AS FLOAT)/[w].[Executions]
+,[AverageWait_Preemptive] = CAST([w].[TW_Preemptive] AS FLOAT)/[w].[Executions]
+,[AverageWait_ServiceBroker] = CAST([w].[TW_ServiceBroker] AS FLOAT)/[w].[Executions]
+,[AverageWait_TranLogIO] = CAST([w].[TW_TranLogIO] AS FLOAT)/[w].[Executions]
+,[AverageWait_NetworkIO] = CAST([w].[TW_NetworkIO] AS FLOAT)/[w].[Executions]
+,[AverageWait_Parallelism] = CAST([w].[TW_Parallelism] AS FLOAT)/[w].[Executions]
+,[AverageWait_Memory] = CAST([w].[TW_Memory] AS FLOAT)/[w].[Executions]
+,[AverageWait_UserWait] = CAST([w].[TW_UserWait] AS FLOAT)/[w].[Executions]
+,[AverageWait_Tracing] = CAST([w].[TW_Tracing] AS FLOAT)/[w].[Executions]
+,[AverageWait_FullTextSearch] = CAST([w].[TW_FullTextSearch] AS FLOAT)/[w].[Executions]
+,[AverageWait_OtherDiskIO] = CAST([w].[TW_OtherDiskIO] AS FLOAT)/[w].[Executions]
+,[AverageWait_Replication] = CAST([w].[TW_Replication] AS FLOAT)/[w].[Executions]
+,[AverageWait_LogRateGovernor] = CAST([w].[TW_LogRateGovernor] AS FLOAT)/[w].[Executions]
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Plan | Averages | IntervalReports
@@ -1055,35 +1094,37 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]						=	MIN([qsrsi].[start_time])
-	,[EndTime]							=	MAX([qsrsi].[end_time])
-	,[w].[QueryID]
-	,[w].[PlanID]		
-	,[Executions]						=	SUM([w].[Executions])
-	,[AverageWait_Unknown]				=	CAST(SUM([w].[TW_Unknown]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_CPU]					=	CAST(SUM([w].[TW_CPU]				)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_WorkerThread]			=	CAST(SUM([w].[TW_WorkerThread]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Lock]					=	CAST(SUM([w].[TW_Lock]				)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Latch]				=	CAST(SUM([w].[TW_Latch]				)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_BufferLatch]			=	CAST(SUM([w].[TW_BufferLatch]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_BufferIO]				=	CAST(SUM([w].[TW_BufferIO]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Compilation]			=	CAST(SUM([w].[TW_Compilation]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_SQLCLR]				=	CAST(SUM([w].[TW_SQLCLR]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Mirroring]			=	CAST(SUM([w].[TW_Mirroring]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Transaction]			=	CAST(SUM([w].[TW_Transaction]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Idle]					=	CAST(SUM([w].[TW_Idle]				)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Preemptive]			=	CAST(SUM([w].[TW_Preemptive]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_ServiceBroker]		=	CAST(SUM([w].[TW_ServiceBroker]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_TranLogIO]			=	CAST(SUM([w].[TW_TranLogIO]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_NetworkIO]			=	CAST(SUM([w].[TW_NetworkIO]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Parallelism]			=	CAST(SUM([w].[TW_Parallelism]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Memory]				=	CAST(SUM([w].[TW_Memory]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_UserWait]				=	CAST(SUM([w].[TW_UserWait]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Tracing]				=	CAST(SUM([w].[TW_Tracing]			)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_FullTextSearch]		=	CAST(SUM([w].[TW_FullTextSearch]	)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_OtherDiskIO]			=	CAST(SUM([w].[TW_OtherDiskIO]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_Replication]			=	CAST(SUM([w].[TW_Replication]		)	AS FLOAT) / SUM([w].[Executions])
-	,[AverageWait_LogRateGovernor]		=	CAST(SUM([w].[TW_LogRateGovernor]	)	AS FLOAT) / SUM([w].[Executions])
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
+,[EndTime]							=	MAX([qsrsi].[end_time])
+,[w].[QueryID]
+,[w].[PlanID]		
+,[Executions] = SUM([w].[Executions])
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1091,6 +1132,7 @@ GROUP BY
 	 [w].[QueryID]				
 	,[w].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Plan | Averages | SimplifiedReports
@@ -1104,34 +1146,36 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	[qsrsi].[start_time]
-	,[EndTime]								=	[qsrsi].[end_time]
-	,[w].[QueryID]				
-	,[Executions]							=	SUM([w].[Executions])
-	,[TotalWait_Unknown]					=	SUM([w].[TW_Unknown])
-	,[TotalWait_CPU]						=	SUM([w].[TW_CPU])
-	,[TotalWait_WorkerThread]				=	SUM([w].[TW_WorkerThread])
-	,[TotalWait_Lock]						=	SUM([w].[TW_Lock])
-	,[TotalWait_Latch]						=	SUM([w].[TW_Latch])
-	,[TotalWait_BufferLatch]				=	SUM([w].[TW_BufferLatch])
-	,[TotalWait_BufferIO]					=	SUM([w].[TW_BufferIO])
-	,[TotalWait_Compilation]				=	SUM([w].[TW_Compilation])
-	,[TotalWait_SQLCLR]						=	SUM([w].[TW_SQLCLR])
-	,[TotalWait_Mirroring]					=	SUM([w].[TW_Mirroring])
-	,[TotalWait_Transaction]				=	SUM([w].[TW_Transaction])
-	,[TotalWait_Idle]						=	SUM([w].[TW_Idle])
-	,[TotalWait_Preemptive]					=	SUM([w].[TW_Preemptive])
-	,[TotalWait_ServiceBroker]				=	SUM([w].[TW_ServiceBroker])
-	,[TotalWait_TranLogIO]					=	SUM([w].[TW_TranLogIO])
-	,[TotalWait_NetworkIO]					=	SUM([w].[TW_NetworkIO])
-	,[TotalWait_Parallelism]				=	SUM([w].[TW_Parallelism])
-	,[TotalWait_Memory]						=	SUM([w].[TW_Memory])
-	,[TotalWait_UserWait]					=	SUM([w].[TW_UserWait])
-	,[TotalWait_Tracing]					=	SUM([w].[TW_Tracing])
-	,[TotalWait_FullTextSearch]				=	SUM([w].[TW_FullTextSearch])
-	,[TotalWait_OtherDiskIO]				=	SUM([w].[TW_OtherDiskIO])
-	,[TotalWait_Replication]				=	SUM([w].[TW_Replication])
-	,[TotalWait_LogRateGovernor]			=	SUM([w].[TW_LogRateGovernor])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	[qsrsi].[start_time]
+,[EndTime]						=	[qsrsi].[end_time]
+,[w].[QueryID]				
+,[Executions] = SUM([w].[Executions])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1140,6 +1184,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[w].[QueryID]
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Query | Totals | IntervalReports
@@ -1148,40 +1193,43 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]							=	MIN([qsrsi].[start_time])
-	,[EndTime]								=	MAX([qsrsi].[end_time])
-	,[w].[QueryID]				
-	,[Executions]							=	SUM([w].[Executions])
-	,[TotalWait_Unknown]					=	SUM([w].[TW_Unknown])
-	,[TotalWait_CPU]						=	SUM([w].[TW_CPU])
-	,[TotalWait_WorkerThread]				=	SUM([w].[TW_WorkerThread])
-	,[TotalWait_Lock]						=	SUM([w].[TW_Lock])
-	,[TotalWait_Latch]						=	SUM([w].[TW_Latch])
-	,[TotalWait_BufferLatch]				=	SUM([w].[TW_BufferLatch])
-	,[TotalWait_BufferIO]					=	SUM([w].[TW_BufferIO])
-	,[TotalWait_Compilation]				=	SUM([w].[TW_Compilation])
-	,[TotalWait_SQLCLR]						=	SUM([w].[TW_SQLCLR])
-	,[TotalWait_Mirroring]					=	SUM([w].[TW_Mirroring])
-	,[TotalWait_Transaction]				=	SUM([w].[TW_Transaction])
-	,[TotalWait_Idle]						=	SUM([w].[TW_Idle])
-	,[TotalWait_Preemptive]					=	SUM([w].[TW_Preemptive])
-	,[TotalWait_ServiceBroker]				=	SUM([w].[TW_ServiceBroker])
-	,[TotalWait_TranLogIO]					=	SUM([w].[TW_TranLogIO])
-	,[TotalWait_NetworkIO]					=	SUM([w].[TW_NetworkIO])
-	,[TotalWait_Parallelism]				=	SUM([w].[TW_Parallelism])
-	,[TotalWait_Memory]						=	SUM([w].[TW_Memory])
-	,[TotalWait_UserWait]					=	SUM([w].[TW_UserWait])
-	,[TotalWait_Tracing]					=	SUM([w].[TW_Tracing])
-	,[TotalWait_FullTextSearch]				=	SUM([w].[TW_FullTextSearch])
-	,[TotalWait_OtherDiskIO]				=	SUM([w].[TW_OtherDiskIO])
-	,[TotalWait_Replication]				=	SUM([w].[TW_Replication])
-	,[TotalWait_LogRateGovernor]			=	SUM([w].[TW_LogRateGovernor])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	MIN([qsrsi].[start_time])
+,[EndTime]						=	MAX([qsrsi].[end_time])
+,[w].[QueryID]				
+,[Executions] = SUM([w].[Executions])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 GROUP BY
 	 [w].[QueryID]
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Query | Totals | SimplifiedReports
@@ -1191,34 +1239,36 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]					=	[qsrsi].[start_time]
-	,[EndTime]						=	[qsrsi].[end_time]
-	,[w].[QueryID]
-	,[Executions]					=	SUM([w].[Executions])		
-	,[AverageWait_Unknown]			=	CAST(SUM([w].[TW_Unknown]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_CPU]				=	CAST(SUM([w].[TW_CPU]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_WorkerThread]		=	CAST(SUM([w].[TW_WorkerThread]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Lock]				=	CAST(SUM([w].[TW_Lock]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Latch]			=	CAST(SUM([w].[TW_Latch]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_BufferLatch]		=	CAST(SUM([w].[TW_BufferLatch]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_BufferIO]			=	CAST(SUM([w].[TW_BufferIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Compilation]		=	CAST(SUM([w].[TW_Compilation]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_SQLCLR]			=	CAST(SUM([w].[TW_SQLCLR]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Mirroring]		=	CAST(SUM([w].[TW_Mirroring]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Transaction]		=	CAST(SUM([w].[TW_Transaction]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Idle]				=	CAST(SUM([w].[TW_Idle]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Preemptive]		=	CAST(SUM([w].[TW_Preemptive]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_ServiceBroker]	=	CAST(SUM([w].[TW_ServiceBroker]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_TranLogIO]		=	CAST(SUM([w].[TW_TranLogIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_NetworkIO]		=	CAST(SUM([w].[TW_NetworkIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Parallelism]		=	CAST(SUM([w].[TW_Parallelism]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Memory]			=	CAST(SUM([w].[TW_Memory]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_UserWait]			=	CAST(SUM([w].[TW_UserWait]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Tracing]			=	CAST(SUM([w].[TW_Tracing]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_FullTextSearch]	=	CAST(SUM([w].[TW_FullTextSearch]	)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_OtherDiskIO]		=	CAST(SUM([w].[TW_OtherDiskIO]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Replication]		=	CAST(SUM([w].[TW_Replication]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_LogRateGovernor]	=	CAST(SUM([w].[TW_LogRateGovernor]	)	AS FLOAT)	/	SUM([w].[Executions])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	[qsrsi].[start_time]
+,[EndTime]						=	[qsrsi].[end_time]
+,[w].[QueryID]
+,[Executions] = SUM([w].[Executions])		
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1227,6 +1277,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[w].[QueryID]
 	ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Query | Averages | IntervalReports
@@ -1236,40 +1287,43 @@ GROUP BY
 		BEGIN -- WaitStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]					=	MIN([qsrsi].[start_time])
-	,[EndTime]						=	MAX([qsrsi].[end_time])
-	,[w].[QueryID]
-	,[Executions]					=	SUM([w].[Executions])		
-	,[AverageWait_Unknown]			=	CAST(SUM([w].[TW_Unknown]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_CPU]				=	CAST(SUM([w].[TW_CPU]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_WorkerThread]		=	CAST(SUM([w].[TW_WorkerThread]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Lock]				=	CAST(SUM([w].[TW_Lock]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Latch]			=	CAST(SUM([w].[TW_Latch]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_BufferLatch]		=	CAST(SUM([w].[TW_BufferLatch]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_BufferIO]			=	CAST(SUM([w].[TW_BufferIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Compilation]		=	CAST(SUM([w].[TW_Compilation]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_SQLCLR]			=	CAST(SUM([w].[TW_SQLCLR]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Mirroring]		=	CAST(SUM([w].[TW_Mirroring]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Transaction]		=	CAST(SUM([w].[TW_Transaction]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Idle]				=	CAST(SUM([w].[TW_Idle]				)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Preemptive]		=	CAST(SUM([w].[TW_Preemptive]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_ServiceBroker]	=	CAST(SUM([w].[TW_ServiceBroker]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_TranLogIO]		=	CAST(SUM([w].[TW_TranLogIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_NetworkIO]		=	CAST(SUM([w].[TW_NetworkIO]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Parallelism]		=	CAST(SUM([w].[TW_Parallelism]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Memory]			=	CAST(SUM([w].[TW_Memory]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_UserWait]			=	CAST(SUM([w].[TW_UserWait]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Tracing]			=	CAST(SUM([w].[TW_Tracing]			)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_FullTextSearch]	=	CAST(SUM([w].[TW_FullTextSearch]	)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_OtherDiskIO]		=	CAST(SUM([w].[TW_OtherDiskIO]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_Replication]		=	CAST(SUM([w].[TW_Replication]		)	AS FLOAT)	/	SUM([w].[Executions])
-	,[AverageWait_LogRateGovernor]	=	CAST(SUM([w].[TW_LogRateGovernor]	)	AS FLOAT)	/	SUM([w].[Executions])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	MIN([qsrsi].[start_time])
+,[EndTime]						=	MAX([qsrsi].[end_time])
+,[w].[QueryID]
+,[Executions] = SUM([w].[Executions])		
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 GROUP BY
 	 [w].[QueryID]
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Query | Averages | SimplifiedReports
@@ -1281,32 +1335,34 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]					=	[qsrsi].[start_time]
-	,[EndTime]						=	[qsrsi].[end_time]
-	,[TotalWait_Unknown]			=	SUM([w].[TW_Unknown])
-	,[TotalWait_CPU]				=	SUM([w].[TW_CPU])
-	,[TotalWait_WorkerThread]		=	SUM([w].[TW_WorkerThread])
-	,[TotalWait_Lock]				=	SUM([w].[TW_Lock])
-	,[TotalWait_Latch]				=	SUM([w].[TW_Latch])
-	,[TotalWait_BufferLatch]		=	SUM([w].[TW_BufferLatch])
-	,[TotalWait_BufferIO]			=	SUM([w].[TW_BufferIO])
-	,[TotalWait_Compilation]		=	SUM([w].[TW_Compilation])
-	,[TotalWait_SQLCLR]				=	SUM([w].[TW_SQLCLR])
-	,[TotalWait_Mirroring]			=	SUM([w].[TW_Mirroring])
-	,[TotalWait_Transaction]		=	SUM([w].[TW_Transaction])
-	,[TotalWait_Idle]				=	SUM([w].[TW_Idle])
-	,[TotalWait_Preemptive]			=	SUM([w].[TW_Preemptive])
-	,[TotalWait_ServiceBroker]		=	SUM([w].[TW_ServiceBroker])
-	,[TotalWait_TranLogIO]			=	SUM([w].[TW_TranLogIO])
-	,[TotalWait_NetworkIO]			=	SUM([w].[TW_NetworkIO])
-	,[TotalWait_Parallelism]		=	SUM([w].[TW_Parallelism])
-	,[TotalWait_Memory]				=	SUM([w].[TW_Memory])
-	,[TotalWait_UserWait]			=	SUM([w].[TW_UserWait])
-	,[TotalWait_Tracing]			=	SUM([w].[TW_Tracing])
-	,[TotalWait_FullTextSearch]		=	SUM([w].[TW_FullTextSearch])
-	,[TotalWait_OtherDiskIO]		=	SUM([w].[TW_OtherDiskIO])
-	,[TotalWait_Replication]		=	SUM([w].[TW_Replication])
-	,[TotalWait_LogRateGovernor]	=	SUM([w].[TW_LogRateGovernor])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	[qsrsi].[start_time]
+,[EndTime]						=	[qsrsi].[end_time]
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1314,6 +1370,7 @@ GROUP BY
 	 [qsrsi].[start_time]
 	,[qsrsi].[end_time]
 	ORDER BY 1'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Object | Totals | IntervalReports
@@ -1322,36 +1379,39 @@ GROUP BY
 		BEGIN -- WaitStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
-	 [StartTime]					=	MIN([qsrsi].[start_time])
-	,[EndTime]						=	MAX([qsrsi].[end_time])
-	,[TotalWait_Unknown]			=	SUM([w].[TW_Unknown])
-	,[TotalWait_CPU]				=	SUM([w].[TW_CPU])
-	,[TotalWait_WorkerThread]		=	SUM([w].[TW_WorkerThread])
-	,[TotalWait_Lock]				=	SUM([w].[TW_Lock])
-	,[TotalWait_Latch]				=	SUM([w].[TW_Latch])
-	,[TotalWait_BufferLatch]		=	SUM([w].[TW_BufferLatch])
-	,[TotalWait_BufferIO]			=	SUM([w].[TW_BufferIO])
-	,[TotalWait_Compilation]		=	SUM([w].[TW_Compilation])
-	,[TotalWait_SQLCLR]				=	SUM([w].[TW_SQLCLR])
-	,[TotalWait_Mirroring]			=	SUM([w].[TW_Mirroring])
-	,[TotalWait_Transaction]		=	SUM([w].[TW_Transaction])
-	,[TotalWait_Idle]				=	SUM([w].[TW_Idle])
-	,[TotalWait_Preemptive]			=	SUM([w].[TW_Preemptive])
-	,[TotalWait_ServiceBroker]		=	SUM([w].[TW_ServiceBroker])
-	,[TotalWait_TranLogIO]			=	SUM([w].[TW_TranLogIO])
-	,[TotalWait_NetworkIO]			=	SUM([w].[TW_NetworkIO])
-	,[TotalWait_Parallelism]		=	SUM([w].[TW_Parallelism])
-	,[TotalWait_Memory]				=	SUM([w].[TW_Memory])
-	,[TotalWait_UserWait]			=	SUM([w].[TW_UserWait])
-	,[TotalWait_Tracing]			=	SUM([w].[TW_Tracing])
-	,[TotalWait_FullTextSearch]		=	SUM([w].[TW_FullTextSearch])
-	,[TotalWait_OtherDiskIO]		=	SUM([w].[TW_OtherDiskIO])
-	,[TotalWait_Replication]		=	SUM([w].[TW_Replication])
-	,[TotalWait_LogRateGovernor]	=	SUM([w].[TW_LogRateGovernor])
+ [ServerIdentifier]				=	''{@ServerIdentifier}''
+,[DatabaseName]					=	DB_NAME()
+,[StartTime]					=	MIN([qsrsi].[start_time])
+,[EndTime]						=	MAX([qsrsi].[end_time])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 ORDER BY 1'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- WaitStats Show | Object | Totals | SimplifiedReports
@@ -1374,46 +1434,47 @@ BEGIN -- RuntimeStats & WaitStats Show
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
-	 [StartTime]	=	[qsrsi].[start_time]
-	,[EndTime]		=	[qsrsi].[end_time]
-	,[r].[QueryID]				
-	,[r].[PlanID]				
-	,[r].[Executions]	
-	,[TotalRuntime_CPUTime]				= [r].[TR_CPUTime]			
-	,[TotalRuntime_Duration]			= [r].[TR_Duration]			
-	,[TotalRuntime_LogicalIOReads]		= [r].[TR_LogicalIOReads]	
-	,[TotalRuntime_LogicalIOWrites]		= [r].[TR_LogicalIOWrites]	
-	,[TotalRuntime_PhysicalIOReads]		= [r].[TR_PhysicalIOReads]	
-	,[TotalRuntime_NumPhysicalIOReads]	= [r].[TR_NumPhysicalIOReads]
-	,[TotalRuntime_CLRTime]				= [r].[TR_CLRTime]			
-	,[TotalRuntime_QueryMaxUsedMemory]	= [r].[TR_QueryMaxUsedMemory]
-	,[TotalRuntime_Rowcount]			= [r].[TR_Rowcount]			
-	,[TotalRuntime_LogBytesUsed]		= [r].[TR_LogBytesUsed]		
-	,[TotalRuntime_TempDBSpaceUsed]		= [r].[TR_TempDBSpaceUsed]	
-	,[TotalWait_Unknown]				= [w].[TW_Unknown]	
-	,[TotalWait_CPU]					= [w].[TW_CPU]		
-	,[TotalWait_WorkerThread]			= [w].[TW_WorkerThread]
-	,[TotalWait_Lock]					= [w].[TW_Lock]		
-	,[TotalWait_Lock]					= [w].[TW_Lock]		
-	,[TotalWait_BufferLatch]			= [w].[TW_BufferLatch]
-	,[TotalWait_BufferIO]				= [w].[TW_BufferIO]	
-	,[TotalWait_Compilation]			= [w].[TW_Compilation]
-	,[TotalWait_SQLCLR]					= [w].[TW_SQLCLR]		
-	,[TotalWait_Mirroring]				= [w].[TW_Mirroring]	
-	,[TotalWait_Transaction]			= [w].[TW_Transaction]
-	,[TotalWait_Idle]					= [w].[TW_Idle]		
-	,[TotalWait_Preemptive]				= [w].[TW_Preemptive]	
-	,[TotalWait_ServiceBroker]			= [w].[TW_ServiceBroker]
-	,[TotalWait_TranLogIO]				= [w].[TW_TranLogIO]	
-	,[TotalWait_NetworkIO]				= [w].[TW_NetworkIO]	
-	,[TotalWait_Parallelism]			= [w].[TW_Parallelism]
-	,[TotalWait_Memory]					= [w].[TW_Memory]		
-	,[TotalWait_UserWait]				= [w].[TW_UserWait]	
-	,[TotalWait_Tracing]				= [w].[TW_Tracing]	
-	,[TotalWait_FullTextSearch]			= [w].[TW_FullTextSearch]
-	,[TotalWait_OtherDiskIO]			= [w].[TW_OtherDiskIO]
-	,[TotalWait_Replication]			= [w].[TW_Replication]
-	,[TotalWait_LogRateGovernor]		= [w].[TW_LogRateGovernor]
+ [ServerIdentifier]					= ''{@ServerIdentifier}''
+,[DatabaseName]						= DB_NAME()
+,[StartTime]						= [qsrsi].[start_time]
+,[EndTime]							= [qsrsi].[end_time]
+,[r].[QueryID]				
+,[r].[PlanID]				
+,[r].[Executions]	
+,[TotalRuntime_CPUTime] = [r].[TR_CPUTime]			
+,[TotalRuntime_Duration] = [r].[TR_Duration]			
+,[TotalRuntime_LogicalIOReads] = [r].[TR_LogicalIOReads]	
+,[TotalRuntime_LogicalIOWrites] = [r].[TR_LogicalIOWrites]	
+,[TotalRuntime_PhysicalIOReads] = [r].[TR_PhysicalIOReads]	
+,[TotalRuntime_NumPhysicalIOReads] = [r].[TR_NumPhysicalIOReads]
+,[TotalRuntime_CLRTime] = [r].[TR_CLRTime]			
+,[TotalRuntime_QueryMaxUsedMemory] = [r].[TR_QueryMaxUsedMemory]
+,[TotalRuntime_Rowcount] = [r].[TR_Rowcount]			
+,[TotalRuntime_LogBytesUsed] = [r].[TR_LogBytesUsed]		
+,[TotalRuntime_TempDBSpaceUsed] = [r].[TR_TempDBSpaceUsed]	
+,[TotalWait_Unknown] = [w].[TW_Unknown]	
+,[TotalWait_CPU] = [w].[TW_CPU]		
+,[TotalWait_WorkerThread] = [w].[TW_WorkerThread]
+,[TotalWait_Lock] = [w].[TW_Lock]		
+,[TotalWait_BufferLatch] = [w].[TW_BufferLatch]
+,[TotalWait_BufferIO] = [w].[TW_BufferIO]	
+,[TotalWait_Compilation] = [w].[TW_Compilation]
+,[TotalWait_SQLCLR] = [w].[TW_SQLCLR]		
+,[TotalWait_Mirroring] = [w].[TW_Mirroring]	
+,[TotalWait_Transaction] = [w].[TW_Transaction]
+,[TotalWait_Idle] = [w].[TW_Idle]		
+,[TotalWait_Preemptive] = [w].[TW_Preemptive]	
+,[TotalWait_ServiceBroker] = [w].[TW_ServiceBroker]
+,[TotalWait_TranLogIO] = [w].[TW_TranLogIO]	
+,[TotalWait_NetworkIO] = [w].[TW_NetworkIO]	
+,[TotalWait_Parallelism] = [w].[TW_Parallelism]
+,[TotalWait_Memory] = [w].[TW_Memory]		
+,[TotalWait_UserWait] = [w].[TW_UserWait]	
+,[TotalWait_Tracing] = [w].[TW_Tracing]	
+,[TotalWait_FullTextSearch] = [w].[TW_FullTextSearch]
+,[TotalWait_OtherDiskIO] = [w].[TW_OtherDiskIO]
+,[TotalWait_Replication] = [w].[TW_Replication]
+,[TotalWait_LogRateGovernor] = [w].[TW_LogRateGovernor]
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1422,6 +1483,7 @@ AND [r].[PlanID]					= [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Plan | Totals | IntervalReports
@@ -1430,46 +1492,48 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime]						= MIN([qsrsi].[start_time])
+ [ServerIdentifier]					= ''{@ServerIdentifier}''
+,[DatabaseName]						= DB_NAME()
+,[StartTime]						= MIN([qsrsi].[start_time])
 ,[EndTime]							= MAX([qsrsi].[end_time])
 ,[r].[QueryID]				
 ,[r].[PlanID]				
-,[Executions]						= SUM([r].[Executions])
-,[TotalRuntime_CPUTime]				= SUM([r].[TR_CPUTime])
-,[TotalRuntime_Duration]			= SUM([r].[TR_Duration])
-,[TotalRuntime_LogicalIOReads]		= SUM([r].[TR_LogicalIOReads])
-,[TotalRuntime_LogicalIOWrites]		= SUM([r].[TR_LogicalIOWrites])
-,[TotalRuntime_PhysicalIOReads]		= SUM([r].[TR_PhysicalIOReads])
-,[TotalRuntime_NumPhysicalIOReads]	= SUM([r].[TR_NumPhysicalIOReads])
-,[TotalRuntime_CLRTime]				= SUM([r].[TR_CLRTime])
-,[TotalRuntime_QueryMaxUsedMemory]	= SUM([r].[TR_QueryMaxUsedMemory])
-,[TotalRuntime_Rowcount]			= SUM([r].[TR_Rowcount])
-,[TotalRuntime_LogBytesUsed]		= SUM([r].[TR_LogBytesUsed])
-,[TotalRuntime_TempDBSpaceUsed]		= SUM([r].[TR_TempDBSpaceUsed])
-,[TotalWait_Unknown]				= SUM([w].[TW_Unknown])
-,[TotalWait_CPU]					= SUM([w].[TW_CPU])
-,[TotalWait_WorkerThread]			= SUM([w].[TW_WorkerThread])
-,[TotalWait_Lock]					= SUM([w].[TW_Lock])
-,[TotalWait_Latch]					= SUM([w].[TW_Latch])
-,[TotalWait_BufferLatch]			= SUM([w].[TW_BufferLatch])
-,[TotalWait_BufferIO]				= SUM([w].[TW_BufferIO])
-,[TotalWait_Compilation]			= SUM([w].[TW_Compilation])
-,[TotalWait_SQLCLR]					= SUM([w].[TW_SQLCLR])
-,[TotalWait_Mirroring]				= SUM([w].[TW_Mirroring])
-,[TotalWait_Transaction]			= SUM([w].[TW_Transaction])
-,[TotalWait_Idle]					= SUM([w].[TW_Idle])
-,[TotalWait_Preemptive]				= SUM([w].[TW_Preemptive])
-,[TotalWait_ServiceBroker]			= SUM([w].[TW_ServiceBroker])
-,[TotalWait_TranLogIO]				= SUM([w].[TW_TranLogIO])
-,[TotalWait_NetworkIO]				= SUM([w].[TW_NetworkIO])
-,[TotalWait_Parallelism]			= SUM([w].[TW_Parallelism])
-,[TotalWait_Memory]					= SUM([w].[TW_Memory])
-,[TotalWait_UserWait]				= SUM([w].[TW_UserWait])
-,[TotalWait_Tracing]				= SUM([w].[TW_Tracing])
-,[TotalWait_FullTextSearch]			= SUM([w].[TW_FullTextSearch])
-,[TotalWait_OtherDiskIO]			= SUM([w].[TW_OtherDiskIO])
-,[TotalWait_Replication]			= SUM([w].[TW_Replication])
-,[TotalWait_LogRateGovernor]		= SUM([w].[TW_LogRateGovernor])
+,[Executions] = SUM([r].[Executions])
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1481,6 +1545,7 @@ GROUP BY
 	 [r].[QueryID]				
 	,[r].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Plan | Totals | SimplifiedReports
@@ -1489,7 +1554,9 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime] = [qsrsi].[start_time]
+[ServerIdentifier] = ''{@ServerIdentifier}''
+,[DatabaseName] = DB_NAME()
+,[StartTime] = [qsrsi].[start_time]
 ,[EndTime] = [qsrsi].[end_time]
 ,[r].[QueryID]
 ,[r].[PlanID]			
@@ -1536,6 +1603,7 @@ AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Plan | Averages | IntervalReports
@@ -1544,46 +1612,48 @@ GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORD
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime] = MIN([qsrsi].[start_time])
-,[EndTime]	 = MAX([qsrsi].[end_time])
+[ServerIdentifier] = ''{@ServerIdentifier}''
+,[DatabaseName] = DB_NAME()
+,[StartTime] = MIN([qsrsi].[start_time])
+,[EndTime] = MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[r].[PlanID]			
-,[Executions]						 = SUM([r].[Executions])
-,[AverageRuntime_CPUTime]			 = CAST(SUM([r].[TR_CPUTime]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration]			 = CAST(SUM([r].[TR_Duration]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads]	 = CAST(SUM([r].[TR_LogicalIOReads]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites]	 = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads]	 = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[Executions] = SUM([r].[Executions])
+,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
 ,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime]			 = CAST(SUM([r].[TR_CLRTime]		) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
 ,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount]			 = CAST(SUM([r].[TR_Rowcount]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed]		 = CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed]	 = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Unknown]				 = CAST(SUM([w].[TW_Unknown]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_CPU]					 = CAST(SUM([w].[TW_CPU]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_WorkerThread]			 = CAST(SUM([w].[TW_WorkerThread]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Lock]					 = CAST(SUM([w].[TW_Lock]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Latch]				 = CAST(SUM([w].[TW_Latch]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferLatch]			 = CAST(SUM([w].[TW_BufferLatch]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferIO]				 = CAST(SUM([w].[TW_BufferIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Compilation]			 = CAST(SUM([w].[TW_Compilation]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_SQLCLR]				 = CAST(SUM([w].[TW_SQLCLR]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Mirroring]			 = CAST(SUM([w].[TW_Mirroring]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Transaction]			 = CAST(SUM([w].[TW_Transaction]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Idle]					 = CAST(SUM([w].[TW_Idle]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Preemptive]			 = CAST(SUM([w].[TW_Preemptive]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_ServiceBroker]		 = CAST(SUM([w].[TW_ServiceBroker]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_TranLogIO]			 = CAST(SUM([w].[TW_TranLogIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_NetworkIO]			 = CAST(SUM([w].[TW_NetworkIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Parallelism]			 = CAST(SUM([w].[TW_Parallelism]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Memory]				 = CAST(SUM([w].[TW_Memory]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_UserWait]				 = CAST(SUM([w].[TW_UserWait]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Tracing]				 = CAST(SUM([w].[TW_Tracing]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_FullTextSearch]		 = CAST(SUM([w].[TW_FullTextSearch]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_OtherDiskIO]			 = CAST(SUM([w].[TW_OtherDiskIO]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Replication]			 = CAST(SUM([w].[TW_Replication]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_LogRateGovernor]		 = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1595,6 +1665,7 @@ GROUP BY
 	 [r].[QueryID]				
 	,[r].[PlanID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Plan | Averages | SimplifiedReports
@@ -1608,45 +1679,47 @@ IF(@QueryAggregation		=	1)
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime]						=	[qsrsi].[start_time]
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
 ,[EndTime]							=	[qsrsi].[end_time]
 ,[r].[QueryID]				
-,[Executions]						=	SUM([r].[Executions]			)
-,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
-,[TotalWait_Unknown]				=	SUM([w].[TW_Unknown]			)
-,[TotalWait_CPU]					=	SUM([w].[TW_CPU]				)
-,[TotalWait_WorkerThread]			=	SUM([w].[TW_WorkerThread]		)
-,[TotalWait_Lock]					=	SUM([w].[TW_Lock]				)
-,[TotalWait_Latch]					=	SUM([w].[TW_Latch]				)
-,[TotalWait_BufferLatch]			=	SUM([w].[TW_BufferLatch]		)
-,[TotalWait_BufferIO]				=	SUM([w].[TW_BufferIO]			)
-,[TotalWait_Compilation]			=	SUM([w].[TW_Compilation]		)
-,[TotalWait_SQLCLR]					=	SUM([w].[TW_SQLCLR]				)
-,[TotalWait_Mirroring]				=	SUM([w].[TW_Mirroring]			)
-,[TotalWait_Transaction]			=	SUM([w].[TW_Transaction]		)
-,[TotalWait_Idle]					=	SUM([w].[TW_Idle]				)
-,[TotalWait_Preemptive]				=	SUM([w].[TW_Preemptive]			)
-,[TotalWait_ServiceBroker]			=	SUM([w].[TW_ServiceBroker]		)
-,[TotalWait_TranLogIO]				=	SUM([w].[TW_TranLogIO]			)
-,[TotalWait_NetworkIO]				=	SUM([w].[TW_NetworkIO]			)
-,[TotalWait_Parallelism]			=	SUM([w].[TW_Parallelism]		)
-,[TotalWait_Memory]					=	SUM([w].[TW_Memory]				)
-,[TotalWait_UserWait]				=	SUM([w].[TW_UserWait]			)
-,[TotalWait_Tracing]				=	SUM([w].[TW_Tracing]			)
-,[TotalWait_FullTextSearch]			=	SUM([w].[TW_FullTextSearch]		)
-,[TotalWait_OtherDiskIO]			=	SUM([w].[TW_OtherDiskIO]		)
-,[TotalWait_Replication]			=	SUM([w].[TW_Replication]		)
-,[TotalWait_LogRateGovernor]		=	SUM([w].[TW_LogRateGovernor]	)
+,[Executions] = SUM([r].[Executions])
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1659,6 +1732,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[r].[QueryID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Query | Totals | IntervalReports
@@ -1667,45 +1741,47 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime]						=	MIN([qsrsi].[start_time])
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
 ,[EndTime]							=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]				
-,[Executions]						=	SUM([r].[Executions]			)
-,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
-,[TotalWait_Unknown]				=	SUM([w].[TW_Unknown]			)
-,[TotalWait_CPU]					=	SUM([w].[TW_CPU]				)
-,[TotalWait_WorkerThread]			=	SUM([w].[TW_WorkerThread]		)
-,[TotalWait_Lock]					=	SUM([w].[TW_Lock]				)
-,[TotalWait_Latch]					=	SUM([w].[TW_Latch]				)
-,[TotalWait_BufferLatch]			=	SUM([w].[TW_BufferLatch]		)
-,[TotalWait_BufferIO]				=	SUM([w].[TW_BufferIO]			)
-,[TotalWait_Compilation]			=	SUM([w].[TW_Compilation]		)
-,[TotalWait_SQLCLR]					=	SUM([w].[TW_SQLCLR]				)
-,[TotalWait_Mirroring]				=	SUM([w].[TW_Mirroring]			)
-,[TotalWait_Transaction]			=	SUM([w].[TW_Transaction]		)
-,[TotalWait_Idle]					=	SUM([w].[TW_Idle]				)
-,[TotalWait_Preemptive]				=	SUM([w].[TW_Preemptive]			)
-,[TotalWait_ServiceBroker]			=	SUM([w].[TW_ServiceBroker]		)
-,[TotalWait_TranLogIO]				=	SUM([w].[TW_TranLogIO]			)
-,[TotalWait_NetworkIO]				=	SUM([w].[TW_NetworkIO]			)
-,[TotalWait_Parallelism]			=	SUM([w].[TW_Parallelism]		)
-,[TotalWait_Memory]					=	SUM([w].[TW_Memory]				)
-,[TotalWait_UserWait]				=	SUM([w].[TW_UserWait]			)
-,[TotalWait_Tracing]				=	SUM([w].[TW_Tracing]			)
-,[TotalWait_FullTextSearch]			=	SUM([w].[TW_FullTextSearch]		)
-,[TotalWait_OtherDiskIO]			=	SUM([w].[TW_OtherDiskIO]		)
-,[TotalWait_Replication]			=	SUM([w].[TW_Replication]		)
-,[TotalWait_LogRateGovernor]		=	SUM([w].[TW_LogRateGovernor]	)
+,[Executions] = SUM([r].[Executions])
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1716,6 +1792,7 @@ ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
 	 [r].[QueryID]
 ORDER BY 1,3,4'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Query | Totals | SimplifiedReports
@@ -1724,45 +1801,47 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime]							= [qsrsi].[start_time]
+ [ServerIdentifier]						= ''{@ServerIdentifier}''
+,[DatabaseName]							= DB_NAME()
+,[StartTime]							= [qsrsi].[start_time]
 ,[EndTime]								= [qsrsi].[end_time]
 ,[r].[QueryID]
-,[Executions]							= SUM([r].[Executions])
-,[AverageRuntime_CPUTime]				= CAST(SUM([r].[TR_CPUTime]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration]				= CAST(SUM([r].[TR_Duration]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads]		= CAST(SUM([r].[TR_LogicalIOReads]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites]		= CAST(SUM([r].[TR_LogicalIOWrites]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads]		= CAST(SUM([r].[TR_PhysicalIOReads]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads]	= CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime]				= CAST(SUM([r].[TR_CLRTime]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory]	= CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount]				= CAST(SUM([r].[TR_Rowcount]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed]			= CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed]		= CAST(SUM([r].[TR_TempDBSpaceUsed]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Unknown]					= CAST(SUM([w].[TW_Unknown]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_CPU]						= CAST(SUM([w].[TW_CPU]				) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_WorkerThread]				= CAST(SUM([w].[TW_WorkerThread]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Lock]						= CAST(SUM([w].[TW_Lock]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Latch]					= CAST(SUM([w].[TW_Latch]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferLatch]				= CAST(SUM([w].[TW_BufferLatch]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferIO]					= CAST(SUM([w].[TW_BufferIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Compilation]				= CAST(SUM([w].[TW_Compilation]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_SQLCLR]					= CAST(SUM([w].[TW_SQLCLR]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Mirroring]				= CAST(SUM([w].[TW_Mirroring]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Transaction]				= CAST(SUM([w].[TW_Transaction]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Idle]						= CAST(SUM([w].[TW_Idle]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Preemptive]				= CAST(SUM([w].[TW_Preemptive]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_ServiceBroker]			= CAST(SUM([w].[TW_ServiceBroker]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_TranLogIO]				= CAST(SUM([w].[TW_TranLogIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_NetworkIO]				= CAST(SUM([w].[TW_NetworkIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Parallelism]				= CAST(SUM([w].[TW_Parallelism]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Memory]					= CAST(SUM([w].[TW_Memory]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_UserWait]					= CAST(SUM([w].[TW_UserWait]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Tracing]					= CAST(SUM([w].[TW_Tracing]			) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_FullTextSearch]			= CAST(SUM([w].[TW_FullTextSearch]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_OtherDiskIO]				= CAST(SUM([w].[TW_OtherDiskIO]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Replication]				= CAST(SUM([w].[TW_Replication]		) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_LogRateGovernor]			= CAST(SUM([w].[TW_LogRateGovernor]	) AS FLOAT)/SUM([r].[Executions])
+,[Executions] = SUM([r].[Executions])
+,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1775,6 +1854,7 @@ GROUP BY
 	,[qsrsi].[end_time]
 	,[r].[QueryID]				
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Query | Averages | IntervalReports
@@ -1783,45 +1863,47 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [StartTime]							= MIN([qsrsi].[start_time])
+ [ServerIdentifier]						= ''{@ServerIdentifier}''
+,[DatabaseName]							= DB_NAME()
+,[StartTime]							= MIN([qsrsi].[start_time])
 ,[EndTime]								= MAX([qsrsi].[end_time])
 ,[r].[QueryID]	
-,[Executions]							= SUM([r].[Executions])
-,[AverageRuntime_CPUTime]				= CAST(SUM([r].[TR_CPUTime]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_Duration]				= CAST(SUM([r].[TR_Duration]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads]		= CAST(SUM([r].[TR_LogicalIOReads]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites]		= CAST(SUM([r].[TR_LogicalIOWrites]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads]		= CAST(SUM([r].[TR_PhysicalIOReads]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads]	= CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_CLRTime]				= CAST(SUM([r].[TR_CLRTime]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory]	= CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_Rowcount]				= CAST(SUM([r].[TR_Rowcount]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed]			= CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed]		= CAST(SUM([r].[TR_TempDBSpaceUsed]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Unknown]					= CAST(SUM([w].[TW_Unknown]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_CPU]						= CAST(SUM([w].[TW_CPU]				) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_WorkerThread]				= CAST(SUM([w].[TW_WorkerThread]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Lock]						= CAST(SUM([w].[TW_Lock]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Latch]					= CAST(SUM([w].[TW_Latch]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_BufferLatch]				= CAST(SUM([w].[TW_BufferLatch]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_BufferIO]					= CAST(SUM([w].[TW_BufferIO]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Compilation]				= CAST(SUM([w].[TW_Compilation]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_SQLCLR]					= CAST(SUM([w].[TW_SQLCLR]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Mirroring]				= CAST(SUM([w].[TW_Mirroring]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Transaction]				= CAST(SUM([w].[TW_Transaction]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Idle]						= CAST(SUM([w].[TW_Idle]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Preemptive]				= CAST(SUM([w].[TW_Preemptive]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_ServiceBroker]			= CAST(SUM([w].[TW_ServiceBroker]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_TranLogIO]				= CAST(SUM([w].[TW_TranLogIO]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_NetworkIO]				= CAST(SUM([w].[TW_NetworkIO]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Parallelism]				= CAST(SUM([w].[TW_Parallelism]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Memory]					= CAST(SUM([w].[TW_Memory]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_UserWait]					= CAST(SUM([w].[TW_UserWait]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Tracing]					= CAST(SUM([w].[TW_Tracing]			) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_FullTextSearch]			= CAST(SUM([w].[TW_FullTextSearch]	) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_OtherDiskIO]				= CAST(SUM([w].[TW_OtherDiskIO]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Replication]				= CAST(SUM([w].[TW_Replication]		) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_LogRateGovernor]			= CAST(SUM([w].[TW_LogRateGovernor]	) AS FLOAT) / SUM([r].[Executions])
+,[Executions] = SUM([r].[Executions])
+,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1832,6 +1914,7 @@ ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
 	 [r].[QueryID]				
 ORDER BY 1,3'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Query | Averages | SimplifiedReports
@@ -1844,43 +1927,45 @@ IF	(	(@ObjectAggregation		=	1) AND (@ObjectName IS NOT NULL)	)
 		BEGIN -- RuntimeStats & WaitStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
-	 [StartTime]						=	[qsrsi].[start_time]
-	,[EndTime]							=	[qsrsi].[end_time]
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
-	,[TotalWait_Unknown]				=	SUM([w].[TW_Unknown]			)
-	,[TotalWait_CPU]					=	SUM([w].[TW_CPU]				)
-	,[TotalWait_WorkerThread]			=	SUM([w].[TW_WorkerThread]		)
-	,[TotalWait_Lock]					=	SUM([w].[TW_Lock]				)
-	,[TotalWait_Latch]					=	SUM([w].[TW_Latch]				)
-	,[TotalWait_BufferLatch]			=	SUM([w].[TW_BufferLatch]		)
-	,[TotalWait_BufferIO]				=	SUM([w].[TW_BufferIO]			)
-	,[TotalWait_Compilation]			=	SUM([w].[TW_Compilation]		)
-	,[TotalWait_SQLCLR]					=	SUM([w].[TW_SQLCLR]				)
-	,[TotalWait_Mirroring]				=	SUM([w].[TW_Mirroring]			)
-	,[TotalWait_Transaction]			=	SUM([w].[TW_Transaction]		)
-	,[TotalWait_Idle]					=	SUM([w].[TW_Idle]				)
-	,[TotalWait_Preemptive]				=	SUM([w].[TW_Preemptive]			)
-	,[TotalWait_ServiceBroker]			=	SUM([w].[TW_ServiceBroker]		)
-	,[TotalWait_TranLogIO]				=	SUM([w].[TW_TranLogIO]			)
-	,[TotalWait_NetworkIO]				=	SUM([w].[TW_NetworkIO]			)
-	,[TotalWait_Parallelism]			=	SUM([w].[TW_Parallelism]		)
-	,[TotalWait_Memory]					=	SUM([w].[TW_Memory]				)
-	,[TotalWait_UserWait]				=	SUM([w].[TW_UserWait]			)
-	,[TotalWait_Tracing]				=	SUM([w].[TW_Tracing]			)
-	,[TotalWait_FullTextSearch]			=	SUM([w].[TW_FullTextSearch]		)
-	,[TotalWait_OtherDiskIO]			=	SUM([w].[TW_OtherDiskIO]		)
-	,[TotalWait_Replication]			=	SUM([w].[TW_Replication]		)
-	,[TotalWait_LogRateGovernor]		=	SUM([w].[TW_LogRateGovernor]	)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	[qsrsi].[start_time]
+,[EndTime]							=	[qsrsi].[end_time]
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1892,6 +1977,7 @@ GROUP BY
 	 [qsrsi].[start_time]
 	,[qsrsi].[end_time]
 ORDER BY 1'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Object | Totals | IntervalReports
@@ -1900,43 +1986,45 @@ ORDER BY 1'
 		BEGIN -- RuntimeStats & WaitStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
-	 [StartTime]						=	MIN([qsrsi].[start_time])
-	,[EndTime]							=	MAX([qsrsi].[end_time])
-	,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime]			)
-	,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration]			)
-	,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads]		)
-	,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites]	)
-	,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads]	)
-	,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads]	)
-	,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime]			)
-	,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory]	)
-	,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount]			)
-	,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed]		)
-	,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed]	)
-	,[TotalWait_Unknown]				=	SUM([w].[TW_Unknown]			)
-	,[TotalWait_CPU]					=	SUM([w].[TW_CPU]				)
-	,[TotalWait_WorkerThread]			=	SUM([w].[TW_WorkerThread]		)
-	,[TotalWait_Lock]					=	SUM([w].[TW_Lock]				)
-	,[TotalWait_Latch]					=	SUM([w].[TW_Latch]				)
-	,[TotalWait_BufferLatch]			=	SUM([w].[TW_BufferLatch]		)
-	,[TotalWait_BufferIO]				=	SUM([w].[TW_BufferIO]			)
-	,[TotalWait_Compilation]			=	SUM([w].[TW_Compilation]		)
-	,[TotalWait_SQLCLR]					=	SUM([w].[TW_SQLCLR]				)
-	,[TotalWait_Mirroring]				=	SUM([w].[TW_Mirroring]			)
-	,[TotalWait_Transaction]			=	SUM([w].[TW_Transaction]		)
-	,[TotalWait_Idle]					=	SUM([w].[TW_Idle]				)
-	,[TotalWait_Preemptive]				=	SUM([w].[TW_Preemptive]			)
-	,[TotalWait_ServiceBroker]			=	SUM([w].[TW_ServiceBroker]		)
-	,[TotalWait_TranLogIO]				=	SUM([w].[TW_TranLogIO]			)
-	,[TotalWait_NetworkIO]				=	SUM([w].[TW_NetworkIO]			)
-	,[TotalWait_Parallelism]			=	SUM([w].[TW_Parallelism]		)
-	,[TotalWait_Memory]					=	SUM([w].[TW_Memory]				)
-	,[TotalWait_UserWait]				=	SUM([w].[TW_UserWait]			)
-	,[TotalWait_Tracing]				=	SUM([w].[TW_Tracing]			)
-	,[TotalWait_FullTextSearch]			=	SUM([w].[TW_FullTextSearch]		)
-	,[TotalWait_OtherDiskIO]			=	SUM([w].[TW_OtherDiskIO]		)
-	,[TotalWait_Replication]			=	SUM([w].[TW_Replication]		)
-	,[TotalWait_LogRateGovernor]		=	SUM([w].[TW_LogRateGovernor]	)
+ [ServerIdentifier]					=	''{@ServerIdentifier}''
+,[DatabaseName]						=	DB_NAME()
+,[StartTime]						=	MIN([qsrsi].[start_time])
+,[EndTime]							=	MAX([qsrsi].[end_time])
+,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites] = SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads] = SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads] = SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime] = SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory] = SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount] = SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed] = SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed] = SUM([r].[TR_TempDBSpaceUsed])
+,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
+,[TotalWait_CPU] = SUM([w].[TW_CPU])
+,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
+,[TotalWait_Lock] = SUM([w].[TW_Lock])
+,[TotalWait_Latch] = SUM([w].[TW_Latch])
+,[TotalWait_BufferLatch] = SUM([w].[TW_BufferLatch])
+,[TotalWait_BufferIO] = SUM([w].[TW_BufferIO])
+,[TotalWait_Compilation] = SUM([w].[TW_Compilation])
+,[TotalWait_SQLCLR] = SUM([w].[TW_SQLCLR])
+,[TotalWait_Mirroring] = SUM([w].[TW_Mirroring])
+,[TotalWait_Transaction] = SUM([w].[TW_Transaction])
+,[TotalWait_Idle] = SUM([w].[TW_Idle])
+,[TotalWait_Preemptive] = SUM([w].[TW_Preemptive])
+,[TotalWait_ServiceBroker] = SUM([w].[TW_ServiceBroker])
+,[TotalWait_TranLogIO] = SUM([w].[TW_TranLogIO])
+,[TotalWait_NetworkIO] = SUM([w].[TW_NetworkIO])
+,[TotalWait_Parallelism] = SUM([w].[TW_Parallelism])
+,[TotalWait_Memory] = SUM([w].[TW_Memory])
+,[TotalWait_UserWait] = SUM([w].[TW_UserWait])
+,[TotalWait_Tracing] = SUM([w].[TW_Tracing])
+,[TotalWait_FullTextSearch] = SUM([w].[TW_FullTextSearch])
+,[TotalWait_OtherDiskIO] = SUM([w].[TW_OtherDiskIO])
+,[TotalWait_Replication] = SUM([w].[TW_Replication])
+,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 INNER JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1945,6 +2033,7 @@ AND [r].[PlanID]					= [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 ORDER BY 1'
+			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
 		END -- RuntimeStats & WaitStats Show | Object | Totals | SimplifiedReports
@@ -1964,7 +2053,9 @@ BEGIN
 
 	SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 	SELECT DISTINCT
-		 [q].[QueryID]
+		 [ServerIdentifier]	=	''{@ServerIdentifier}''
+		,[DatabaseName]		=	DB_NAME()
+		,[q].[QueryID]
 		,[q].[QueryTextID]
 		,[qsqt].[query_sql_text]
 		,[qsqt].[statement_sql_handle]
@@ -1973,6 +2064,7 @@ BEGIN
 	FROM #QueryPlanIDs [q]
 	INNER JOIN [sys].[query_store_query_text] [qsqt]
 	ON [q].[QueryTextID] = [qsqt].[query_text_id]'
+	SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 	IF (@VerboseMode = 1) PRINT (@GetResults)
 	EXECUTE (@GetResults)	
 END
@@ -1982,7 +2074,9 @@ IF(@PlanDetails			=	1)
 BEGIN
 	SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 	SELECT
-		 [q].[QueryID]
+		 [ServerIdentifier]	=	''{@ServerIdentifier}''
+		,[DatabaseName]		=	DB_NAME()
+		,[q].[QueryID]
 		,[q].[QueryTextID]
 		,[q].[PlanID]
 		,[qsp].[plan_group_id]
@@ -2008,6 +2102,7 @@ BEGIN
 	FROM #QueryPlanIDs [q]
 	INNER JOIN [sys].[query_store_plan] [qsp]
 	ON [q].[PlanID] = [qsp].[plan_id]'
+	SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 	IF (@VerboseMode = 1) PRINT (@GetResults)
 	EXECUTE (@GetResults)	
 END

@@ -85,12 +85,12 @@ Combining both can provide some hindsight on what kind of blocking may have caus
 ```
 EXECUTE [dbo].[QueryReport]
 	 @DatabaseName		=	'Db05'
-	,@PlanID			=	4454
-	,@StartTime			=	'2021-07-01 00:00'
-	,@EndTime			=	'2021-08-01 00:00'
+	,@PlanID		=	4454
+	,@StartTime		=	'2021-07-01 00:00'
+	,@EndTime		=	'2021-08-01 00:00'
 	,@IntervalReports	=	1
 	,@PlanAggregation	=	1
-	,@Averages			=	1
+	,@Averages		=	1
 	,@RuntimeStats		=	1
-	,@WaitStats			=	1
+	,@WaitStats		=	1
 ```
