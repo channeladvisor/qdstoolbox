@@ -9,11 +9,11 @@
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the databse the information of the following columns has been extracted from
 --
---		[PlanID]				BIGINT			NOT NULL
---			Identifier of the execution plan the following columns are associated to
---
 --		[QueryID]				BIGINT			NOT NULL
---			Identifier of the query the [PlanID] is associated to
+--			Identifier of the query the statistics are associated to
+--
+--		[MinNumberPlans]		INT				NOT NULL
+--			Minimum number of execution plans found for the QueryID
 --
 --		[QueryTextID]			BIGINT			NOT NULL
 --			Identifier of the Query Text belonging to the corresponding [QueryID]
@@ -74,7 +74,11 @@
 --
 -- Date: 2021.05.08
 -- Auth: Pablo Lozano (@sqlozano)
--- 		Changed script logic to drop & recreate table
+-- Changes: Modified script logic to drop & recreate table
+--
+-- Date: 2021.08.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Modified table to replace [PlanID] with [MinNumberPlans]
 ----------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS [dbo].[ServerTopQueriesStore]
@@ -82,8 +86,8 @@ CREATE TABLE [dbo].[ServerTopQueriesStore]
 (
 	 [ReportID]				BIGINT			NOT NULL
 	,[DatabaseName]			SYSNAME			NOT NULL
-	,[PlanID]				BIGINT			NOT NULL
 	,[QueryID]				BIGINT			NOT NULL
+	,[MinNumberPlans]		INT				NOT NULL
 	,[QueryTextID]			BIGINT			NOT NULL
 	,[ObjectID]				BIGINT			NOT NULL
 	,[SchemaName]			SYSNAME			    NULL
@@ -106,6 +110,6 @@ ADD CONSTRAINT [PK_ServerTopQueriesStore] PRIMARY KEY CLUSTERED
 (
 	  [ReportID]			ASC
 	 ,[DatabaseName]		ASC
-	 ,[PlanID]				ASC
+	 ,[QueryID]				ASC
 	 ,[ExecutionTypeDesc]	ASC
 )
