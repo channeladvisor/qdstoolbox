@@ -41,6 +41,9 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.08.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added new parameters: @ExecutionRegular, @ExecutionAborted, @ExecutionException, @AggregateAll, @AggregateNonRegular
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopQueriesIndex]
@@ -57,6 +60,11 @@ SELECT
 	,q.n.value('IncludeQueryText[1]',	'BIT')				AS [IncludeQueryText]
 	,q.n.value('ExcludeAdhoc[1]',		'BIT')				AS [ExcludeAdhoc]
 	,q.n.value('ExcludeInternal[1]',	'BIT')				AS [ExcludeInternal]
+	,q.n.value('ExecutionRegular[1]',	'BIT')				AS [ExecutionRegular]
+	,q.n.value('ExecutionAborted[1]',	'BIT')				AS [ExecutionAborted]
+	,q.n.value('ExecutionException[1]',	'BIT')				AS [ExecutionException]
+	,q.n.value('AggregateAll[1]',		'BIT')				AS [AggregateAll]
+	,q.n.value('AggregateNonRegular[1]','BIT')				AS [AggregateNonRegular]
 FROM [dbo].[ServerTopQueriesIndex] [stqi]
 CROSS APPLY [stqi].[Parameters].nodes('/Root/ServerTopQueriesParameters') AS q(n)
 GO

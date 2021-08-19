@@ -9,11 +9,11 @@
 --		[DatabaseName]			SYSNAME			NOT NULL
 --			Name of the databse the information of the following columns has been extracted from
 --
---		[PlanID]				BIGINT			NOT NULL
---			Identifier of the execution plan the following columns are associated to
---
 --		[QueryID]				BIGINT			NOT NULL
---			Identifier of the query the [PlanID] is associated to
+--			Identifier of the query the statistics are associated to
+--
+--		[MinNumberPlans]		INT				NOT NULL
+--			Minimum number of execution plans found for the QueryID
 --
 --		[QueryTextID]			BIGINT			NOT NULL
 --			Identifier of the Query Text belonging to the corresponding [QueryID]
@@ -68,6 +68,9 @@
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2021.08.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Modified view to replace [PlanID] with [MinNumberPlans]
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopQueriesStore]
@@ -78,8 +81,8 @@ SELECT
 	,[stqi].[ServerIdentifier]
 	,[stqi].[Measurement]
 	,[stqs].[DatabaseName]
-	,[stqs].[PlanID]
 	,[stqs].[QueryID]
+	,[stqs].[MinNumberPlans]
 	,[stqs].[QueryTextID]
 	,[stqs].[ObjectID]
 	,[stqs].[SchemaName]
