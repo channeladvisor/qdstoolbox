@@ -42,21 +42,3 @@ EXECUTE [dbo].[ServerTopQueries]
 ## Suggested uses
 ### High CPU analysis
 Execute it to capture highest CPU consumers after a certain threshold has been reach to analyze what was the cause being a period of high activity on the server even when it occurred out of office hours.
-
-### Archival of Query Store Data
-It is possible to use this tool to aggregate the runtime statistics per hour/day/week/month... to allow some historical data to be stored without impacting the databases' Query Store space usage
-```
-EXECUTE [dbo].[ServerTopQueries]
-	 @DatabaseName		=	'TargetDB'
-	,@ReportIndex		=	'dbo.ServerTopQueriesIndex'
-	,@ReportTable		=	'dbo.ServerTopQueriesStore'
-	,@Top 			= 	0
-	,@IncludeQueryText 	= 	0
-	,@ExcludeAdhoc		=	0
-	,@ExcludeInternal	=	0
-	,@ExecutionRegular	=	1
-	,@ExecutionAborted	=	1
-	,@ExecutionException	=	1
-	,@AggregateAll		=	0
-	,@AggregateNonRegular	=	0
-```
