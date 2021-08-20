@@ -140,6 +140,10 @@ GO
 --
 -- Date: 2021.08.17
 -- Auth: Pablo Lozano (@sqlozano)
+--
+-- Date: 2021.08.20
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Missing data when joining runtime & wait stats (@RuntimeStats = 1 and @WaitStats = 1)
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[QueryReport]  
@@ -1476,7 +1480,7 @@ BEGIN -- RuntimeStats & WaitStats Show
 ,[TotalWait_Replication] = [w].[TW_Replication]
 ,[TotalWait_LogRateGovernor] = [w].[TW_LogRateGovernor]
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1535,7 +1539,7 @@ ORDER BY 1,3,4'
 ,[TotalWait_Replication] = SUM([w].[TW_Replication])
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1596,7 +1600,7 @@ ORDER BY 1,3,4'
 ,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO] ) AS FLOAT) / SUM([r].[Executions])
 ,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication] ) AS FLOAT) / SUM([r].[Executions])
 ,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor] ) AS FLOAT) / SUM([r].[Executions])
-FROM #RuntimeStats [r] INNER JOIN #WaitStats [w]
+FROM #RuntimeStats [r] LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID] = [w].[QueryID]
 AND [r].[PlanID] = [w].[PlanID]
@@ -1655,7 +1659,7 @@ GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORD
 ,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
 ,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1721,7 +1725,7 @@ IF(@QueryAggregation		=	1)
 ,[TotalWait_Replication] = SUM([w].[TW_Replication])
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1783,7 +1787,7 @@ ORDER BY 1,3,4'
 ,[TotalWait_Replication] = SUM([w].[TW_Replication])
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1843,7 +1847,7 @@ ORDER BY 1,3,4'
 ,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
 ,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1905,7 +1909,7 @@ ORDER BY 1,3'
 ,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
 ,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -1967,7 +1971,7 @@ IF	(	(@ObjectAggregation		=	1) AND (@ObjectName IS NOT NULL)	)
 ,[TotalWait_Replication] = SUM([w].[TW_Replication])
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
@@ -2026,7 +2030,7 @@ ORDER BY 1'
 ,[TotalWait_Replication] = SUM([w].[TW_Replication])
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
-INNER JOIN #WaitStats [w]
+LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID]					= [w].[QueryID]
 AND [r].[PlanID]					= [w].[PlanID]
