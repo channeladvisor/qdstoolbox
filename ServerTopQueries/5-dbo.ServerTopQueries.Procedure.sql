@@ -50,15 +50,6 @@
 --		@ExcludeInternal			BIT				--	Flag to define whether to ignore internal queries (backup, index rebuild, statistics update...) from the analysis
 --														[Default: 0]
 --
---		@ExecutionRegular			BIT				--	Flag to include the Regular executions in the results.
---														[Default: 1]
---
---		@ExecutionAborted			BIT				--	Flag to include the Aborted executions in the results.
---														[Default: 1]
---
---		@ExecutionException			BIT				--	Flag to include the Exception executions in the results.
---														[Default: 1]
---
 --		@AggregateAll				BIT				--	Flag to aggregate all types of executions in the results
 --														[Default: 1]
 --
@@ -87,6 +78,10 @@
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Added flags to aggregate executions based on the execution result (Regular, Aborted, Exception)
 --			Replaced [PlanID] with [MinNumberPlans]
+--
+-- Date: 2021.08.25
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Removed filter based on execution result (Regular, Aborted, Exception) due to the additional load and duration it generated
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
@@ -102,9 +97,6 @@ CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 	,@IncludeQueryText		BIT				= 0
 	,@ExcludeAdhoc			BIT				= 0
 	,@ExcludeInternal		BIT				= 1
-	,@ExecutionRegular		BIT				= 1
-	,@ExecutionAborted		BIT				= 1
-	,@ExecutionException	BIT				= 1
 	,@AggregateAll			BIT				= 1
 	,@AggregateNonRegular	BIT				= 0
 	,@VerboseMode			BIT				= 0
@@ -287,7 +279,6 @@ WHERE
 )
 {@ExcludeAdhoc}
 {@ExcludeInternal}
-AND [qsrs].[execution_type_desc] IN (''PlaceHolder''{@ExecutionRegular}{@ExecutionAborted}{@ExecutionException})
 GROUP BY [qsp].[query_id], [qsq].[query_text_id], [obs].[schema_id], [obs].[object_id], [qsrs].[execution_type_desc],[qsrs].[count_executions]
 ),
 [st2]
@@ -395,39 +386,6 @@ FROM [st2]
 	END
 	-- Based on @ExcludeInternal, exclude internal queries from the analysis - END
 
-	-- Based on @ExecutionRegular, include queries with Regular executions in the analysis - START
-	IF (@ExecutionRegular = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionRegular}',	'')	
-	END
-	IF (@ExecutionRegular = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionRegular}',	',''Regular''')	
-	END
-	-- Based on @ExecutionRegular, include queries with Regular executions in the analysis - END
-
-	-- Based on @ExecutionAborted, include queries with Regular executions in the analysis - START
-	IF (@ExecutionAborted = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionAborted}',	'')	
-	END
-	IF (@ExecutionAborted = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionAborted}',	',''Aborted''')	
-	END
-	-- Based on @ExecutionAborted, include queries with Regular executions in the analysis - END
-
-	-- Based on @ExecutionException, include queries with Regular executions in the analysis - START
-	IF (@ExecutionException = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionException}',	'')	
-	END
-	IF (@ExecutionException = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExecutionException}',	',''Exception''')	
-	END
-	-- Based on @ExecutionException, include queries with Regular executions in the analysis - END
-
 
 	-- Based on @AggregateAll, aggregate all executions in the analysis - START
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@AggregateAll}',			CAST(@AggregateAll AS NVARCHAR(1)))
@@ -529,9 +487,6 @@ BEGIN
 			{@IncludeQueryText}		AS [IncludeQueryText],
 			{@ExcludeAdhoc}			AS [ExcludeAdhoc],
 			{@ExcludeInternal}		AS [ExcludeInternal],
-			{@ExecutionRegular}		AS [ExecutionRegular],
-			{@ExecutionAborted}		AS [ExecutionAborted],
-			{@ExecutionException}	AS [ExecutionException],
 			{@AggregateAll}			AS [AggregateAll],
 			{@AggregateNonRegular}	AS [AggregateNonRegular]
 		FOR XML PATH(''ServerTopQueriesParameters''), ROOT(''Root'')
@@ -546,10 +501,6 @@ BEGIN
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',			@Measurement)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',		@IncludeQueryText)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeAdhoc}',			@ExcludeAdhoc)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeInternal}',		@ExcludeInternal)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExecutionRegular}',		@ExecutionRegular)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExecutionAborted}',		@ExecutionAborted)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExecutionException}',	@ExecutionException)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateAll}',			@AggregateAll)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateNonRegular}',	@AggregateNonRegular)
 
