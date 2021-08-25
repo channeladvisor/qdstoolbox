@@ -12,20 +12,6 @@ EXECUTE [dbo].[ServerTopQueries]
 	,@AggregateAll		=	1
 	,@IncludeQueryText 	= 	1
 ```
-### Failed / cancelled queries with a high CPU consumption
-Get a list of non-adhoc queries (top 10 per database) that exited with an exception (such as divide by zero) or cancelled consuming the most CPU, keeping their metrics separated
-```
-EXECUTE [dbo].[ServerTopQueries]
-	 @Measurement 		= 	'cpu_time'
-	,@Top 			= 	10
-	,@ExcludeAdhoc		=	1
-	,@ExcludeInternal	=	1
-	,@ExecutionRegular	=	0
-	,@ExecutionAborted	=	1
-	,@ExecutionException	=	1
-	,@AggregateAll		=	0
-	,@AggregateNonRegular	=	0
-```
 ### Queries with highest TempDB usage for a given database
 Store a list with the top 50 queries with the highest TempDB usage for the database Target, along with their query text
 ```
