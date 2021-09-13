@@ -123,6 +123,10 @@ GO
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	Fixed an error in the dynamic SQL command not properly joining the QDS tables from the target @DatabaseName
 --		 	Added support for SQL 2016
+--
+-- Date: 2021.09.12
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	@CleanStale applies to all queries, and not just the ones belonging to an object
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 (
@@ -279,7 +283,6 @@ BEGIN
 		ON [qsp].[query_id] = [qsq].[query_id]
 	JOIN {@DatabaseName}.[sys].[query_store_runtime_stats] AS [qsrs]
 		ON [qsrs].[plan_id] = [qsp].[plan_id]
-	WHERE [qsq].[object_id] <> 0
 	GROUP BY [qsq].[query_id], [qsp].[plan_id], [qsp].[is_forced_plan] 
 	{@QueryClause}
 
