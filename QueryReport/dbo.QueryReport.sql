@@ -144,6 +144,10 @@ GO
 -- Date: 2021.08.20
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Missing data when joining runtime & wait stats (@RuntimeStats = 1 and @WaitStats = 1)
+--
+-- Date: 2021.10.11
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Shortened "Average" to "Avg" column names to prevent query truncation
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[QueryReport]  
@@ -538,17 +542,17 @@ SELECT
 ,[r].[QueryID]
 ,[r].[PlanID]			
 ,[r].[Executions]
-,[AverageRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	[r].[Executions]
-,[AverageRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	[r].[Executions]
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -575,17 +579,17 @@ SELECT
 ,[r].[QueryID]
 ,[r].[PlanID]	
 ,[Executions] =	SUM([r].[Executions])
-,[AverageRuntime_CPUTime] =	CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] =	CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] =	CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] =	CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] =	CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] =	CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -677,17 +681,17 @@ SELECT
 ,[EndTime]								=	[qsrsi].[end_time]
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -711,17 +715,17 @@ SELECT
 ,[EndTime]								=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -1061,30 +1065,30 @@ SELECT
 ,[w].[QueryID]
 ,[w].[PlanID]			
 ,[w].[Executions]		
-,[AverageWait_Unknown] = CAST([w].[TW_Unknown] AS FLOAT)/[w].[Executions]
-,[AverageWait_CPU] = CAST([w].[TW_CPU] AS FLOAT)/[w].[Executions]
-,[AverageWait_WorkerThread] = CAST([w].[TW_WorkerThread] AS FLOAT)/[w].[Executions]
-,[AverageWait_Lock] = CAST([w].[TW_Lock] AS FLOAT)/[w].[Executions]
-,[AverageWait_Latch] = CAST([w].[TW_Latch] AS FLOAT)/[w].[Executions]
-,[AverageWait_BufferLatch] = CAST([w].[TW_BufferLatch] AS FLOAT)/[w].[Executions]
-,[AverageWait_BufferIO] = CAST([w].[TW_BufferIO] AS FLOAT)/[w].[Executions]
-,[AverageWait_Compilation] = CAST([w].[TW_Compilation] AS FLOAT)/[w].[Executions]
-,[AverageWait_SQLCLR] = CAST([w].[TW_SQLCLR] AS FLOAT)/[w].[Executions]
-,[AverageWait_Mirroring] = CAST([w].[TW_Mirroring] AS FLOAT)/[w].[Executions]
-,[AverageWait_Transaction] = CAST([w].[TW_Transaction] AS FLOAT)/[w].[Executions]
-,[AverageWait_Idle] = CAST([w].[TW_Idle] AS FLOAT)/[w].[Executions]
-,[AverageWait_Preemptive] = CAST([w].[TW_Preemptive] AS FLOAT)/[w].[Executions]
-,[AverageWait_ServiceBroker] = CAST([w].[TW_ServiceBroker] AS FLOAT)/[w].[Executions]
-,[AverageWait_TranLogIO] = CAST([w].[TW_TranLogIO] AS FLOAT)/[w].[Executions]
-,[AverageWait_NetworkIO] = CAST([w].[TW_NetworkIO] AS FLOAT)/[w].[Executions]
-,[AverageWait_Parallelism] = CAST([w].[TW_Parallelism] AS FLOAT)/[w].[Executions]
-,[AverageWait_Memory] = CAST([w].[TW_Memory] AS FLOAT)/[w].[Executions]
-,[AverageWait_UserWait] = CAST([w].[TW_UserWait] AS FLOAT)/[w].[Executions]
-,[AverageWait_Tracing] = CAST([w].[TW_Tracing] AS FLOAT)/[w].[Executions]
-,[AverageWait_FullTextSearch] = CAST([w].[TW_FullTextSearch] AS FLOAT)/[w].[Executions]
-,[AverageWait_OtherDiskIO] = CAST([w].[TW_OtherDiskIO] AS FLOAT)/[w].[Executions]
-,[AverageWait_Replication] = CAST([w].[TW_Replication] AS FLOAT)/[w].[Executions]
-,[AverageWait_LogRateGovernor] = CAST([w].[TW_LogRateGovernor] AS FLOAT)/[w].[Executions]
+,[AvgWait_Unknown] = CAST([w].[TW_Unknown] AS FLOAT)/[w].[Executions]
+,[AvgWait_CPU] = CAST([w].[TW_CPU] AS FLOAT)/[w].[Executions]
+,[AvgWait_WorkerThread] = CAST([w].[TW_WorkerThread] AS FLOAT)/[w].[Executions]
+,[AvgWait_Lock] = CAST([w].[TW_Lock] AS FLOAT)/[w].[Executions]
+,[AvgWait_Latch] = CAST([w].[TW_Latch] AS FLOAT)/[w].[Executions]
+,[AvgWait_BufferLatch] = CAST([w].[TW_BufferLatch] AS FLOAT)/[w].[Executions]
+,[AvgWait_BufferIO] = CAST([w].[TW_BufferIO] AS FLOAT)/[w].[Executions]
+,[AvgWait_Compilation] = CAST([w].[TW_Compilation] AS FLOAT)/[w].[Executions]
+,[AvgWait_SQLCLR] = CAST([w].[TW_SQLCLR] AS FLOAT)/[w].[Executions]
+,[AvgWait_Mirroring] = CAST([w].[TW_Mirroring] AS FLOAT)/[w].[Executions]
+,[AvgWait_Transaction] = CAST([w].[TW_Transaction] AS FLOAT)/[w].[Executions]
+,[AvgWait_Idle] = CAST([w].[TW_Idle] AS FLOAT)/[w].[Executions]
+,[AvgWait_Preemptive] = CAST([w].[TW_Preemptive] AS FLOAT)/[w].[Executions]
+,[AvgWait_ServiceBroker] = CAST([w].[TW_ServiceBroker] AS FLOAT)/[w].[Executions]
+,[AvgWait_TranLogIO] = CAST([w].[TW_TranLogIO] AS FLOAT)/[w].[Executions]
+,[AvgWait_NetworkIO] = CAST([w].[TW_NetworkIO] AS FLOAT)/[w].[Executions]
+,[AvgWait_Parallelism] = CAST([w].[TW_Parallelism] AS FLOAT)/[w].[Executions]
+,[AvgWait_Memory] = CAST([w].[TW_Memory] AS FLOAT)/[w].[Executions]
+,[AvgWait_UserWait] = CAST([w].[TW_UserWait] AS FLOAT)/[w].[Executions]
+,[AvgWait_Tracing] = CAST([w].[TW_Tracing] AS FLOAT)/[w].[Executions]
+,[AvgWait_FullTextSearch] = CAST([w].[TW_FullTextSearch] AS FLOAT)/[w].[Executions]
+,[AvgWait_OtherDiskIO] = CAST([w].[TW_OtherDiskIO] AS FLOAT)/[w].[Executions]
+,[AvgWait_Replication] = CAST([w].[TW_Replication] AS FLOAT)/[w].[Executions]
+,[AvgWait_LogRateGovernor] = CAST([w].[TW_LogRateGovernor] AS FLOAT)/[w].[Executions]
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1105,30 +1109,30 @@ SELECT
 ,[w].[QueryID]
 ,[w].[PlanID]		
 ,[Executions] = SUM([w].[Executions])
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1249,30 +1253,30 @@ SELECT
 ,[EndTime]						=	[qsrsi].[end_time]
 ,[w].[QueryID]
 ,[Executions] = SUM([w].[Executions])		
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1297,30 +1301,30 @@ SELECT
 ,[EndTime]						=	MAX([qsrsi].[end_time])
 ,[w].[QueryID]
 ,[Executions] = SUM([w].[Executions])		
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([w].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([w].[Executions])
 FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
@@ -1565,41 +1569,41 @@ ORDER BY 1,3,4'
 ,[r].[QueryID]
 ,[r].[PlanID]			
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration] )	AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication] ) AS FLOAT) / SUM([r].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration] )	AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor] ) AS FLOAT) / SUM([r].[Executions])
 FROM #RuntimeStats [r] LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID] = [w].[QueryID]
@@ -1623,41 +1627,41 @@ GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORD
 ,[r].[QueryID]
 ,[r].[PlanID]			
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]	) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1811,41 +1815,41 @@ ORDER BY 1,3,4'
 ,[EndTime]								= [qsrsi].[end_time]
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
@@ -1873,41 +1877,41 @@ ORDER BY 1,3'
 ,[EndTime]								= MAX([qsrsi].[end_time])
 ,[r].[QueryID]	
 ,[Executions] = SUM([r].[Executions])
-,[AverageRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
-,[AverageWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
