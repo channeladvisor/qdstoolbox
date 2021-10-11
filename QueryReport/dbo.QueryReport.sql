@@ -148,6 +148,7 @@ GO
 -- Date: 2021.10.11
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Shortened "Average" to "Avg" column names to prevent query truncation
+--			Removed tabs and white spaces to reduce SQL command length to prevent query truncation
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[QueryReport]  
@@ -413,39 +414,39 @@ BEGIN -- RuntimeStats Load
 	SET @SqlCommand2PopulateRuntimeStats = 'USE [{@DatabaseName}];
 INSERT INTO #RuntimeStats
 SELECT
-     [qsrsi].[runtime_stats_interval_id]
-	,[p].[QueryID]
-	,[p].[PlanID]
-	,[qsrs].[count_executions]
-    ,[qsrs].[count_executions] * [qsrs].[avg_cpu_time]
-    ,[qsrs].[count_executions] * [qsrs].[avg_duration]
-	,[qsrs].[count_executions] * [qsrs].[avg_logical_io_reads]
-    ,[qsrs].[count_executions] * [qsrs].[avg_logical_io_writes]
-    ,[qsrs].[count_executions] * [qsrs].[avg_physical_io_reads]
-    ,[qsrs].[count_executions] * [qsrs].[avg_num_physical_io_reads]
-    ,[qsrs].[count_executions] * [qsrs].[avg_clr_time]
-    ,[qsrs].[count_executions] * [qsrs].[avg_query_max_used_memory]
-    ,[qsrs].[count_executions] * [qsrs].[avg_rowcount]
-    ,[qsrs].[count_executions] * [qsrs].[avg_log_bytes_used]
-    ,[qsrs].[count_executions] * [qsrs].[avg_tempdb_space_used]
+ [qsrsi].[runtime_stats_interval_id]
+,[p].[QueryID]
+,[p].[PlanID]
+,[qsrs].[count_executions]
+,[qsrs].[count_executions] * [qsrs].[avg_cpu_time]
+,[qsrs].[count_executions] * [qsrs].[avg_duration]
+,[qsrs].[count_executions] * [qsrs].[avg_logical_io_reads]
+,[qsrs].[count_executions] * [qsrs].[avg_logical_io_writes]
+,[qsrs].[count_executions] * [qsrs].[avg_physical_io_reads]
+,[qsrs].[count_executions] * [qsrs].[avg_num_physical_io_reads]
+,[qsrs].[count_executions] * [qsrs].[avg_clr_time]
+,[qsrs].[count_executions] * [qsrs].[avg_query_max_used_memory]
+,[qsrs].[count_executions] * [qsrs].[avg_rowcount]
+,[qsrs].[count_executions] * [qsrs].[avg_log_bytes_used]
+,[qsrs].[count_executions] * [qsrs].[avg_tempdb_space_used]
 FROM [sys].[query_store_runtime_stats] [qsrs]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [qsrs].[runtime_stats_interval_id]
 INNER JOIN #QueryPlanIDs [p]
 ON [qsrs].[plan_id] = [p].[PlanID]
 WHERE
+(
+	(	
+		[qsrsi].[start_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}''
+	AND [qsrsi].[end_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}''
+	)
+	AND
 	(
-		(	
-			[qsrsi].[start_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}''
-		AND [qsrsi].[end_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}''
-		)
-		AND
-		(
-			   ([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
-			OR ([qsrs].[first_execution_time] <= ''{@StartTime}'' AND [qsrs].[last_execution_time] > ''{@StartTime}'')
-			OR ([qsrs].[first_execution_time] <= ''{@EndTime}''   AND [qsrs].[last_execution_time] > ''{@EndTime}'')
-		)
-	)'
+		   ([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
+		OR ([qsrs].[first_execution_time] <= ''{@StartTime}'' AND [qsrs].[last_execution_time] > ''{@StartTime}'')
+		OR ([qsrs].[first_execution_time] <= ''{@EndTime}''   AND [qsrs].[last_execution_time] > ''{@EndTime}'')
+	)
+)'
 	
 		SET @SqlCommand2PopulateRuntimeStats = REPLACE(@SqlCommand2PopulateRuntimeStats, '{@DatabaseName}',			@DatabaseName)
 		SET @SqlCommand2PopulateRuntimeStats = REPLACE(@SqlCommand2PopulateRuntimeStats, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
@@ -507,18 +508,18 @@ SELECT
 ,[EndTime]							=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[r].[PlanID]			
-,[Executions]						=	SUM([r].[Executions])
-,[TotalRuntime_CPUTime]				=	SUM([r].[TR_CPUTime])
-,[TotalRuntime_Duration]			=	SUM([r].[TR_Duration])
-,[TotalRuntime_LogicalIOReads]		=	SUM([r].[TR_LogicalIOReads])
-,[TotalRuntime_LogicalIOWrites]		=	SUM([r].[TR_LogicalIOWrites])
-,[TotalRuntime_PhysicalIOReads]		=	SUM([r].[TR_PhysicalIOReads])
-,[TotalRuntime_NumPhysicalIOReads]	=	SUM([r].[TR_NumPhysicalIOReads])
-,[TotalRuntime_CLRTime]				=	SUM([r].[TR_CLRTime])
-,[TotalRuntime_QueryMaxUsedMemory]	=	SUM([r].[TR_QueryMaxUsedMemory])
-,[TotalRuntime_Rowcount]			=	SUM([r].[TR_Rowcount])
-,[TotalRuntime_LogBytesUsed]		=	SUM([r].[TR_LogBytesUsed])
-,[TotalRuntime_TempDBSpaceUsed]		=	SUM([r].[TR_TempDBSpaceUsed])
+,[Executions]						= SUM([r].[Executions])
+,[TotalRuntime_CPUTime]				= SUM([r].[TR_CPUTime])
+,[TotalRuntime_Duration]			= SUM([r].[TR_Duration])
+,[TotalRuntime_LogicalIOReads]		= SUM([r].[TR_LogicalIOReads])
+,[TotalRuntime_LogicalIOWrites]		= SUM([r].[TR_LogicalIOWrites])
+,[TotalRuntime_PhysicalIOReads]		= SUM([r].[TR_PhysicalIOReads])
+,[TotalRuntime_NumPhysicalIOReads]	= SUM([r].[TR_NumPhysicalIOReads])
+,[TotalRuntime_CLRTime]				= SUM([r].[TR_CLRTime])
+,[TotalRuntime_QueryMaxUsedMemory]	= SUM([r].[TR_QueryMaxUsedMemory])
+,[TotalRuntime_Rowcount]			= SUM([r].[TR_Rowcount])
+,[TotalRuntime_LogBytesUsed]		= SUM([r].[TR_LogBytesUsed])
+,[TotalRuntime_TempDBSpaceUsed]		= SUM([r].[TR_TempDBSpaceUsed])
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
@@ -535,33 +536,33 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]						=	''{@ServerIdentifier}''
-,[DatabaseName]							=	DB_NAME()
-,[StartTime]							=	[qsrsi].[start_time]
-,[EndTime]								=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[r].[QueryID]
 ,[r].[PlanID]			
 ,[r].[Executions]
-,[AvgRuntime_CPUTime]				=	CAST(SUM([r].[TR_CPUTime]				)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_Duration]				=	CAST(SUM([r].[TR_Duration]				)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_LogicalIOReads]		=	CAST(SUM([r].[TR_LogicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_LogicalIOWrites]		=	CAST(SUM([r].[TR_LogicalIOWrites]		)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_PhysicalIOReads]		=	CAST(SUM([r].[TR_PhysicalIOReads]		)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_NumPhysicalIOReads]	=	CAST(SUM([r].[TR_NumPhysicalIOReads]	)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_CLRTime]				=	CAST(SUM([r].[TR_CLRTime]				)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_QueryMaxUsedMemory]	=	CAST(SUM([r].[TR_QueryMaxUsedMemory]	)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_Rowcount]				=	CAST(SUM([r].[TR_Rowcount]				)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_LogBytesUsed]			=	CAST(SUM([r].[TR_LogBytesUsed]			)	AS FLOAT)	/	[r].[Executions]
-,[AvgRuntime_TempDBSpaceUsed]		=	CAST(SUM([r].[TR_TempDBSpaceUsed]		)	AS FLOAT)	/	[r].[Executions]
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/[r].[Executions]
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/[r].[Executions]
 FROM #RuntimeStats [r]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
-	,[r].[QueryID]
-	,[r].[PlanID]			
-	,[r].[Executions]
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
+,[r].[QueryID]
+,[r].[PlanID]			
+,[r].[Executions]
 ORDER BY 1,3,4'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -572,10 +573,10 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Plan | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]						=	''{@ServerIdentifier}''
-,[DatabaseName]							=	DB_NAME()
-,[StartTime]							=	MIN([qsrsi].[start_time])
-,[EndTime]								=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[r].[PlanID]	
 ,[Executions] =	SUM([r].[Executions])
@@ -609,10 +610,10 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	[qsrsi].[start_time]
-,[EndTime]							=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])		
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
@@ -643,10 +644,10 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	MIN([qsrsi].[start_time])
-,[EndTime]							=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])		
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
@@ -675,10 +676,10 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]						=	''{@ServerIdentifier}''
-,[DatabaseName]							=	DB_NAME()
-,[StartTime]							=	[qsrsi].[start_time]
-,[EndTime]								=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
 ,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
@@ -709,10 +710,10 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]						=	''{@ServerIdentifier}''
-,[DatabaseName]							=	DB_NAME()
-,[StartTime]							=	MIN([qsrsi].[start_time])
-,[EndTime]								=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
 ,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
@@ -746,10 +747,10 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	[qsrsi].[start_time]
-,[EndTime]							=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
 ,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
 ,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
@@ -777,10 +778,10 @@ GROUP BY
 		BEGIN -- RuntimeStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	MIN([qsrsi].[start_time])
-,[EndTime]							=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
 ,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
 ,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
@@ -850,58 +851,58 @@ BEGIN -- WaitStats Load
 	SET @SqlCommand2PopulateWaitStats = 'USE [{@DatabaseName}];
 WITH [executions] AS
 (
-	SELECT DISTINCT
-		 [qsrsi].[runtime_stats_interval_id] AS [RuntimeStatsIntervalID]
-		,[q].[QueryID]
-		,[q].[PlanID]
-		,[qsrs].[count_executions] AS [Executions]
-	FROM [sys].[query_store_runtime_stats] [qsrs]
-	INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
-	ON [qsrsi].[runtime_stats_interval_id] = [qsrs].[runtime_stats_interval_id]
-	INNER JOIN #QueryPlanIDs [q]
-	ON [qsrs].[plan_id] = [q].[PlanID]
-	WHERE
+SELECT DISTINCT
+ [qsrsi].[runtime_stats_interval_id] AS [RuntimeStatsIntervalID]
+,[q].[QueryID]
+,[q].[PlanID]
+,[qsrs].[count_executions] AS [Executions]
+FROM [sys].[query_store_runtime_stats] [qsrs]
+INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
+ON [qsrsi].[runtime_stats_interval_id] = [qsrs].[runtime_stats_interval_id]
+INNER JOIN #QueryPlanIDs [q]
+ON [qsrs].[plan_id] = [q].[PlanID]
+WHERE
+(
+	([qsrsi].[start_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}'') AND ([qsrsi].[end_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}'')
+	AND
 	(
-		([qsrsi].[start_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}'') AND ([qsrsi].[end_time] BETWEEN ''{@StartTime}'' AND ''{@EndTime}'')
-		AND
-		(
-			   ([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
-			OR ([qsrs].[first_execution_time] <= ''{@StartTime}'' AND [qsrs].[last_execution_time] > ''{@StartTime}'')
-			OR ([qsrs].[first_execution_time] <= ''{@EndTime}''   AND [qsrs].[last_execution_time] > ''{@EndTime}'')
-		)
+		   ([qsrs].[first_execution_time] >= ''{@StartTime}'' AND [qsrs].[last_execution_time] < ''{@EndTime}'')
+		OR ([qsrs].[first_execution_time] <= ''{@StartTime}'' AND [qsrs].[last_execution_time] > ''{@StartTime}'')
+		OR ([qsrs].[first_execution_time] <= ''{@EndTime}''   AND [qsrs].[last_execution_time] > ''{@EndTime}'')
 	)
+)
 )
 ,[cte] AS
 (
 SELECT  
-	 [RuntimeStatsIntervalID]
-	,[QueryID]
-	,[PlanID]
-	,[Executions]
-	,CAST(COALESCE(SUM([PivotTable].[Unknown]			)	,0) AS BIGINT)	AS [Unknown]
-	,CAST(COALESCE(SUM([PivotTable].[CPU]				)	,0) AS BIGINT)	AS [CPU]
-	,CAST(COALESCE(SUM([PivotTable].[Worker Thread]		)	,0) AS BIGINT)	AS [WorkerThread]
-	,CAST(COALESCE(SUM([PivotTable].[Lock]				)	,0) AS BIGINT)	AS [Lock]
-	,CAST(COALESCE(SUM([PivotTable].[Latch]				)	,0) AS BIGINT)	AS [Latch]
-	,CAST(COALESCE(SUM([PivotTable].[Buffer Latch]		)	,0) AS BIGINT)	AS [BufferLatch]
-	,CAST(COALESCE(SUM([PivotTable].[Buffer IO]			)	,0) AS BIGINT)	AS [BufferIO]
-	,CAST(COALESCE(SUM([PivotTable].[Compilation]		)	,0) AS BIGINT)	AS [Compilation]
-	,CAST(COALESCE(SUM([PivotTable].[SQL CLR]			)	,0) AS BIGINT)	AS [SQLCLR]
-	,CAST(COALESCE(SUM([PivotTable].[Mirroring]			)	,0) AS BIGINT)	AS [Mirroring]
-	,CAST(COALESCE(SUM([PivotTable].[Transaction]		)	,0) AS BIGINT)	AS [Transaction]
-	,CAST(COALESCE(SUM([PivotTable].[Idle]				)	,0) AS BIGINT)	AS [Idle]
-	,CAST(COALESCE(SUM([PivotTable].[Preemptive]		)	,0) AS BIGINT)	AS [Preemptive]
-	,CAST(COALESCE(SUM([PivotTable].[Service Broker]	)	,0) AS BIGINT)	AS [ServiceBroker]
-	,CAST(COALESCE(SUM([PivotTable].[Tran Log IO]		)	,0) AS BIGINT)	AS [TranLogIO]
-	,CAST(COALESCE(SUM([PivotTable].[Network IO]		)	,0) AS BIGINT)	AS [NetworkIO]
-	,CAST(COALESCE(SUM([PivotTable].[Parallelism]		)	,0) AS BIGINT)	AS [Parallelism]
-	,CAST(COALESCE(SUM([PivotTable].[Memory]			)	,0) AS BIGINT)	AS [Memory]
-	,CAST(COALESCE(SUM([PivotTable].[User Wait]			)	,0) AS BIGINT)	AS [UserWait]
-	,CAST(COALESCE(SUM([PivotTable].[Tracing]			)	,0) AS BIGINT)	AS [Tracing]
-	,CAST(COALESCE(SUM([PivotTable].[Full Text Search]	)	,0) AS BIGINT)	AS [FullTextSearch]
-	,CAST(COALESCE(SUM([PivotTable].[Other Disk IO]		)	,0) AS BIGINT)	AS [OtherDiskIO]
-	,CAST(COALESCE(SUM([PivotTable].[Replication]		)	,0) AS BIGINT)	AS [Replication]
-	,CAST(COALESCE(SUM([PivotTable].[Log Rate Governor]	)	,0) AS BIGINT)	AS [LogRateGovernor]
+ [RuntimeStatsIntervalID]
+,[QueryID]
+,[PlanID]
+,[Executions]
+,CAST(COALESCE(SUM([PivotTable].[Unknown]),0) AS BIGINT) AS [Unknown]
+,CAST(COALESCE(SUM([PivotTable].[CPU]),0) AS BIGINT) AS [CPU]
+,CAST(COALESCE(SUM([PivotTable].[Worker Thread]),0) AS BIGINT) AS [WorkerThread]
+,CAST(COALESCE(SUM([PivotTable].[Lock]),0) AS BIGINT) AS [Lock]
+,CAST(COALESCE(SUM([PivotTable].[Latch]),0) AS BIGINT) AS [Latch]
+,CAST(COALESCE(SUM([PivotTable].[Buffer Latch]),0) AS BIGINT) AS [BufferLatch]
+,CAST(COALESCE(SUM([PivotTable].[Buffer IO]),0) AS BIGINT) AS [BufferIO]
+,CAST(COALESCE(SUM([PivotTable].[Compilation]),0) AS BIGINT) AS [Compilation]
+,CAST(COALESCE(SUM([PivotTable].[SQL CLR]),0) AS BIGINT) AS [SQLCLR]
+,CAST(COALESCE(SUM([PivotTable].[Mirroring]),0) AS BIGINT) AS [Mirroring]
+,CAST(COALESCE(SUM([PivotTable].[Transaction]),0) AS BIGINT) AS [Transaction]
+,CAST(COALESCE(SUM([PivotTable].[Idle]),0) AS BIGINT) AS [Idle]
+,CAST(COALESCE(SUM([PivotTable].[Preemptive]),0) AS BIGINT) AS [Preemptive]
+,CAST(COALESCE(SUM([PivotTable].[Service Broker]),0) AS BIGINT) AS [ServiceBroker]
+,CAST(COALESCE(SUM([PivotTable].[Tran Log IO]),0) AS BIGINT) AS [TranLogIO]
+,CAST(COALESCE(SUM([PivotTable].[Network IO]),0) AS BIGINT) AS [NetworkIO]
+,CAST(COALESCE(SUM([PivotTable].[Parallelism]),0) AS BIGINT) AS [Parallelism]
+,CAST(COALESCE(SUM([PivotTable].[Memory]),0) AS BIGINT) AS [Memory]
+,CAST(COALESCE(SUM([PivotTable].[User Wait]),0) AS BIGINT) AS [UserWait]
+,CAST(COALESCE(SUM([PivotTable].[Tracing]),0) AS BIGINT) AS [Tracing]
+,CAST(COALESCE(SUM([PivotTable].[Full Text Search]),0) AS BIGINT) AS [FullTextSearch]
+,CAST(COALESCE(SUM([PivotTable].[Other Disk IO]),0) AS BIGINT) AS [OtherDiskIO]
+,CAST(COALESCE(SUM([PivotTable].[Replication]),0) AS BIGINT) AS [Replication]
+,CAST(COALESCE(SUM([PivotTable].[Log Rate Governor]),0) AS BIGINT) AS [LogRateGovernor]
 FROM [sys].[query_store_wait_stats] [qsws]
 INNER JOIN [executions] [e]
 ON  [qsws].[runtime_stats_interval_id]	= [e].[RuntimeStatsIntervalID]
@@ -910,38 +911,38 @@ PIVOT (
 	SUM([total_query_wait_time_ms])
 	FOR [wait_category_desc] IN 
 	(
-		 [Unknown]
-		,[CPU]
-		,[Worker Thread]
-		,[Lock]
-		,[Latch]
-		,[Buffer Latch]
-		,[Buffer IO]
-		,[Compilation]
-		,[SQL CLR]
-		,[Mirroring]
-		,[Transaction]
-		,[Idle]
-		,[Preemptive]
-		,[Service Broker]
-		,[Tran Log IO]
-		,[Network IO]
-		,[Parallelism]
-		,[Memory]
-		,[User Wait]
-		,[Tracing]
-		,[Full Text Search]
-		,[Other Disk IO]
-		,[Replication]
-		,[Log Rate Governor]
+	 [Unknown]
+	,[CPU]
+	,[Worker Thread]
+	,[Lock]
+	,[Latch]
+	,[Buffer Latch]
+	,[Buffer IO]
+	,[Compilation]
+	,[SQL CLR]
+	,[Mirroring]
+	,[Transaction]
+	,[Idle]
+	,[Preemptive]
+	,[Service Broker]
+	,[Tran Log IO]
+	,[Network IO]
+	,[Parallelism]
+	,[Memory]
+	,[User Wait]
+	,[Tracing]
+	,[Full Text Search]
+	,[Other Disk IO]
+	,[Replication]
+	,[Log Rate Governor]
 	)
 )
 AS [PivotTable]
 GROUP BY
-	 [RuntimeStatsIntervalID]
-	,[QueryID]
-	,[PlanID]
-	,[Executions]
+ [RuntimeStatsIntervalID]
+,[QueryID]
+,[PlanID]
+,[Executions]
 )
 INSERT INTO #WaitStats
 SELECT * FROM [cte]'
@@ -966,10 +967,10 @@ BEGIN -- WaitStats Show
 		BEGIN -- WaitStats Show | Plan | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	[qsrsi].[start_time]
-,[EndTime]						=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[w].[QueryID]				
 ,[w].[PlanID]				
 ,[w].[Executions]			
@@ -1010,10 +1011,10 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	MIN([qsrsi].[start_time])
-,[EndTime]						=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[w].[QueryID]				
 ,[w].[PlanID]				
 ,[Executions] = SUM([w].[Executions])
@@ -1058,10 +1059,10 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	[qsrsi].[start_time]
-,[EndTime]							=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[w].[QueryID]
 ,[w].[PlanID]			
 ,[w].[Executions]		
@@ -1102,10 +1103,10 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Plan | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	MIN([qsrsi].[start_time])
-,[EndTime]							=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[w].[QueryID]
 ,[w].[PlanID]		
 ,[Executions] = SUM([w].[Executions])
@@ -1154,10 +1155,10 @@ ORDER BY 1,3,4'
 		BEGIN -- WaitStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	[qsrsi].[start_time]
-,[EndTime]						=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[w].[QueryID]				
 ,[Executions] = SUM([w].[Executions])
 ,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
@@ -1201,10 +1202,10 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	MIN([qsrsi].[start_time])
-,[EndTime]						=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[w].[QueryID]				
 ,[Executions] = SUM([w].[Executions])
 ,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
@@ -1247,10 +1248,10 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	[qsrsi].[start_time]
-,[EndTime]						=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[w].[QueryID]
 ,[Executions] = SUM([w].[Executions])		
 ,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
@@ -1281,10 +1282,10 @@ FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
-	,[w].[QueryID]
-	ORDER BY 1,3'
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
+,[w].[QueryID]
+ORDER BY 1,3'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
@@ -1295,10 +1296,10 @@ GROUP BY
 		BEGIN -- WaitStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	MIN([qsrsi].[start_time])
-,[EndTime]						=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[w].[QueryID]
 ,[Executions] = SUM([w].[Executions])		
 ,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([w].[Executions])
@@ -1343,10 +1344,10 @@ ORDER BY 1,3'
 		BEGIN -- WaitStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	[qsrsi].[start_time]
-,[EndTime]						=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
 ,[TotalWait_CPU] = SUM([w].[TW_CPU])
 ,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
@@ -1375,9 +1376,9 @@ FROM #WaitStats [w]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [w].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
-	ORDER BY 1'
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
+ORDER BY 1'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
@@ -1387,10 +1388,10 @@ GROUP BY
 		BEGIN -- WaitStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';
 SELECT
- [ServerIdentifier]				=	''{@ServerIdentifier}''
-,[DatabaseName]					=	DB_NAME()
-,[StartTime]					=	MIN([qsrsi].[start_time])
-,[EndTime]						=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[TotalWait_Unknown] = SUM([w].[TW_Unknown])
 ,[TotalWait_CPU] = SUM([w].[TW_CPU])
 ,[TotalWait_WorkerThread] = SUM([w].[TW_WorkerThread])
@@ -1442,10 +1443,10 @@ BEGIN -- RuntimeStats & WaitStats Show
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					= ''{@ServerIdentifier}''
-,[DatabaseName]						= DB_NAME()
-,[StartTime]						= [qsrsi].[start_time]
-,[EndTime]							= [qsrsi].[end_time]
+ [ServerIdentifier]	= ''{@ServerIdentifier}''
+,[DatabaseName]		= DB_NAME()
+,[StartTime]		= [qsrsi].[start_time]
+,[EndTime]			= [qsrsi].[end_time]
 ,[r].[QueryID]				
 ,[r].[PlanID]				
 ,[r].[Executions]	
@@ -1500,10 +1501,10 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					= ''{@ServerIdentifier}''
-,[DatabaseName]						= DB_NAME()
-,[StartTime]						= MIN([qsrsi].[start_time])
-,[EndTime]							= MAX([qsrsi].[end_time])
+ [ServerIdentifier]	= ''{@ServerIdentifier}''
+,[DatabaseName]		= DB_NAME()
+,[StartTime]		= MIN([qsrsi].[start_time])
+,[EndTime]			= MAX([qsrsi].[end_time])
 ,[r].[QueryID]				
 ,[r].[PlanID]				
 ,[Executions] = SUM([r].[Executions])
@@ -1562,55 +1563,56 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Plan | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
-[ServerIdentifier] = ''{@ServerIdentifier}''
+ [ServerIdentifier] = ''{@ServerIdentifier}''
 ,[DatabaseName] = DB_NAME()
 ,[StartTime] = [qsrsi].[start_time]
 ,[EndTime] = [qsrsi].[end_time]
 ,[r].[QueryID]
 ,[r].[PlanID]			
 ,[Executions] = SUM([r].[Executions])
-,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration] )	AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication] ) AS FLOAT) / SUM([r].[Executions])
-,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor] ) AS FLOAT) / SUM([r].[Executions])
+,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Duration] = CAST(SUM([r].[TR_Duration]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOReads] = CAST(SUM([r].[TR_LogicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogicalIOWrites] = CAST(SUM([r].[TR_LogicalIOWrites]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_PhysicalIOReads] = CAST(SUM([r].[TR_PhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_NumPhysicalIOReads] = CAST(SUM([r].[TR_NumPhysicalIOReads]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_CLRTime] = CAST(SUM([r].[TR_CLRTime]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_QueryMaxUsedMemory] = CAST(SUM([r].[TR_QueryMaxUsedMemory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_Rowcount] = CAST(SUM([r].[TR_Rowcount]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_LogBytesUsed] = CAST(SUM([r].[TR_LogBytesUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgRuntime_TempDBSpaceUsed] = CAST(SUM([r].[TR_TempDBSpaceUsed]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Unknown] = CAST(SUM([w].[TW_Unknown]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_CPU] = CAST(SUM([w].[TW_CPU]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_WorkerThread] = CAST(SUM([w].[TW_WorkerThread]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Lock] = CAST(SUM([w].[TW_Lock]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Latch] = CAST(SUM([w].[TW_Latch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferLatch] = CAST(SUM([w].[TW_BufferLatch]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_BufferIO] = CAST(SUM([w].[TW_BufferIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Compilation] = CAST(SUM([w].[TW_Compilation]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_SQLCLR] = CAST(SUM([w].[TW_SQLCLR]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Mirroring] = CAST(SUM([w].[TW_Mirroring]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Transaction] = CAST(SUM([w].[TW_Transaction]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Idle] = CAST(SUM([w].[TW_Idle]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Preemptive] = CAST(SUM([w].[TW_Preemptive]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_ServiceBroker] = CAST(SUM([w].[TW_ServiceBroker]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_TranLogIO] = CAST(SUM([w].[TW_TranLogIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_NetworkIO] = CAST(SUM([w].[TW_NetworkIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Parallelism] = CAST(SUM([w].[TW_Parallelism]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Memory] = CAST(SUM([w].[TW_Memory]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_UserWait] = CAST(SUM([w].[TW_UserWait]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Tracing] = CAST(SUM([w].[TW_Tracing]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_FullTextSearch] = CAST(SUM([w].[TW_FullTextSearch])AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_OtherDiskIO] = CAST(SUM([w].[TW_OtherDiskIO]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_Replication] = CAST(SUM([w].[TW_Replication]) AS FLOAT)/SUM([r].[Executions])
+,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r] LEFT JOIN #WaitStats [w]
 ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
 AND [r].[QueryID] = [w].[QueryID]
 AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
-GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORDER BY 1,3,4'
+GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID]
+ORDER BY 1,3,4'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
 			EXECUTE (@GetResults)
@@ -1664,9 +1666,9 @@ GROUP BY [qsrsi].[start_time],[qsrsi].[end_time],[r].[QueryID] ,[r].[PlanID] ORD
 ,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
@@ -1687,10 +1689,10 @@ IF(@QueryAggregation		=	1)
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	[qsrsi].[start_time]
-,[EndTime]							=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[r].[QueryID]				
 ,[Executions] = SUM([r].[Executions])
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
@@ -1730,15 +1732,15 @@ IF(@QueryAggregation		=	1)
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
-	,[r].[QueryID]
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
+,[r].[QueryID]
 ORDER BY 1,3,4'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -1749,10 +1751,10 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	MIN([qsrsi].[start_time])
-,[EndTime]							=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[r].[QueryID]				
 ,[Executions] = SUM([r].[Executions])
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
@@ -1792,13 +1794,13 @@ ORDER BY 1,3,4'
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [r].[QueryID]
+ [r].[QueryID]
 ORDER BY 1,3,4'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -1809,10 +1811,10 @@ ORDER BY 1,3,4'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Averages | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]						= ''{@ServerIdentifier}''
-,[DatabaseName]							= DB_NAME()
-,[StartTime]							= [qsrsi].[start_time]
-,[EndTime]								= [qsrsi].[end_time]
+ [ServerIdentifier]	= ''{@ServerIdentifier}''
+,[DatabaseName]		= DB_NAME()
+,[StartTime]		= [qsrsi].[start_time]
+,[EndTime]			= [qsrsi].[end_time]
 ,[r].[QueryID]
 ,[Executions] = SUM([r].[Executions])
 ,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
@@ -1852,15 +1854,15 @@ ORDER BY 1,3,4'
 ,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
-	,[r].[QueryID]				
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
+,[r].[QueryID]				
 ORDER BY 1,3'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -1871,10 +1873,10 @@ ORDER BY 1,3'
 		BEGIN -- RuntimeStats & WaitStats Show | Query | Averages | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]						= ''{@ServerIdentifier}''
-,[DatabaseName]							= DB_NAME()
-,[StartTime]							= MIN([qsrsi].[start_time])
-,[EndTime]								= MAX([qsrsi].[end_time])
+ [ServerIdentifier]	= ''{@ServerIdentifier}''
+,[DatabaseName]		= DB_NAME()
+,[StartTime]		= MIN([qsrsi].[start_time])
+,[EndTime]			= MAX([qsrsi].[end_time])
 ,[r].[QueryID]	
 ,[Executions] = SUM([r].[Executions])
 ,[AvgRuntime_CPUTime] = CAST(SUM([r].[TR_CPUTime]) AS FLOAT)/SUM([r].[Executions])
@@ -1914,13 +1916,13 @@ ORDER BY 1,3'
 ,[AvgWait_LogRateGovernor] = CAST(SUM([w].[TW_LogRateGovernor]) AS FLOAT)/SUM([r].[Executions])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [r].[QueryID]				
+ [r].[QueryID]				
 ORDER BY 1,3'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -1935,10 +1937,10 @@ IF	(	(@ObjectAggregation		=	1) AND (@ObjectName IS NOT NULL)	)
 		BEGIN -- RuntimeStats & WaitStats Show | Object | Totals | IntervalReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	[qsrsi].[start_time]
-,[EndTime]							=	[qsrsi].[end_time]
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	[qsrsi].[start_time]
+,[EndTime]			=	[qsrsi].[end_time]
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
 ,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
 ,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
@@ -1976,14 +1978,14 @@ IF	(	(@ObjectAggregation		=	1) AND (@ObjectName IS NOT NULL)	)
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 GROUP BY
-	 [qsrsi].[start_time]
-	,[qsrsi].[end_time]
+ [qsrsi].[start_time]
+,[qsrsi].[end_time]
 ORDER BY 1'
 			SET @GetResults = REPLACE(@GetResults, '{@ServerIdentifier}',	@ServerIdentifier)
 			IF (@VerboseMode = 1) PRINT (@GetResults)
@@ -1994,10 +1996,10 @@ ORDER BY 1'
 		BEGIN -- RuntimeStats & WaitStats Show | Object | Totals | SimplifiedReports
 			SET @GetResults = 'USE ' + QUOTENAME(@DatabaseName) +';'+
 'SELECT
- [ServerIdentifier]					=	''{@ServerIdentifier}''
-,[DatabaseName]						=	DB_NAME()
-,[StartTime]						=	MIN([qsrsi].[start_time])
-,[EndTime]							=	MAX([qsrsi].[end_time])
+ [ServerIdentifier]	=	''{@ServerIdentifier}''
+,[DatabaseName]		=	DB_NAME()
+,[StartTime]		=	MIN([qsrsi].[start_time])
+,[EndTime]			=	MAX([qsrsi].[end_time])
 ,[TotalRuntime_CPUTime] = SUM([r].[TR_CPUTime])
 ,[TotalRuntime_Duration] = SUM([r].[TR_Duration])
 ,[TotalRuntime_LogicalIOReads] = SUM([r].[TR_LogicalIOReads])
@@ -2035,9 +2037,9 @@ ORDER BY 1'
 ,[TotalWait_LogRateGovernor] = SUM([w].[TW_LogRateGovernor])
 FROM #RuntimeStats [r]
 LEFT JOIN #WaitStats [w]
-ON  [r].[RuntimeStatsIntervalID]	= [w].[RuntimeStatsIntervalID]
-AND [r].[QueryID]					= [w].[QueryID]
-AND [r].[PlanID]					= [w].[PlanID]
+ON  [r].[RuntimeStatsIntervalID] = [w].[RuntimeStatsIntervalID]
+AND [r].[QueryID] = [w].[QueryID]
+AND [r].[PlanID] = [w].[PlanID]
 INNER JOIN [sys].[query_store_runtime_stats_interval] [qsrsi]
 ON [qsrsi].[runtime_stats_interval_id] = [r].[RuntimeStatsIntervalID]
 ORDER BY 1'
