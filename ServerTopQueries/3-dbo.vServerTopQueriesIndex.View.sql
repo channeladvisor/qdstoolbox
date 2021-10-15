@@ -28,6 +28,10 @@
 --		[Measurement]			NVARCHAR(32)	NOT NULL
 --			Measurement to order the queries on
 --
+--		[Percentages]			BIT				NOT NULL
+--			Flag to determine whether the values are "percentages"
+--			When enabled, the [Measurement] values will go from 0 to 100000 (equivalent to 0% to 100%)
+--
 --		[IncludeQueryText]		BIT				NOT NULL
 --			Flag to include the Query Text in the results generated
 --
@@ -48,6 +52,10 @@
 -- Date: 2021.08.25
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Removed parameters: @ExecutionRegular, @ExecutionAborted, @ExecutionException after removing them from the procedure
+--
+-- Date: 2021.10.15
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added parameter: @Percentages
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopQueriesIndex]
@@ -61,6 +69,7 @@ SELECT
 	,q.n.value('EndTime[1]',			'DATETIME2')		AS [EndTime] 
 	,q.n.value('Top[1]',				'INT')				AS [Top]
 	,q.n.value('Measurement[1]',		'NVARCHAR(32)')		AS [Measurement]
+	,q.n.value('Percentages[1]',		'BIT')				AS [Percentages]
 	,q.n.value('IncludeQueryText[1]',	'BIT')				AS [IncludeQueryText]
 	,q.n.value('ExcludeAdhoc[1]',		'BIT')				AS [ExcludeAdhoc]
 	,q.n.value('ExcludeInternal[1]',	'BIT')				AS [ExcludeInternal]

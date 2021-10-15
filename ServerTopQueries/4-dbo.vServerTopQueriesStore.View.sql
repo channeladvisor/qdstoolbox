@@ -71,6 +71,10 @@
 -- Date: 2021.08.19
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Modified view to replace [PlanID] with [MinNumberPlans]
+--
+-- Date: 2021.10.15
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added column [Percentages] for new parameter @Percentages
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopQueriesStore]
@@ -80,6 +84,7 @@ SELECT
 	,[stqi].[CaptureDate]
 	,[stqi].[ServerIdentifier]
 	,[stqi].[Measurement]
+	,[stqi].[Percentages]
 	,[stqs].[DatabaseName]
 	,[stqs].[QueryID]
 	,[stqs].[MinNumberPlans]
