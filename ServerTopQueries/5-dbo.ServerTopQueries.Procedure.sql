@@ -41,6 +41,10 @@
 --															tempdb_space_used
 --														[Default: cpu_time]
 --
+--		@Percentages				BIT				--	Flag to use percentages rather than total values for @Measurement.
+--														When enabled, @Measurement will go from 0 to 100000 (equivalent to 0% to 100%)
+--														[Default: 0]
+--
 --		@IncludeQueryText			BIT				--	Flag to include the query text in the results.
 --														[Default: 0]
 --
@@ -82,6 +86,10 @@
 -- Date: 2021.08.25
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Removed filter based on execution result (Regular, Aborted, Exception) due to the additional load and duration it generated
+--
+-- Date: 2021.10.15
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added flag @Percentages to calculate percentages instead of absolute values
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
@@ -94,6 +102,7 @@ CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 	,@EndTime				DATETIME2		= NULL
 	,@Top					INT				= 25
 	,@Measurement			NVARCHAR(32)	= 'cpu_time'
+	,@Percentages			BIT				= 0
 	,@IncludeQueryText		BIT				= 0
 	,@ExcludeAdhoc			BIT				= 0
 	,@ExcludeInternal		BIT				= 1
@@ -168,6 +177,9 @@ BEGIN
 		[tempdb_space_used]', 16, 0, @Measurement)
 	RETURN
 END
+
+IF (@Percentages IS NULL)
+	SET @Percentages = 0
 
 IF (@IncludeQueryText IS NULL)
 	SET @IncludeQueryText = 0
@@ -254,15 +266,15 @@ SELECT
 	ELSE [qsrs].[execution_type_desc]
  END AS [ExecutionTypeDesc]
 ,[count_executions]	= [qsrs].[count_executions]
-,[duration]			= CAST(SUM([qsrs].[avg_duration]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[cpu_time]			= CAST(SUM([qsrs].[avg_cpu_time]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[logical_io_reads]	= CAST(SUM([qsrs].[avg_logical_io_reads])  * SUM([qsrs].[count_executions]) AS BIGINT)
-,[logical_io_writes]= CAST(SUM([qsrs].[avg_logical_io_writes]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[physical_io_reads]= CAST(SUM([qsrs].[avg_physical_io_reads]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[clr_time]			= CAST(SUM([qsrs].[avg_clr_time]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[query_used_memory]= CAST(SUM([qsrs].[avg_query_max_used_memory]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[log_bytes_used]	= {@SQL2016columns} CAST(SUM([qsrs].[avg_log_bytes_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
-,[tempdb_space_used]= {@SQL2016columns} CAST(SUM([qsrs].[avg_tempdb_space_used]) * SUM([qsrs].[count_executions]) AS BIGINT)
+,[duration]				=					CAST(SUM([qsrs].[avg_duration]				* [qsrs].[count_executions]) AS BIGINT)
+,[cpu_time]				=					CAST(SUM([qsrs].[avg_cpu_time]				* [qsrs].[count_executions]) AS BIGINT)
+,[logical_io_reads]		=					CAST(SUM([qsrs].[avg_logical_io_reads]		* [qsrs].[count_executions]) AS BIGINT)
+,[logical_io_writes]	=					CAST(SUM([qsrs].[avg_logical_io_writes]		* [qsrs].[count_executions]) AS BIGINT)
+,[physical_io_reads]	=					CAST(SUM([qsrs].[avg_physical_io_reads]		* [qsrs].[count_executions]) AS BIGINT)
+,[clr_time]				=					CAST(SUM([qsrs].[avg_clr_time]				* [qsrs].[count_executions]) AS BIGINT)
+,[query_used_memory]	=					CAST(SUM([qsrs].[avg_query_max_used_memory]	* [qsrs].[count_executions]) AS BIGINT)
+,[log_bytes_used]		= {@SQL2016columns} CAST(SUM([qsrs].[avg_log_bytes_used]		* [qsrs].[count_executions]) AS BIGINT)
+,[tempdb_space_used]	= {@SQL2016columns} CAST(SUM([qsrs].[avg_tempdb_space_used]		* [qsrs].[count_executions]) AS BIGINT)
 FROM
 [{@DatabaseName}].[sys].[query_store_runtime_stats] [qsrs]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
@@ -412,18 +424,135 @@ FROM [st2]
 -- Query to extract the details for any given @DatabaseName - END 
 
  
+-- Create and initialize temp table to store Total Metrics for @Percentages = 1 - START
+DROP TABLE IF EXISTS #TotalMetrics
+CREATE TABLE #TotalMetrics
+(
+	 [duration]				BIGINT
+	,[cpu_time]				BIGINT
+	,[logical_io_reads]		BIGINT
+	,[logical_io_writes]	BIGINT
+	,[physical_io_reads]	BIGINT
+	,[clr_time]				BIGINT
+	,[query_used_memory]	BIGINT
+	,[log_bytes_used]		BIGINT
+	,[tempdb_space_used]	BIGINT
+)
+INSERT INTO #TotalMetrics VALUES (0,0,0,0,0,0,0,0,0)
+-- Create and initialize temp table to store Total Metrics for @Percentages = 1 - END
+
+-- Define query to capture total values for all metrics - START
+DECLARE @SqlCommand2GetTotalMetricsTemplate NVARCHAR(MAX)
+SET @SqlCommand2GetTotalMetricsTemplate = 'USE [{@DatabaseName}]
+DECLARE @Database_duration			BIGINT
+DECLARE @Database_cpu_time			BIGINT
+DECLARE @Database_logical_io_reads	BIGINT
+DECLARE @Database_logical_io_writes	BIGINT
+DECLARE @Database_physical_io_reads	BIGINT
+DECLARE @Database_clr_time			BIGINT
+DECLARE @Database_query_used_memory	BIGINT
+DECLARE @Database_log_bytes_used	BIGINT
+DECLARE @Database_tempdb_space_used	BIGINT
+
+SELECT
+ @Database_duration				=					CAST(SUM([qsrs].[avg_duration]				* [qsrs].[count_executions]) AS BIGINT)
+,@Database_cpu_time				=					CAST(SUM([qsrs].[avg_cpu_time]				* [qsrs].[count_executions]) AS BIGINT)
+,@Database_logical_io_reads		=					CAST(SUM([qsrs].[avg_logical_io_reads]		* [qsrs].[count_executions]) AS BIGINT)
+,@Database_logical_io_writes	=					CAST(SUM([qsrs].[avg_logical_io_writes]		* [qsrs].[count_executions]) AS BIGINT)
+,@Database_physical_io_reads	=					CAST(SUM([qsrs].[avg_physical_io_reads]		* [qsrs].[count_executions]) AS BIGINT)
+,@Database_clr_time				=					CAST(SUM([qsrs].[avg_clr_time]				* [qsrs].[count_executions]) AS BIGINT)
+,@Database_query_used_memory	=					CAST(SUM([qsrs].[avg_query_max_used_memory]	* [qsrs].[count_executions]) AS BIGINT)
+,@Database_log_bytes_used		= {@SQL2016columns} CAST(SUM([qsrs].[avg_log_bytes_used]		* [qsrs].[count_executions]) AS BIGINT)
+,@Database_tempdb_space_used	= {@SQL2016columns} CAST(SUM([qsrs].[avg_tempdb_space_used]		* [qsrs].[count_executions]) AS BIGINT)
+FROM [{@DatabaseName}].[sys].[query_store_runtime_stats] [qsrs]
+WHERE
+	(
+	 (qsrs.first_execution_time >= ''{@StartTime}'' AND qsrs.last_execution_time < ''{@EndTime}'')
+	 OR (qsrs.first_execution_time  <= ''{@StartTime}'' AND qsrs.last_execution_time > ''{@StartTime}'')
+	 OR (qsrs.first_execution_time  <= ''{@EndTime}''   AND qsrs.last_execution_time > ''{@EndTime}'')
+	)
+
+SET @Database_duration			= COALESCE(@Database_duration,0)
+SET @Database_cpu_time			= COALESCE(@Database_cpu_time,0)
+SET @Database_logical_io_reads	= COALESCE(@Database_logical_io_reads,0)
+SET @Database_logical_io_writes	= COALESCE(@Database_logical_io_writes,0)
+SET @Database_physical_io_reads	= COALESCE(@Database_physical_io_reads,0)
+SET @Database_clr_time			= COALESCE(@Database_clr_time,0)
+SET @Database_query_used_memory	= COALESCE(@Database_query_used_memory,0)
+SET @Database_log_bytes_used	= COALESCE(@Database_log_bytes_used,0)
+SET @Database_tempdb_space_used	= COALESCE(@Database_tempdb_space_used,0)
+
+DECLARE @Total_duration				BIGINT
+DECLARE @Total_cpu_time				BIGINT
+DECLARE @Total_logical_io_reads		BIGINT
+DECLARE @Total_logical_io_writes	BIGINT
+DECLARE @Total_physical_io_reads	BIGINT
+DECLARE @Total_clr_time				BIGINT
+DECLARE @Total_query_used_memory	BIGINT
+DECLARE @Total_log_bytes_used		BIGINT
+DECLARE @Total_tempdb_space_used	BIGINT
+SELECT
+ @Total_duration			=	[duration]
+,@Total_cpu_time			=	[cpu_time]
+,@Total_logical_io_reads	=	[logical_io_reads]
+,@Total_logical_io_writes	=	[logical_io_writes]
+,@Total_physical_io_reads	=	[physical_io_reads]
+,@Total_clr_time			=	[clr_time]
+,@Total_query_used_memory	=	[query_used_memory]
+,@Total_log_bytes_used		=	[log_bytes_used]
+,@Total_tempdb_space_used	=	[tempdb_space_used]
+FROM #TotalMetrics
+
+UPDATE #TotalMetrics
+SET
+ [duration]				= @Total_duration			+	@Database_duration
+,[cpu_time]				= @Total_cpu_time			+	@Database_cpu_time
+,[logical_io_reads]		= @Total_logical_io_reads	+	@Database_logical_io_reads
+,[logical_io_writes]	= @Total_logical_io_writes	+	@Database_logical_io_writes
+,[physical_io_reads]	= @Total_physical_io_reads	+	@Database_physical_io_reads
+,[clr_time]				= @Total_clr_time			+	@Database_clr_time
+,[query_used_memory]	= @Total_query_used_memory	+	@Database_query_used_memory
+,[log_bytes_used]		= @Total_log_bytes_used		+	@Database_log_bytes_used
+,[tempdb_space_used]	= @Total_tempdb_space_used	+	@Database_tempdb_space_used'
+	SET @SqlCommand2GetTotalMetricsTemplate = REPLACE(@SqlCommand2GetTotalMetricsTemplate, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
+	SET @SqlCommand2GetTotalMetricsTemplate = REPLACE(@SqlCommand2GetTotalMetricsTemplate, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+
+	-- If the SQL version is 2016, exclude components not available on that version - START
+	IF (@Version = 13)
+	BEGIN
+		SET @SqlCommand2GetTotalMetricsTemplate = REPLACE(@SqlCommand2GetTotalMetricsTemplate, '{@SQL2016columns}',	'0 --')
+	END
+	ELSE
+	BEGIN
+		SET @SqlCommand2GetTotalMetricsTemplate = REPLACE(@SqlCommand2GetTotalMetricsTemplate, '{@SQL2016columns}',	'')
+	END
+	-- If the SQL version is 2016, exclude components not available on that version - END
+-- Define query to capture total values for all metrics - END
+
+
 -- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - START
 DECLARE @CurrentDBTable TABLE(
     DatabaseName  SYSNAME
 )
 DECLARE @CurrentDB SYSNAME
 
+DECLARE @SqlCommand2GetTotalMetrics NVARCHAR(MAX)
 DECLARE @SqlCommand2PopulateTempTable NVARCHAR(MAX)
 WHILE EXISTS (SELECT 1 FROM @dbs)
 BEGIN
     DELETE TOP(1) FROM @dbs
     OUTPUT deleted.DatabaseName INTO @CurrentDBTable
     SELECT @CurrentDB = DatabaseName FROM @CurrentDBTable
+
+	-- When @Percentages = 1, calculate the total amount of all metrics - START
+	IF (@Percentages = 1)
+	BEGIN
+		SET @SqlCommand2GetTotalMetrics	=	REPLACE(@SqlCommand2GetTotalMetricsTemplate,	'{@DatabaseName}',		@CurrentDB)
+		IF (@VerboseMode = 1)	PRINT	(@SqlCommand2GetTotalMetrics)
+		IF (@TestMode = 0)		EXECUTE	(@SqlCommand2GetTotalMetrics)
+	END
+	-- When @Percentages = 1, calculate the total amount of all metrics - END
+
     SET @SqlCommand2PopulateTempTable	=	REPLACE(@SqlCommand2PopulateTempTableTemplate,	'{@DatabaseName}',		@CurrentDB)
     IF (@VerboseMode = 1)	PRINT	(@SqlCommand2PopulateTempTable)
 	IF (@TestMode = 0)		EXECUTE	(@SqlCommand2PopulateTempTable)
@@ -431,10 +560,49 @@ END
 -- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - END
 
 
+-- Store the Total Metrics for calculations required for @Percentages = 1 - START
+DECLARE @TotalDuration			BIGINT
+DECLARE @TotalCPU				BIGINT
+DECLARE @TotalLogicalIOReads	BIGINT
+DECLARE @TotalLogicalIOWrites	BIGINT
+DECLARE @TotalPhysicalIOReads	BIGINT
+DECLARE @TotalCLR				BIGINT
+DECLARE @TotalMemory			BIGINT
+DECLARE @TotalLogBytesUsed		BIGINT
+DECLARE @TotalTempDB			BIGINT
+SELECT
+	 @TotalDuration			=	[tm].[duration]
+	,@TotalCPU				=	[tm].[cpu_time]
+	,@TotalLogicalIOReads	=	[tm].[logical_io_reads]
+	,@TotalLogicalIOWrites	=	[tm].[logical_io_writes]
+	,@TotalPhysicalIOReads	=	[tm].[physical_io_reads]
+	,@TotalCLR				=	[tm].[clr_time]
+	,@TotalMemory			=	[tm].[query_used_memory]
+	,@TotalLogBytesUsed		=	[tm].[log_bytes_used]
+	,@TotalTempDB			=	[tm].[tempdb_space_used]
+FROM #TotalMetrics [tm]
+	-- If no total metrics have been calculated, reset this value to xxxxx - START
+	IF (@TotalDuration + @TotalCPU + @TotalLogicalIOReads + @TotalLogicalIOWrites + @TotalPhysicalIOReads + @TotalCLR + @TotalMemory + @TotalLogBytesUsed + @TotalTempDB = 0)
+	BEGIN
+		SET @TotalDuration			=	100000
+		SET @TotalCPU				=	100000
+		SET @TotalLogicalIOReads	=	100000
+		SET @TotalLogicalIOWrites	=	100000
+		SET @TotalPhysicalIOReads	=	100000
+		SET @TotalCLR				=	100000
+		SET @TotalMemory			=	100000
+		SET @TotalLogBytesUsed		=	100000
+		SET @TotalTempDB			=	100000
+	END
+	-- If no total metrics have been calculated, reset this value to xxxxx - END
+-- Store the Total Metrics for calculations required for @Percentages = 1 - END
+
+
 -- Output to user - START
 IF (@ReportTable IS NULL) OR (@ReportTable = '') OR (@ReportIndex IS NULL) OR (@ReportIndex = '')
 BEGIN
-	DECLARE @SqlCmd2User NVARCHAR(MAX) = 'SELECT
+	DECLARE @SqlCmd2User NVARCHAR(MAX)
+	SET @SqlCmd2User = 'SELECT
 	 [DatabaseName]			
 	,[QueryID]				
 	,[MinNumberPlans]				
@@ -444,18 +612,31 @@ BEGIN
 	,[ObjectName]			
 	,[ExecutionTypeDesc]		
 	,[ExecutionCount]		
-	,[duration]											AS [Duration]
-	,[cpu_time]											AS [CPU]
-	,[logical_io_reads]									AS [LogicalIOReads]
-	,[logical_io_writes]								AS [LogicalIOWrites]
-	,[physical_io_reads]								AS [PhysicalIOReads]
-	,[clr_time]											AS [CLR]
-	,[query_used_memory]								AS [Memory]
-	,[log_bytes_used]									AS [LogBytesUsed]
-	,[tempdb_space_used]								AS [TempDB]
+	,CASE WHEN {@TotalDuration}			= 0 THEN 0 ELSE CAST( (100000*[duration]			)	/{@TotalDuration}			AS BIGINT)	END AS [Duration]
+	,CASE WHEN {@TotalCPU}				= 0 THEN 0 ELSE CAST( (100000*[cpu_time]			)	/{@TotalCPU}				AS BIGINT)	END AS [CPU]
+	,CASE WHEN {@TotalLogicalIOReads}	= 0 THEN 0 ELSE CAST( (100000*[logical_io_reads]	)	/{@TotalLogicalIOReads}		AS BIGINT)	END AS [LogicalIOReads]
+	,CASE WHEN {@TotalLogicalIOWrites}	= 0 THEN 0 ELSE CAST( (100000*[logical_io_writes]	)	/{@TotalLogicalIOWrites}	AS BIGINT)	END AS [LogicalIOWrites]
+	,CASE WHEN {@TotalPhysicalIOReads}	= 0 THEN 0 ELSE CAST( (100000*[physical_io_reads]	)	/{@TotalPhysicalIOReads}	AS BIGINT)	END AS [PhysicalIOReads]
+	,CASE WHEN {@TotalCLR}				= 0 THEN 0 ELSE CAST( (100000*[clr_time]			)	/{@TotalCLR}				AS BIGINT)	END AS [CLR]
+	,CASE WHEN {@TotalMemory}			= 0 THEN 0 ELSE CAST( (100000*[query_used_memory]	)	/{@TotalMemory}				AS BIGINT)	END AS [Memory]
+	,CASE WHEN {@TotalLogBytesUsed}		= 0 THEN 0 ELSE CAST( (100000*[log_bytes_used]		)	/{@TotalLogBytesUsed}		AS BIGINT)	END AS [LogBytesUsed]
+	,CASE WHEN {@TotalTempDB}			= 0 THEN 0 ELSE CAST( (100000*[tempdb_space_used]	)	/{@TotalTempDB}				AS BIGINT)	END AS [TempDB]
 	,CAST(DECOMPRESS([QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
 	FROM #ServerTopQueriesStore
 	ORDER BY {@Measurement} DESC'
+	
+	-- Replace @TotalXXXXX values - START
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalDuration}',			CAST(@TotalDuration			AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalCPU}',				CAST(@TotalCPU				AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalLogicalIOReads}',	CAST(@TotalLogicalIOReads	AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalLogicalIOWrites}',	CAST(@TotalLogicalIOWrites	AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalPhysicalIOReads}',	CAST(@TotalPhysicalIOReads	AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalCLR}',				CAST(@TotalCLR				AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalMemory}',			CAST(@TotalMemory			AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalLogBytesUsed}',		CAST(@TotalLogBytesUsed		AS NVARCHAR(22)))
+	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@TotalTempDB}',			CAST(@TotalTempDB			AS NVARCHAR(22)))
+	-- Replace @TotalXXXXX values - END
+
 	SET @SqlCmd2User = REPLACE(@SqlCmd2User,	'{@Measurement}', QUOTENAME(@Measurement))
 	IF (@VerboseMode = 1)	PRINT (@SqlCmd2User)
 	IF (@TestMode = 0)		EXEC (@SqlCmd2User)
@@ -484,6 +665,7 @@ BEGIN
 			''{@EndTime}''			AS [EndTime],
 			{@Top}					AS [Top],
 			''{@Measurement}''		AS [Measurement],
+			{@Percentages}			AS [Percentages],
 			{@IncludeQueryText}		AS [IncludeQueryText],
 			{@ExcludeAdhoc}			AS [ExcludeAdhoc],
 			{@ExcludeInternal}		AS [ExcludeInternal],
@@ -496,11 +678,13 @@ BEGIN
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',		@ServerIdentifier)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',			ISNULL(@DatabaseName,'*'))
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime	AS NVARCHAR(34)))
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',					@Top)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',			@Measurement)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Percentages}',			@Percentages)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',		@IncludeQueryText)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeAdhoc}',			@ExcludeAdhoc)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeInternal}',		@ExcludeInternal)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateAll}',			@AggregateAll)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateNonRegular}',	@AggregateNonRegular)
 
@@ -523,20 +707,32 @@ BEGIN
 		,[ObjectName]
 		,[ExecutionTypeDesc]
 		,[ExecutionCount]
-		,[duration]
-		,[cpu_time]
-		,[logical_io_reads]
-		,[logical_io_writes]
-		,[physical_io_reads]
-		,[clr_time]
-		,[query_used_memory]
-		,[log_bytes_used]
-		,[tempdb_space_used]
+		,(1000000*[duration]		 )/{@TotalDuration}
+		,(1000000*[cpu_time]		 )/{@TotalCPU}
+		,(1000000*[logical_io_reads] )/{@TotalLogicalIOReads}
+		,(1000000*[logical_io_writes])/{@TotalLogicalIOWrites}
+		,(1000000*[physical_io_reads])/{@TotalPhysicalIOReads}
+		,(1000000*[clr_time]		 )/{@TotalCLR}
+		,(1000000*[query_used_memory])/{@TotalMemory}
+		,(1000000*[log_bytes_used]	 )/{@TotalLogBytesUsed}
+		,(1000000*[tempdb_space_used])/{@TotalTempDB}
 		,[QuerySqlText]	
 	FROM #ServerTopQueriesStore'
 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportTable}',		@ReportTable) 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportID}',			@ReportID) 
+
+	-- Replace @TotalXXXXX values - START
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalDuration}',			CAST(@TotalDuration			AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalCPU}',				CAST(@TotalCPU				AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalLogicalIOReads}',	CAST(@TotalLogicalIOReads	AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalLogicalIOWrites}',	CAST(@TotalLogicalIOWrites	AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalPhysicalIOReads}',	CAST(@TotalPhysicalIOReads	AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalCLR}',				CAST(@TotalCLR				AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalMemory}',			CAST(@TotalMemory			AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalLogBytesUsed}',		CAST(@TotalLogBytesUsed		AS NVARCHAR(22)))
+	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table,	'{@TotalTempDB}',			CAST(@TotalTempDB			AS NVARCHAR(22)))
+	-- Replace @TotalXXXXX values - END
 
 	IF (@VerboseMode = 1)	PRINT (@SqlCmd2Table)
 	IF (@TestMode = 0)		EXEC (@SqlCmd2Table)
@@ -544,7 +740,7 @@ END
 -- Output to table - END
 
 DROP TABLE IF EXISTS #ServerTopQueriesStore
-
+DROP TABLE IF EXISTS #TotalMetrics
 RETURN
 END
 GO
