@@ -32,6 +32,7 @@ EXECUTE [dbo].[QDSCacheCleanup]
 	,@MinExecutionCount			=	2
 	,@CleanOrphan				=	1
 	,@CleanInternal				=	1
+	,@RetainForcedMetrics		=	1
 	,@ReportIndexOutputTable	=	'[dbo].[QDSCacheCleanupIndex]'
 	,@ReportDetailsOutputTable	=	'[dbo].[QDSCacheCleanupDetails]'
 	,@TestMode					=	1
