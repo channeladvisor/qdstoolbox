@@ -43,6 +43,9 @@ GO
 --		@CleanInternal				BIT				--	Flag to clean queries identified as internal ones by QDS (UPDATE STATISTICS, INDEX REBUILD....)
 --														[Default: 1]
 --
+--		@RetainForcedMetrics		BIT				--	Flag to retain metrics for queries having forced plans (provided they are not orphan queries)
+--														[Default: 0]
+--
 --		@CleanStatsOnly				BIT				--	Changes the behavior of the clean process so only the stats will be cleaned, but not the plans, queries and queries' texts.
 --														[Default: 0]
 --
@@ -127,6 +130,11 @@ GO
 -- Date: 2021.09.12
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes:	@CleanStale applies to all queries, and not just the ones belonging to an object
+
+-- Date: 2021.11.28
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes:	New parameter @RetainForcedMetrics to retain metrics for queries having forced plans (provided they are not orphan queries)
+--			https://github.com/channeladvisor/qdstoolbox/issues/25
 ----------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 (
@@ -138,6 +146,7 @@ CREATE OR ALTER PROCEDURE [dbo].[QDSCacheCleanup]
 	,@MinExecutionCount			INT				=	2
 	,@CleanOrphan				BIT				=	1
 	,@CleanInternal				BIT				=	1
+	,@RetainForcedMetrics		BIT				=	1
 	,@CleanStatsOnly			BIT				=	1
 	,@ReportAsText				BIT				=	0
 	,@ReportAsTable				BIT				=	0
@@ -349,6 +358,16 @@ BEGIN
 END
 -- Load internal queries into #InternalQueryTable - END
 
+-- Exclude queries with forced plans from #DeleteableQueryTable - START
+IF (@RetainForcedMetrics = 1)
+BEGIN
+	DELETE [Del1]
+	FROM #DeleteableQueryTable [Del1]
+	INNER JOIN #DeleteableQueryTable [Del2]
+	ON [Del1].[QueryID] = [Del2].[QueryID]
+	AND [Del2].[ForcedPlan] = 1
+END
+-- Exclude queries with forced plans from #DeleteableQueryTable - END
 
 -- Load orphan queries into #DeleteableQueryTable - START
 IF (@CleanOrphan = 1)
@@ -686,6 +705,7 @@ BEGIN
 				,{@MinExecutionCount}	AS [MinExecutionCount]
 				,{@CleanOrphan}			AS [CleanOrphan]
 				,{@CleanInternal}		AS [CleanInternal]
+				,{@RetainForcedMetrics}	AS [RetainForcedMetrics]
 				,{@CleanStatsOnly}		AS [CleanStatsOnly]
 			FOR XML PATH (''CleanupParameters''), ROOT(''Root'')
 		) as [CleanupParameters]
@@ -693,7 +713,7 @@ BEGIN
 	FROM #Report
 	ORDER BY [QueryType] ASC'
 
-	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportIndexOutputTable}',				@ReportIndexOutputTable)
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportIndexOutputTable}',	@ReportIndexOutputTable)
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportID}',				CAST(@ReportID AS NVARCHAR(20)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ReportDate}',				CAST(@ExecutionTime AS NVARCHAR(34)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@ServerIdentifier}',		@ServerIdentifier)
@@ -704,6 +724,7 @@ BEGIN
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@MinExecutionCount}',		CAST(@MinExecutionCount AS NVARCHAR(8)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanOrphan}',			CAST(@CleanOrphan AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanInternal}',			CAST(@CleanInternal AS NVARCHAR(1)))
+	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@RetainForcedMetrics}',	CAST(@RetainForcedMetrics AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@CleanStatsOnly}',			CAST(@CleanStatsOnly AS NVARCHAR(1)))
 	SET @ReportOutputInsert = REPLACE(@ReportOutputInsert, '{@TestMode}',				CAST(@TestMode AS NVARCHAR(1)))
 
