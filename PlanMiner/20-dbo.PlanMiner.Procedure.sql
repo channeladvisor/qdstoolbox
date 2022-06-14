@@ -947,7 +947,7 @@ BEGIN
 			SET @IndexOperation = 'ReadWrite'
 			-- Temporaly store the IndexScan parameters to join them to the actual index details - START
 			SELECT
-				 @Lookup		=	@XMLContent.value('(/IndexScan/@Lookup)[1]',			'BIT')
+				 @Lookup		=	COALESCE(@XMLContent.value('(/IndexScan/@Lookup)[1]',	'BIT'),0)
 				,@Ordered		=	@XMLContent.value('(/IndexScan/@Ordered)[1]',			'BIT')
 				,@ForcedIndex	=	@XMLContent.value('(/IndexScan/@ForcedIndex)[1]',		'BIT')
 				,@ForcedSeek	=	@XMLContent.value('(/IndexScan/@ForceSeek)[1]',			'BIT')
