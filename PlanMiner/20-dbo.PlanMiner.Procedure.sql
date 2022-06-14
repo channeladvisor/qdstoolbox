@@ -129,6 +129,10 @@
 --
 -- Date: 2021.05.08
 -- Auth: Pablo Lozano (@sqlozano)
+--
+-- Date: 2022.06.14
+-- Auth: Pablo Lozano (@sqlozano)
+-- Added flag for KeyLoopup operations
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
@@ -440,6 +444,7 @@ CREATE TABLE #PlanMinerTable_IndexOperations
 	,[IndexName]			NVARCHAR(128)	NULL
 	,[IndexKind]			NVARCHAR(128)	NULL
 	,[LogicalOp]			NVARCHAR(128)	NULL
+	,[Lookup]				BIT				NULL
 	,[Ordered]				BIT				NULL
 	,[ForcedIndex]			BIT				NULL
 	,[ForceSeek]			BIT				NULL
@@ -619,6 +624,7 @@ DECLARE @MissingIndexID		INT				=	0
 
 -- Variables to temporary store index operation parameters - START
 DECLARE @NodeID			INT
+DECLARE @Lookup			BIT
 DECLARE @Ordered		BIT
 DECLARE @ForcedIndex	BIT
 DECLARE @ForcedSeek		BIT
@@ -941,7 +947,8 @@ BEGIN
 			SET @IndexOperation = 'ReadWrite'
 			-- Temporaly store the IndexScan parameters to join them to the actual index details - START
 			SELECT
-				 @Ordered		=	@XMLContent.value('(/IndexScan/@Ordered)[1]',			'BIT')
+				 @Lookup		=	@XMLContent.value('(/IndexScan/@Lookup)[1]',			'BIT')
+				,@Ordered		=	@XMLContent.value('(/IndexScan/@Ordered)[1]',			'BIT')
 				,@ForcedIndex	=	@XMLContent.value('(/IndexScan/@ForcedIndex)[1]',		'BIT')
 				,@ForcedSeek	=	@XMLContent.value('(/IndexScan/@ForceSeek)[1]',			'BIT')
 				,@ForcedScan	=	@XMLContent.value('(/IndexScan/@ForceScan)[1]',			'BIT')
@@ -973,6 +980,7 @@ BEGIN
 				,[IndexName]		=	REPLACE(REPLACE(@XMLContent.value('(/Object/@Index)[1]',		'NVARCHAR(128)'),']',''),'[','')
 				,[IndexKind]		=	@XMLContent.value('(/Object/@IndexKind)[1]',					'NVARCHAR(128)')
 				,@LogicalOp
+				,@Lookup
 				,@Ordered		
 				,@ForcedIndex	
 				,@ForcedSeek	
@@ -981,6 +989,7 @@ BEGIN
 				,@Storage	
 
 			-- Reset the values so they won't be carried over to ther operations that don't include those parameters - START
+			SET @Lookup			= NULL
 			SET @Ordered		= NULL
 			SET @ForcedIndex	= NULL
 			SET @ForcedSeek		= NULL
@@ -1129,4 +1138,3 @@ RETURN
 
 END
 GO
-

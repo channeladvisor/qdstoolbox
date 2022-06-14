@@ -29,6 +29,9 @@
 --		[IndexKind]				NVARCHAR(128)	NULL
 --			Type of index
 --
+--		[Lookup]				BIT				NULL
+--			Flag to define whether the operation involves a Key Lookup
+--
 --		[Ordered]				BIT				NULL
 --			Flag to define whether the index ordering
 --
@@ -55,6 +58,9 @@
 -- Date: 2021.05.08
 -- Auth: Pablo Lozano (@sqlozano)
 --
+-- Date: 2022.06.14
+-- Auth: Pablo Lozano (@sqlozano)
+-- Added flag for KeyLoopup operations
 ----------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS [dbo].[PlanMiner_IndexOperations]
@@ -69,6 +75,7 @@ CREATE TABLE [dbo].[PlanMiner_IndexOperations]
 	,[IndexName]			NVARCHAR(128)	NULL
 	,[IndexKind]			NVARCHAR(128)	NULL
 	,[LogicalOp]			NVARCHAR(128)	NOT NULL
+	,[Lookup]				BIT				NULL
 	,[Ordered]				BIT				NULL
 	,[ForcedIndex]			BIT				NULL
 	,[ForceSeek]			BIT				NULL
