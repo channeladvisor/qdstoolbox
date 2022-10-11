@@ -132,7 +132,11 @@
 --
 -- Date: 2022.06.14
 -- Auth: Pablo Lozano (@sqlozano)
--- Added flag for KeyLoopup operations
+-- Added flag for KeyLookup operations
+--
+-- Date: 2022.10.11
+-- Auth: Pablo Lozano (@sqlozano)
+-- Fixed a bug by adding another copy of the lines used to reset the flags so the previous values won't be carried over to the following node
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[PlanMiner]
@@ -776,6 +780,16 @@ BEGIN
 		IF (@XMLContent.exist('/ExitRelOp') = 1)
 		BEGIN
 			SET @Depth = @Depth - 1
+			-- Reset the values so they won't be carried over to ther operations that don't include those parameters - START
+			SET @Ordered		= NULL
+			SET @ForcedIndex	= NULL
+			SET @ForcedSeek		= NULL
+			SET @ForcedScan		= NULL
+			SET @NoExpandHint	= NULL
+			SET @Storage		= NULL
+			SET @LogicalOp		= NULL
+			SET @Lookup			= NULL
+			-- Reset the values so they won't be carried over to ther operations that don't include those parameters - END
 			FETCH NEXT FROM [XMLContentCursor] INTO @LineNumber, @XMLContent
 			CONTINUE
 		END
