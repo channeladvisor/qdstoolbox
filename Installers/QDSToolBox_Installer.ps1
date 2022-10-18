@@ -11,6 +11,7 @@ Param(
 .\QDSCacheCleanup_Installer.ps1     -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\QueryVariation_Installer.ps1      -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\QueryWaits_Installer.ps1          -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
+.\ServerTopObject_Installer.ps1     -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\ServerTopQueries_Installer.ps1    -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\StatisticsUsed_Installer.ps1      -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password
 .\WaitsVariation_Installer.ps1      -TargetInstance $TargetInstance -TargetDatabase $TargetDatabase -TargetSchema $TargetSchema -Login $Login -Password $Password

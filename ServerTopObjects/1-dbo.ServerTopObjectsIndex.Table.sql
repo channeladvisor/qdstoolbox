@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
--- Table Name: [dbo].[ServerTopQueriesIndex]
+-- Table Name: [dbo].[ServerTopObjectsIndex]
 --
--- Desc: This table is used by the procedure [dbo].[ServerTopQueries] to store its entry parameters
+-- Desc: This table is used by the procedure [dbo].[ServerTopObjects] to store its entry parameters
 --
 -- Columns:
 --		[ReportID]				BIGINT			NOT NULL
@@ -17,19 +17,16 @@
 --			Name of the database this operation was executed against
 --
 --		[Parameters]		XML					NULL
---			List of parameters used to invoke the execution of [dbo].[ServerTopQueries]
+--			List of parameters used to invoke the execution of [dbo].[ServerTopObjects]
 --
 --
--- Date: 2020.10.22
+-- Date: 2022.10.18
 -- Auth: Pablo Lozano (@sqlozano)
---
--- Date: 2021.05.08
--- Auth: Pablo Lozano (@sqlozano)
--- 		Changed script logic to drop & recreate table
+-- Desc: Created based on [dbo].[ServerTopQueriesIndex]
 ----------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS [dbo].[ServerTopQueriesIndex]
-CREATE TABLE [dbo].[ServerTopQueriesIndex]
+DROP TABLE IF EXISTS [dbo].[ServerTopObjectsIndex]
+CREATE TABLE [dbo].[ServerTopObjectsIndex]
 (
 	 [ReportID]				BIGINT	IDENTITY(1,1)
 	,[CaptureDate]			DATETIME2		NOT NULL
@@ -37,8 +34,8 @@ CREATE TABLE [dbo].[ServerTopQueriesIndex]
 	,[DatabaseName]			SYSNAME			NOT NULL
 	,[Parameters]			XML				NOT NULL
 )
-ALTER TABLE [dbo].[ServerTopQueriesIndex]
-ADD CONSTRAINT [PK_ServerTopQueriesIndex] PRIMARY KEY CLUSTERED
+ALTER TABLE [dbo].[ServerTopObjectsIndex]
+ADD CONSTRAINT [PK_ServerTopObjectsIndex] PRIMARY KEY CLUSTERED
 (
 	 [ReportID]	
 )

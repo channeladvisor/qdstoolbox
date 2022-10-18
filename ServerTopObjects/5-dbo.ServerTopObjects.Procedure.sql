@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
--- Procedure Name: [dbo].[ServerTopQueries]
+-- Procedure Name: [dbo].[ServerTopObjects]
 --
--- Desc: This script loops all the accessible user DBs (or just the selected one) and gathers the TOP XX queries based on the selected measurement and generates a report
+-- Desc: This script loops all the accessible user DBs (or just the selected one) and gathers the TOP XX objects based on the selected measurement and generates a report
 --
 --
 -- Parameters:
@@ -14,11 +14,11 @@
 --
 --		@ReportIndex				NVARCHAR(800)	--	Table to store the details of the report, such as parameters used, if no results returned to the user are required
 --														[Default: NULL, results returned to user]
---														Table available in dbo.ServerTopQueriesIndex
+--														Table available in dbo.ServerTopObjectsIndex
 --
 --		@ReportTable				NVARCHAR(800)	--	Table to store the results of the report, if no results returned to the user are required. 
 --														[Default: NULL, results returned to user]
---														Table available in dbo.ServerTopQueriesStore
+--														Table available in dbo.ServerTopObjectsStore
 --
 --		@StartTime					DATETIME		--	Start time of the period to analyze, in UTC format.
 --														[Default: DATEADD(HOUR,-1,GETUTCDATE()]
@@ -45,15 +45,6 @@
 --														When enabled, @Measurement will go from 0 to 100000 (equivalent to 0% to 100%)
 --														[Default: 0]
 --
---		@IncludeQueryText			BIT				--	Flag to include the query text in the results.
---														[Default: 0]
---
---		@ExcludeAdhoc				BIT				--	Flag to define whether to ignore adhoc queries (not part of a DB object) from the analysis
---														[Default: 0]
---
---		@ExcludeInternal			BIT				--	Flag to define whether to ignore internal queries (backup, index rebuild, statistics update...) from the analysis
---														[Default: 0]
---
 --		@AggregateAll				BIT				--	Flag to aggregate all types of executions in the results
 --														[Default: 1]
 --
@@ -70,33 +61,12 @@
 --	OUTPUT
 --		@ReportID					BIGINT			--	Returns the ReportID (when the report is being logged into a table)
 --
--- Date: 2020.08.06
--- Auth: Pablo Lozano (@sqlozano)
---
--- Date: 2021.02.28
--- Auth: Pablo Lozano (@sqlozano)
--- Changes:	Execution in SQL 2016 will thrown an error when the @Measurement selected does not exist
---			Execution in SQL 2016 will return NULL for the measures not included in this version (log_bytes_used & tempdb_space_used)
---
--- Date: 2021.08.19
--- Auth: Pablo Lozano (@sqlozano)
--- Changes: Added flags to aggregate executions based on the execution result (Regular, Aborted, Exception)
---			Replaced [PlanID] with [MinNumberPlans]
---
--- Date: 2021.08.25
--- Auth: Pablo Lozano (@sqlozano)
--- Changes: Removed filter based on execution result (Regular, Aborted, Exception) due to the additional load and duration it generated
---
--- Date: 2021.10.15
--- Auth: Pablo Lozano (@sqlozano)
--- Changes: Added flag @Percentages to calculate percentages instead of absolute values
---
 -- Date: 2022.10.18
 -- Auth: Pablo Lozano (@sqlozano)
--- Changes: Fixed bug ocurring when some metrics caused a divide by zero error with @Percentages = 1
+-- Desc: Based on [dbo].[ServerTopQueries]
 ----------------------------------------------------------------------------------
 
-CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
+CREATE OR ALTER PROCEDURE [dbo].[ServerTopObjects]
 (
 	 @ServerIdentifier		SYSNAME			= NULL
 	,@DatabaseName			SYSNAME			= NULL
@@ -107,9 +77,6 @@ CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
 	,@Top					INT				= 25
 	,@Measurement			NVARCHAR(32)	= 'cpu_time'
 	,@Percentages			BIT				= 0
-	,@IncludeQueryText		BIT				= 0
-	,@ExcludeAdhoc			BIT				= 0
-	,@ExcludeInternal		BIT				= 1
 	,@AggregateAll			BIT				= 1
 	,@AggregateNonRegular	BIT				= 0
 	,@VerboseMode			BIT				= 0
@@ -124,7 +91,7 @@ SET NOCOUNT ON
 DECLARE @Version INT =  CAST(SUBSTRING(CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0,CHARINDEX('.',CONVERT(VARCHAR(128), SERVERPROPERTY ('productversion')),0)) AS INT)
 IF (@Version < 13)
 BEGIN
-	RAISERROR(N'[dbo].[ServerTopQueries] requires SQL 2016 or higher',16,1)
+	RAISERROR(N'[dbo].[ServerTopObjects] requires SQL 2016 or higher',16,1)
 	RETURN -1
 END
 -- Raise an error if the @Measurement selected is not available in SQL 2016
@@ -184,9 +151,6 @@ END
 
 IF (@Percentages IS NULL)
 	SET @Percentages = 0
-
-IF (@IncludeQueryText IS NULL)
-	SET @IncludeQueryText = 0
 -- Check variables and set defaults - END
 
 
@@ -227,28 +191,24 @@ DECLARE @dbs TABLE
 -- Define databases in scope for the report - END
 
 -- Definition of temp table to store the reports for each database - START
-DROP TABLE IF EXISTS #ServerTopQueriesStore
-CREATE TABLE #ServerTopQueriesStore
+DROP TABLE IF EXISTS #ServerTopObjectsStore
+CREATE TABLE #ServerTopObjectsStore
 (
-	 [DatabaseName]			SYSNAME			NOT NULL
-	,[QueryID]				BIGINT			NOT NULL
-	,[MinNumberPlans]		INT				NOT NULL
-	,[QueryTextID]			BIGINT			NOT NULL
-	,[ObjectID]				BIGINT			NOT NULL
-	,[SchemaName]			SYSNAME			    NULL
-	,[ObjectName]			SYSNAME			    NULL
-	,[ExecutionTypeDesc]	NVARCHAR(120)	NOT NULL
-	,[ExecutionCount]		BIGINT			NOT NULL
-	,[duration]				BIGINT			NOT NULL
-	,[cpu_time]				BIGINT			NOT NULL
-	,[logical_io_reads]		BIGINT			NOT NULL
-	,[logical_io_writes]	BIGINT			NOT NULL
-	,[physical_io_reads]	BIGINT			NOT NULL
-	,[clr_time]				BIGINT			NOT NULL
-	,[query_used_memory]	BIGINT			NOT NULL
-	,[log_bytes_used]		BIGINT				NULL
-	,[tempdb_space_used]	BIGINT				NULL
-	,[QuerySqlText]			VARBINARY(MAX)	    NULL
+	 [DatabaseName]				SYSNAME			NOT NULL
+	,[ObjectID]					BIGINT			NOT NULL
+	,[SchemaName]				SYSNAME			    NULL
+	,[ObjectName]				SYSNAME			    NULL
+	,[ExecutionTypeDesc]		NVARCHAR(120)	NOT NULL
+	,[EstimatedExecutionCount]	BIGINT			NOT NULL
+	,[duration]					BIGINT			NOT NULL
+	,[cpu_time]					BIGINT			NOT NULL
+	,[logical_io_reads]			BIGINT			NOT NULL
+	,[logical_io_writes]		BIGINT			NOT NULL
+	,[physical_io_reads]		BIGINT			NOT NULL
+	,[clr_time]					BIGINT			NOT NULL
+	,[query_used_memory]		BIGINT			NOT NULL
+	,[log_bytes_used]			BIGINT				NULL
+	,[tempdb_space_used]		BIGINT				NULL
 )
 -- Definition of temp table to store the reports for each database - END
 
@@ -258,9 +218,7 @@ SET @SqlCommand2PopulateTempTableTemplate = 'USE [{@DatabaseName}]
 ;WITH [st1] AS
 (
 SELECT
- [qsp].[query_id]
-,[MinNumberPlans]	= COUNT([qsrs].[plan_id])
-,[qsq].[query_text_id]
+ [qsq].[query_id]
 ,[object_id]		= ISNULL([obs].[object_id], 0)
 ,[SchemaName]		= ISNULL(SCHEMA_NAME([obs].[schema_id]), '''')
 ,[ProcedureName]	= ISNULL(OBJECT_NAME([obs].[object_id]), '''')
@@ -269,7 +227,7 @@ SELECT
 	WHEN {@AggregateNonRegular} = 1 AND [qsrs].[execution_type_desc] != ''Regular'' THEN ''NonRegular''
 	ELSE [qsrs].[execution_type_desc]
  END AS [ExecutionTypeDesc]
-,[count_executions]	= [qsrs].[count_executions]
+,[count_executions]		= SUM([qsrs].[count_executions])
 ,[duration]				=					CAST(SUM([qsrs].[avg_duration]				* [qsrs].[count_executions]) AS BIGINT)
 ,[cpu_time]				=					CAST(SUM([qsrs].[avg_cpu_time]				* [qsrs].[count_executions]) AS BIGINT)
 ,[logical_io_reads]		=					CAST(SUM([qsrs].[avg_logical_io_reads]		* [qsrs].[count_executions]) AS BIGINT)
@@ -285,7 +243,7 @@ INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
 ON [qsrs].[plan_id] = [qsp].[plan_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query] [qsq]
 ON [qsp].[query_id] = [qsq].[query_id]
-LEFT JOIN [{@DatabaseName}].[sys].[objects] [obs]
+INNER JOIN [{@DatabaseName}].[sys].[objects] [obs]
 ON [qsq].[object_id] = [obs].[object_id]
 WHERE
 (
@@ -293,22 +251,17 @@ WHERE
  OR (qsrs.first_execution_time  <= ''{@StartTime}'' AND qsrs.last_execution_time > ''{@StartTime}'')
  OR (qsrs.first_execution_time  <= ''{@EndTime}''   AND qsrs.last_execution_time > ''{@EndTime}'')
 )
-{@ExcludeAdhoc}
-{@ExcludeInternal}
-GROUP BY [qsp].[query_id], [qsq].[query_text_id], [obs].[schema_id], [obs].[object_id], [qsrs].[execution_type_desc],[qsrs].[count_executions]
+GROUP BY [qsq].[query_id], [obs].[schema_id], [obs].[object_id], [qsrs].[execution_type_desc]
 ),
 [st2]
 AS
 (
 SELECT
- [st1].[query_id]
-,[MinNumberPlans]	= MIN([st1].[MinNumberPlans])
-,[st1].[query_text_id]
-,[st1].[object_id]
+ [st1].[object_id]
 ,[st1].[SchemaName]
 ,[st1].[ProcedureName]
 ,[st1].[ExecutionTypeDesc]
-,[count_executions]	= SUM([st1].[count_executions])
+,[count_executions]	= MAX([st1].[count_executions])
 ,[duration]			= SUM([st1].[duration])
 ,[cpu_time]			= SUM([st1].[cpu_time])
 ,[logical_io_reads]	= SUM([st1].[logical_io_reads])
@@ -320,20 +273,15 @@ SELECT
 ,[tempdb_space_used]= SUM([st1].[tempdb_space_used])
 FROM [st1]
 GROUP BY
- [st1].[query_id]
-,[st1].[query_text_id]
-,[st1].[object_id]
+ [st1].[object_id]
 ,[st1].[SchemaName]
 ,[st1].[ProcedureName]
 ,[st1].[ExecutionTypeDesc]
 )
-INSERT INTO #ServerTopQueriesStore
+INSERT INTO #ServerTopObjectsStore
 SELECT
  {@Top}
  ''{@DatabaseName}''
-,[st2].[query_id]
-,[st2].[MinNumberPlans]
-,[st2].[query_text_id]
 ,[st2].[object_id]
 ,[st2].[SchemaName]
 ,[st2].[ProcedureName]
@@ -348,9 +296,7 @@ SELECT
 ,[st2].[query_used_memory]
 ,[st2].[log_bytes_used]
 ,[st2].[tempdb_space_used]
-,{@IncludeQueryText_Value} AS [query_sql_text] 
 FROM [st2]
-{@IncludeQueryText_Join}
 {@Order}'
 
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@StartTime}',				CAST(@StartTime AS NVARCHAR(34)))
@@ -366,42 +312,6 @@ FROM [st2]
 		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'')
 	END
 	-- If the SQL version is 2016, exclude components not available on that version - END
-
-	-- Based on @IncludeQueryText, include the query text in the reports or not - START
-	IF (@IncludeQueryText = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'NULL')
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'')
-	END
-	IF (@IncludeQueryText = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Join}',	'INNER JOIN [{@DatabaseName}].[sys].[query_store_query_text] [qsqt] ON [st2].[query_text_id] = [qsqt].[query_text_id]')
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeQueryText_Value}',	'COMPRESS([qsqt].[query_sql_text])')
-	END
-	-- Based on @IncludeQueryText, include the query text in the reports or not - END
-
-	-- Based on @ExcludeAdhoc, exclude Adhoc queries from the analysis - START
-	IF (@ExcludeAdhoc = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeAdhoc}',		'')	
-	END
-	IF (@ExcludeAdhoc = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeAdhoc}',		'AND ([qsq].[object_id] <> 0)')
-	END
-	-- Based on @ExcludeAdhoc, exclude Adhoc queries from the analysis - END
-	
-	-- Based on @ExcludeInternal, exclude internal queries from the analysis - START
-	IF (@ExcludeInternal = 0)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeInternal}',	'')	
-	END
-	IF (@ExcludeInternal = 1)
-	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@ExcludeInternal}',	'AND (qsq.is_internal_query = 0)')	
-	END
-	-- Based on @ExcludeInternal, exclude internal queries from the analysis - END
-
 
 	-- Based on @AggregateAll, aggregate all executions in the analysis - START
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@AggregateAll}',			CAST(@AggregateAll AS NVARCHAR(1)))
@@ -534,7 +444,7 @@ SET
 -- Define query to capture total values for all metrics - END
 
 
--- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - START
+-- Loop through all the databases in scope to load their details into #ServerTopObjectsStore - START
 DECLARE @CurrentDBTable TABLE(
     DatabaseName  SYSNAME
 )
@@ -561,7 +471,7 @@ BEGIN
     IF (@VerboseMode = 1)	PRINT	(@SqlCommand2PopulateTempTable)
 	IF (@TestMode = 0)		EXECUTE	(@SqlCommand2PopulateTempTable)
 END
--- Loop through all the databases in scope to load their details into #ServerTopQueriesStore - END
+-- Loop through all the databases in scope to load their details into #ServerTopObjectsStore - END
 
 
 -- Store the Total Metrics for calculations required for @Percentages = 1 - START
@@ -608,14 +518,11 @@ BEGIN
 	DECLARE @SqlCmd2User NVARCHAR(MAX)
 	SET @SqlCmd2User = 'SELECT
 	 [DatabaseName]			
-	,[QueryID]				
-	,[MinNumberPlans]				
-	,[QueryTextID]			
 	,[ObjectID]				
 	,[SchemaName]			
 	,[ObjectName]			
 	,[ExecutionTypeDesc]		
-	,[ExecutionCount]		
+	,[EstimatedExecutionCount]		
 	,CASE WHEN {@TotalDuration}			= 0 THEN 0 ELSE CAST( (100000*[duration]			)	/{@TotalDuration}			AS BIGINT)	END AS [Duration]
 	,CASE WHEN {@TotalCPU}				= 0 THEN 0 ELSE CAST( (100000*[cpu_time]			)	/{@TotalCPU}				AS BIGINT)	END AS [CPU]
 	,CASE WHEN {@TotalLogicalIOReads}	= 0 THEN 0 ELSE CAST( (100000*[logical_io_reads]	)	/{@TotalLogicalIOReads}		AS BIGINT)	END AS [LogicalIOReads]
@@ -625,8 +532,7 @@ BEGIN
 	,CASE WHEN {@TotalMemory}			= 0 THEN 0 ELSE CAST( (100000*[query_used_memory]	)	/{@TotalMemory}				AS BIGINT)	END AS [Memory]
 	,CASE WHEN {@TotalLogBytesUsed}		= 0 THEN 0 ELSE CAST( (100000*[log_bytes_used]		)	/{@TotalLogBytesUsed}		AS BIGINT)	END AS [LogBytesUsed]
 	,CASE WHEN {@TotalTempDB}			= 0 THEN 0 ELSE CAST( (100000*[tempdb_space_used]	)	/{@TotalTempDB}				AS BIGINT)	END AS [TempDB]
-	,CAST(DECOMPRESS([QuerySqlText]) AS NVARCHAR(MAX))	AS [QuerySqlText]
-	FROM #ServerTopQueriesStore
+	FROM #ServerTopObjectsStore
 	ORDER BY {@Measurement} DESC'
 	
 	-- Replace @TotalXXXXX values - START
@@ -670,12 +576,9 @@ BEGIN
 			{@Top}					AS [Top],
 			''{@Measurement}''		AS [Measurement],
 			{@Percentages}			AS [Percentages],
-			{@IncludeQueryText}		AS [IncludeQueryText],
-			{@ExcludeAdhoc}			AS [ExcludeAdhoc],
-			{@ExcludeInternal}		AS [ExcludeInternal],
 			{@AggregateAll}			AS [AggregateAll],
 			{@AggregateNonRegular}	AS [AggregateNonRegular]
-		FOR XML PATH(''ServerTopQueriesParameters''), ROOT(''Root'')
+		FOR XML PATH(''ServerTopObjectsParameters''), ROOT(''Root'')
 		)	AS [Parameters]'
 
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',			@ReportIndex)
@@ -686,9 +589,6 @@ BEGIN
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',					@Top)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',			@Measurement)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Percentages}',			@Percentages)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeQueryText}',		@IncludeQueryText)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeAdhoc}',			@ExcludeAdhoc)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ExcludeInternal}',		@ExcludeInternal)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateAll}',			@AggregateAll)
 	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateNonRegular}',	@AggregateNonRegular)
 
@@ -703,14 +603,11 @@ BEGIN
 	SELECT
 		 {@ReportID}
 		,[DatabaseName]
-		,[QueryID]
-		,[MinNumberPlans]
-		,[QueryTextID]
 		,[ObjectID]
 		,[SchemaName]
 		,[ObjectName]
 		,[ExecutionTypeDesc]
-		,[ExecutionCount]
+		,[EstimatedExecutionCount]
 		,CASE 
 			WHEN {@TotalDuration} != 0 THEN (1000000*[duration]		 )/{@TotalDuration}
 			ELSE 0
@@ -747,8 +644,7 @@ BEGIN
 			WHEN {@TotalTempDB} != 0 THEN (1000000*[tempdb_space_used])/{@TotalTempDB}
 			ELSE 0
 		 END
-		,[QuerySqlText]	
-	FROM #ServerTopQueriesStore'
+	FROM #ServerTopObjectsStore'
 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportTable}',		@ReportTable) 
 	SET @SqlCmd2Table = REPLACE(@SqlCmd2Table, '{@ReportID}',			@ReportID) 
@@ -770,7 +666,7 @@ BEGIN
 END
 -- Output to table - END
 
-DROP TABLE IF EXISTS #ServerTopQueriesStore
+DROP TABLE IF EXISTS #ServerTopObjectsStore
 DROP TABLE IF EXISTS #TotalMetrics
 RETURN
 END
