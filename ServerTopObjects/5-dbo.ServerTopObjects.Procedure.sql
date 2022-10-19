@@ -52,6 +52,12 @@
 --														[Default: 0]
 --			Only one of @AggregateAll and @AggregateNonRegular are allowed
 --
+--		@IncludeAdhocQueries		BIT				--	Flag to include all Adhoc queries aggregated under a single "virtual" object
+--														[Default: 0]
+--
+--		@IncludeObjectQueryIDs		BIT				--	Flag to include the QueryID of the subqueries of the object in the report
+--														[Default: 1]
+--
 --		@VerboseMode				BIT				--	Flag to determine whether the T-SQL commands that compose this report will be returned to the user.
 --														[Default: 0]
 --
@@ -64,6 +70,10 @@
 -- Date: 2022.10.18
 -- Auth: Pablo Lozano (@sqlozano)
 -- Desc: Based on [dbo].[ServerTopQueries]
+--
+-- Date: 2022.10.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added new parameters: @IncludeAdhocQueries, @IncludeObjectQueryIDs to include QueryIDs to be returned
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopObjects]
@@ -79,6 +89,8 @@ CREATE OR ALTER PROCEDURE [dbo].[ServerTopObjects]
 	,@Percentages			BIT				= 0
 	,@AggregateAll			BIT				= 1
 	,@AggregateNonRegular	BIT				= 0
+	,@IncludeAdhocQueries	BIT				= 0
+	,@IncludeObjectQueryIDs	BIT				= 0
 	,@VerboseMode			BIT				= 0
 	,@TestMode				BIT				= 0
 	,@ReportID				BIGINT			= NULL	OUTPUT
@@ -151,6 +163,19 @@ END
 
 IF (@Percentages IS NULL)
 	SET @Percentages = 0
+
+
+IF (@AggregateAll IS NULL)
+	SET @AggregateAll = 1
+
+IF (@AggregateNonRegular IS NULL)
+	SET @AggregateNonRegular = 0
+
+IF (@IncludeAdhocQueries IS NULL)
+	SET @IncludeAdhocQueries = 0
+
+IF (@IncludeObjectQueryIDs IS NULL)
+	SET @IncludeObjectQueryIDs = 0
 -- Check variables and set defaults - END
 
 
@@ -196,6 +221,7 @@ CREATE TABLE #ServerTopObjectsStore
 (
 	 [DatabaseName]				SYSNAME			NOT NULL
 	,[ObjectID]					BIGINT			NOT NULL
+	,[ObjectQueries]			XML					NULL
 	,[SchemaName]				SYSNAME			    NULL
 	,[ObjectName]				SYSNAME			    NULL
 	,[ExecutionTypeDesc]		NVARCHAR(120)	NOT NULL
@@ -220,8 +246,8 @@ SET @SqlCommand2PopulateTempTableTemplate = 'USE [{@DatabaseName}]
 SELECT
  [qsq].[query_id]
 ,[object_id]		= ISNULL([obs].[object_id], 0)
-,[SchemaName]		= ISNULL(SCHEMA_NAME([obs].[schema_id]), '''')
-,[ProcedureName]	= ISNULL(OBJECT_NAME([obs].[object_id]), '''')
+,[SchemaName]		= ISNULL(SCHEMA_NAME([obs].[schema_id]), ''ADHOC'')
+,[ProcedureName]	= ISNULL(OBJECT_NAME([obs].[object_id]), ''ADHOC'')
 ,CASE
 	WHEN {@AggregateAll} = 1 THEN ''ALL''
 	WHEN {@AggregateNonRegular} = 1 AND [qsrs].[execution_type_desc] != ''Regular'' THEN ''NonRegular''
@@ -243,7 +269,7 @@ INNER JOIN [{@DatabaseName}].[sys].[query_store_plan] [qsp]
 ON [qsrs].[plan_id] = [qsp].[plan_id]
 INNER JOIN [{@DatabaseName}].[sys].[query_store_query] [qsq]
 ON [qsp].[query_id] = [qsq].[query_id]
-INNER JOIN [{@DatabaseName}].[sys].[objects] [obs]
+{@IncludeAdhocQueries} JOIN [{@DatabaseName}].[sys].[objects] [obs]
 ON [qsq].[object_id] = [obs].[object_id]
 WHERE
 (
@@ -283,6 +309,7 @@ SELECT
  {@Top}
  ''{@DatabaseName}''
 ,[st2].[object_id]
+,{@IncludeObjectQueryIDs}(SELECT [st1].[query_id] FROM [st1] WHERE [st1].[object_id] = [st2].[object_id] {@Order} FOR XML PATH(''ObjectQueryIDs'')) AS XML
 ,[st2].[SchemaName]
 ,[st2].[ProcedureName]
 ,[st2].[ExecutionTypeDesc]
@@ -320,6 +347,20 @@ FROM [st2]
 	-- Based on @AggregateNonRegular, aggregate all executions based on Regular / NonRegular in the analysis - START
 	SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@AggregateNonRegular}',	CAST(@AggregateNonRegular AS NVARCHAR(1)))
 	-- Based on @AggregateNonRegular, aggregate all executions based on Regular / NonRegular in the analysis - END
+
+	-- Based on @IncludeAdhocQueries, return adhoc query IDs under a "virtual" Object - START
+	IF (@IncludeAdhocQueries = 0)
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeAdhocQueries}',	'INNER')
+	IF (@IncludeAdhocQueries = 1)
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeAdhocQueries}',	'LEFT')
+	-- Based on @IncludeAdhocQueries, return adhoc query IDs under a "virtual" Object - END
+
+	-- Based on @IncludeObjectQueryIDs, return the query IDs part of the Object captured - START
+	IF (@IncludeObjectQueryIDs = 0)
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeObjectQueryIDs}',	'NULL --')
+	IF (@IncludeObjectQueryIDs = 1)
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@IncludeObjectQueryIDs}',	'')
+	-- Based on @IncludeObjectQueryIDs, return the query IDs part of the Object captured - END
 
 	-- Based on @Top, return only the @Top queries or all - START
 	IF (@Top > 0)
@@ -518,7 +559,8 @@ BEGIN
 	DECLARE @SqlCmd2User NVARCHAR(MAX)
 	SET @SqlCmd2User = 'SELECT
 	 [DatabaseName]			
-	,[ObjectID]				
+	,[ObjectID]
+	,[ObjectQueries]
 	,[SchemaName]			
 	,[ObjectName]			
 	,[ExecutionTypeDesc]		
@@ -571,26 +613,30 @@ BEGIN
 		''{@DatabaseName}'',
 		(
 		SELECT
-			''{@StartTime}''		AS [StartTime],
-			''{@EndTime}''			AS [EndTime],
-			{@Top}					AS [Top],
-			''{@Measurement}''		AS [Measurement],
-			{@Percentages}			AS [Percentages],
-			{@AggregateAll}			AS [AggregateAll],
-			{@AggregateNonRegular}	AS [AggregateNonRegular]
+			''{@StartTime}''			AS [StartTime],
+			''{@EndTime}''				AS [EndTime],
+			{@Top}						AS [Top],
+			''{@Measurement}''			AS [Measurement],
+			{@Percentages}				AS [Percentages],
+			{@AggregateAll}				AS [AggregateAll],
+			{@AggregateNonRegular}		AS [AggregateNonRegular],
+			{@IncludeAdhocQueries}		AS [IncludeAdhocQueries],
+			{@IncludeObjectQueryIDs}	AS [IncludeObjectQueryIDs]
 		FOR XML PATH(''ServerTopObjectsParameters''), ROOT(''Root'')
 		)	AS [Parameters]'
 
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',			@ReportIndex)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',		@ServerIdentifier)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',			ISNULL(@DatabaseName,'*'))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',			CAST(@StartTime AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',				CAST(@EndTime	AS NVARCHAR(34)))
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',					@Top)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',			@Measurement)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Percentages}',			@Percentages)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateAll}',			@AggregateAll)
-	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateNonRegular}',	@AggregateNonRegular)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ReportIndex}',				@ReportIndex)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@ServerIdentifier}',			@ServerIdentifier)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@DatabaseName}',				ISNULL(@DatabaseName,'*'))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@StartTime}',				CAST(@StartTime AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@EndTime}',					CAST(@EndTime	AS NVARCHAR(34)))
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Top}',						@Top)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Measurement}',				@Measurement)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@Percentages}',				@Percentages)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateAll}',				@AggregateAll)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@AggregateNonRegular}',		@AggregateNonRegular)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeAdhocQueries}',		@IncludeAdhocQueries)
+	SET @SqlCmdIndex = REPLACE(@SqlCmdIndex, '{@IncludeObjectQueryIDs}',	@IncludeObjectQueryIDs)
 
 	IF (@VerboseMode = 1)	PRINT (@SqlCmdIndex)
 	IF (@TestMode = 0)		EXEC (@SqlCmdIndex)
@@ -604,6 +650,7 @@ BEGIN
 		 {@ReportID}
 		,[DatabaseName]
 		,[ObjectID]
+		,[ObjectQueries]
 		,[SchemaName]
 		,[ObjectName]
 		,[ExecutionTypeDesc]

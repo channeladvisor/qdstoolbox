@@ -41,6 +41,12 @@
 --		[ExcludeInternal]		BIT				NOT NULL
 --			Flag to exclude internal queries (UPDATE STATISTICS, INDEX REBUILD....)
 --
+--		[AggregateAll]			BIT				NOT NULL
+--			Flag to determine whether all query executions are aggregated
+--
+--		[AggregateNonRegular]	BIT				NOT NULL
+--			Flag to determine whether all query executions that didn't have a "regular" exit are aggregated together
+--
 --
 -- Date: 2020.10.22
 -- Auth: Pablo Lozano (@sqlozano)
@@ -56,6 +62,10 @@
 -- Date: 2021.10.15
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Added parameter: @Percentages
+--
+-- Date: 2022.10.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added missing description for the columns: [AggregateAll], [AggregateNonRegular]
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopQueriesIndex]

@@ -10,13 +10,16 @@
 --			Name of the databse the information of the following columns has been extracted from
 --
 --		[ObjectID]				BIGINT			NOT NULL
---			Identifier of the object associated to the corresponding [QueryID] (if any)
+--			Identifier of the object
+--
+--		[ObjectQueryIDs]		XML					NULL
+--			Identifier of the queries part of the object associated to the corresponding [ObjectID]
 --
 --		[SchemaName]			SYSNAME			    NULL
---			Name of the schema of the object associated to the corresponding [QueryID] (if any)
+--			Name of the schema of the object associated to the corresponding [ObjectID]
 --
 --		[ObjectName]			SYSNAME			    NULL
---			Name of the object associated to the corresponding [QueryID] (if any)
+--			Name of the object associated to the corresponding [ObjectID]
 --
 --		[ExecutionTypeDesc]		NVARCHAR(120)	NOT NULL
 --			Description of the execution type (Regular, Aborted, Exception)
@@ -65,6 +68,7 @@ CREATE TABLE [dbo].[ServerTopObjectsStore]
 	 [ReportID]					BIGINT			NOT NULL
 	,[DatabaseName]				SYSNAME			NOT NULL
 	,[ObjectID]					BIGINT			NOT NULL
+	,[ObjectQueryIDs]			XML					NULL
 	,[SchemaName]				SYSNAME			NOT NULL
 	,[ObjectName]				SYSNAME			NOT NULL
 	,[ExecutionTypeDesc]		NVARCHAR(120)	NOT NULL

@@ -12,11 +12,14 @@
 --		[ObjectID]				BIGINT			NOT NULL
 --			Identifier of the object
 --
+--		[ObjectQueryIDs]		XML					NULL
+--			Identifier of the queries part of the object associated to the corresponding [ObjectID]
+--
 --		[SchemaName]			SYSNAME			    NULL
 --			Name of the object's schema
 --
 --		[ObjectName]			SYSNAME			    NULL
---			Name of the object (if any)
+--			Name of the object
 --
 --		[ExecutionTypeDesc]		NVARCHAR(120)	NOT NULL
 --			Description of the execution type (Regular, Aborted, Exception)
@@ -68,6 +71,7 @@ SELECT
 	,[stoi].[Percentages]
 	,[stos].[DatabaseName]
 	,[stos].[ObjectID]
+	,[stos].[ObjectQueryIDs]
 	,[stos].[SchemaName]
 	,[stos].[ObjectName]
 	,[stos].[ExecutionTypeDesc]
