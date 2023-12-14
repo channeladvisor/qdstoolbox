@@ -32,10 +32,27 @@
 --			Flag to determine whether the values are "percentages"
 --			When enabled, the [Measurement] values will go from 0 to 100000 (equivalent to 0% to 100%)
 --
+--		[AggregateAll]			BIT				NOT NULL
+--			Flag to determine whether all query executions are aggregated
+--
+--		[AggregateNonRegular]	BIT				NOT NULL
+--			Flag to determine whether all query executions that didn't have a "regular" exit are aggregated together
+--
+--		[IncludeAdhocQueryIDs]	BIT				NOT NULL
+--			Flag to determine the Adhoc Queries are considered for the report
+--
+--		[IncludeObjectQueryIDs]	BIT				NOT NULL
+--			Flag to determine whether the individual queries of the Object (or the totality of the Adhoc queries) are included in the report
+--
 --
 -- Date: 2022.10.18
 -- Auth: Pablo Lozano (@sqlozano)
 -- Desc: Created based on [dbo].[vServerTopQueriesIndex]
+--
+-- Date: 2022.10.19
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Added missing description for the columns: [AggregateAll], [AggregateNonRegular]
+--			Added columns for new parameters: [IncludeAdhocQueryIDs], [IncludeObjectQueryIDs]
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER VIEW [dbo].[vServerTopObjectsIndex]
@@ -52,6 +69,8 @@ SELECT
 	,q.n.value('Percentages[1]',		'BIT')				AS [Percentages]
 	,q.n.value('AggregateAll[1]',		'BIT')				AS [AggregateAll]
 	,q.n.value('AggregateNonRegular[1]','BIT')				AS [AggregateNonRegular]
+	,q.n.value('IncludeAdhocQueryIDs[1]','BIT')				AS [IncludeAdhocQueryIDs]
+	,q.n.value('IncludeObjectQueryIDs[1]','BIT')			AS [IncludeObjectQueryIDs]
 FROM [dbo].[ServerTopObjectsIndex] [stoi]
 CROSS APPLY [stoi].[Parameters].nodes('/Root/ServerTopObjectsParameters') AS q(n)
 GO
