@@ -6,6 +6,10 @@ Param(
     [string]$Password
 )
 Import-Module SqlServer
+# For versions >= 22 of the SqlServer PS module, the default encryption changed so it must be manually set Encrypt
+if( (Get-Module -Name "sqlserver").Version.Major -ge 22){
+    $EncryptionParameter = @{Encrypt = "Optional"}
+}
 
 # Deploy all SQL script found in \PlanMiner
 $SQLScripts = (Get-ChildItem -Path '..\PlanMiner' -Filter "*.sql") | Sort
@@ -17,10 +21,10 @@ foreach($Script in $SQLScripts){
     # Deploy updated script
     if($Login){
         # Login / Password authentication
-        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Username $Login -Password $Password -Query $ScriptContents
+        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Username $Login -Password $Password -Query $ScriptContents @EncryptionParameter
     }
     else {
         # Active Directory authentication
-        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Query $ScriptContents
+        Invoke-SqlCmd -ServerInstance $TargetInstance -Database $TargetDatabase -Query $ScriptContents @EncryptionParameter
         }  
 }
