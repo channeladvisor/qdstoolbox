@@ -94,6 +94,10 @@
 -- Date: 2022.10.18
 -- Auth: Pablo Lozano (@sqlozano)
 -- Changes: Fixed bug ocurring when some metrics caused a divide by zero error with @Percentages = 1
+--
+-- Date: 2023.12.14
+-- Auth: Pablo Lozano (@sqlozano)
+-- Changes: Fixed bug ocurring when running on SQL 2016 due to metrics defaulting to NULL rather than 0
 ----------------------------------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE [dbo].[ServerTopQueries]
@@ -359,7 +363,7 @@ FROM [st2]
 	-- If the SQL version is 2016, exclude components not available on that version - START
 	IF (@Version = 13)
 	BEGIN
-		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'NULL --')
+		SET @SqlCommand2PopulateTempTableTemplate = REPLACE(@SqlCommand2PopulateTempTableTemplate, '{@SQL2016columns}',		'0 --')
 	END
 	ELSE
 	BEGIN
